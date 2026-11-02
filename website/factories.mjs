@@ -22,7 +22,7 @@ export const FACTORIES = [
     title: 'Lexical-semantic tiny',
     badge: 'ColBERT only',
     description:
-      'BM25 fused with MoEdernColBERT 1.5M as the only vector model. This browser encodes the 2,000 passages into a TurboQuant token index and scans every token per query.',
+      'BM25 fused with MoEdernColBERT 1.5M as the only vector model. The 2,000 passages come as a prebuilt TurboQuant token index; this browser encodes each query and scans every token.',
     models: ['colbert'],
   },
   {

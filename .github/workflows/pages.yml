@@ -1,6 +1,10 @@
 name: Publish documentation
-# Publishing is an explicit repository-owner action, separate from verification.
+# GitHub Pages serves this workflow's artifact, not the committed docs/ folder: `make docs` copies the ONNX Runtime
+# Web loaders and WASM files (about 86 MB, gitignored) into docs/assets/ort/, and the demo's models need them.
+# VERIFIED (2026-11-02): served from the branch, the site returned 404 for assets/ort/*.mjs and no model could load.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

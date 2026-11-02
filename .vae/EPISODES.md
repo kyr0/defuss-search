@@ -12,12 +12,8 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-10-31T17:12:37Z s=79e705da FINDING scripts/live.mjs:32,74,127; scripts/package-test.mjs:123; scripts/wasm.mjs:56; scripts/models.mjs:41 learn=none: A static rule over console.log template strings would misfire on table output (metrics) and the coverage TOTAL line the gate parses.
 2026-10-31T17:12:37Z s=79e705da FINDING ARCH.md:Security and privacy learn=none: Documentation completeness.
 2026-10-31T17:12:37Z s=79e705da FINDING bench/benchmark.mjs:1; scripts/{live,wasm,package-test,models,coverage,service,language-fixture,metrics}.mjs:1 learn=none: Header presence is a docs-step judgment; a mechanical rule would accept empty boilerplate.
-2026-11-01T02:29:51Z s=79e705da DONE fp=56d801500970 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+106)
 2026-11-01T02:29:51Z s=79e705da FINDING scripts/dev.mjs:listen learn=none: Port occupancy depends on the machine; a test would pin an environment state.
 2026-11-01T02:29:51Z s=79e705da FINDING ARCH.md:66 P07 learn=none: Attribution in prose is a review judgment, not mechanically checkable.
-2026-11-01T02:29:51Z s=79e705da FINDING Makefile:e2e learn=test: scripts/dev-check.mjs in make e2e; mutation probe without the reload hook failed it.
-2026-11-01T02:29:51Z s=79e705da FINDING website/index.html (whole page) learn=test: scripts/e2e.mjs now drives the example chips, both copy buttons (clipboard read-back), the phone sheet menu, the frontier stats and checks highlighted code on t
-2026-11-01T02:29:51Z s=79e705da FINDING website/tabs.mjs learn=test: checkRecall in scripts/e2e.mjs keeps covering nested tabs by mouse and keyboard.
 2026-11-01T02:29:51Z s=79e705da FINDING website/index.html:hs-tier-list learn=none: Visual layout; no mechanical check distinguishes intended gaps.
 2026-11-01T02:29:51Z s=79e705da FINDING scripts/docs.mjs:head learn=none: Build-script robustness; the e2e build fails either way.
 2026-11-01T02:29:51Z s=79e705da FINDING THIRD_PARTY.md:3 B02 learn=none: Claim scope is a review judgment.
@@ -106,3 +102,7 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-02T02:58:13Z s=79e705da FINDING bench/benchmark.mjs:markdown learn=none: Fixed at the root; the heading now derives from package.json.
 2026-11-02T02:58:13Z s=79e705da FINDING docs/data/recall.json, docs/data/pareto.json, package.json learn=verifier: scripts/check-project.mjs and scripts/recall-report.mjs reject reports of another version.
 2026-11-02T02:58:13Z s=79e705da FINDING .gitignore learn=none: Repository policy; the Pages workflow regenerates the files.
+2026-11-02T03:43:08Z s=7ec9146b DONE fp=6e10ed54b3dd cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+35)
+2026-11-02T03:43:08Z s=7ec9146b FINDING .github/workflows/pages.yml:on; .gitignore:docs/assets/ort/ learn=verifier: scripts/check-project.mjs (make verify) now fails when pages.yml stops running make docs on push to main and deploying the artifact; the repo's Pages source set
+2026-11-02T03:43:08Z s=7ec9146b FINDING docs/verification.md:18,19,32 (PROSE B evidence) learn=none: Describing coverage is a docs-sync judgment; a string rule would pin wording, not behavior.
+2026-11-02T03:45:37Z s=7ec9146b DONE fp=4bff522ba2c3 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+30)

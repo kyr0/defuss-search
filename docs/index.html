@@ -582,7 +582,7 @@
                 <legend class="sr-only">Search factory</legend>
                 <label class="radio-card hs-factory" for="factory-lexical-only">
                   <span class="hs-factory-head"
-                    ><input class="radio" type="radio" name="factory" id="factory-lexical-only" value="lexical-only" checked /><span class="hs-factory-title">Lexical-only</span
+                    ><input class="radio" type="radio" name="factory" id="factory-lexical-only" value="lexical-only" /><span class="hs-factory-title">Lexical-only</span
                     ><span class="badge" data-variant="secondary" data-size="sm">No model</span></span
                   >
                   <code class="hs-factory-fn">createLexicalOnlySearch(index)</code>
@@ -606,19 +606,19 @@
                 </label>
                 <label class="radio-card hs-factory" for="factory-tiny">
                   <span class="hs-factory-head"
-                    ><input class="radio" type="radio" name="factory" id="factory-tiny" value="tiny" /><span class="hs-factory-title">Lexical-semantic tiny</span
+                    ><input class="radio" type="radio" name="factory" id="factory-tiny" value="tiny" checked /><span class="hs-factory-title">Lexical-semantic tiny</span
                     ><span class="badge" data-variant="secondary" data-size="sm">ColBERT only</span></span
                   >
                   <code class="hs-factory-fn">createLexicalSemanticTinySearch(index, &#123; documents, colbert &#125;)</code>
                   <span class="radio-description"
-                    >BM25 fused with MoEdernColBERT 1.5M, the only vector model. Your browser
-                    encodes the 2,000 passages into a TurboQuant token index, then each query scans
-                    every token.</span
+                    >BM25 fused with MoEdernColBERT 1.5M, the only vector model. The 2,000 passages
+                    come as a prebuilt TurboQuant token index; your browser encodes each query and
+                    scans every token.</span
                   >
                   <span class="hs-factory-cost"
                     ><svg class="hs-icon" aria-hidden="true"><use href="#i-sparkles" /></svg>Download:
-                    <strong>MoEdernColBERT, <span data-bytes="colbert" data-gzipped>3.97 MB (2.09 MB gzipped)</span></strong>, then
-                    about 15 s of encoding</span
+                    <strong>MoEdernColBERT, <span data-bytes="colbert" data-gzipped>3.97 MB (2.09 MB gzipped)</span></strong>, and
+                    the token index, <span data-bytes="tokens">8.87 MB</span></span
                   >
                   <span class="hs-factory-figures" data-figures="tiny"><table class="hs-factory-table">
     <thead><tr><th scope="col"><span class="sr-only">Corpus</span></th><th scope="col">R@1</th><th scope="col">R@5</th></tr></thead>
@@ -790,7 +790,7 @@
                     <div class="progress-header">
                       <span class="progress-label" id="p-tokens-label"
                         ><svg class="hs-icon" aria-hidden="true"><use href="#i-layers" /></svg>Token
-                        index · built in a Web Worker</span
+                        index · prebuilt TurboQuant codes</span
                       >
                       <output class="progress-value" for="p-tokens">waiting</output>
                     </div>
@@ -802,7 +802,11 @@
                       aria-labelledby="p-tokens-label"
                     ></progress>
                     <span class="progress-hint" id="p-tokens-hint"
-                      >every passage encoded by MoEdernColBERT, 64 bytes per token</span
+                      ><span id="p-tokens-size">gzip</span> ·
+                      <span id="p-tokens-detail"
+                        >every passage encoded by MoEdernColBERT at build time, 64 bytes per
+                        token</span
+                      ></span
                     >
                   </div>
                   <div class="progress-field" data-for="semantic">

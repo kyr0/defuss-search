@@ -10,7 +10,8 @@ import {
 import { createHybridIndex } from 'defuss-search/indexing';
 import { createLexicalRetriever, withSurfaceFields } from 'defuss-search/lexical';
 import { createVectorRetriever } from 'defuss-search/vector';
-import { createColbertAdapter, createColbertRetriever } from 'defuss-search/colbert';
+import { buildColbertTokenIndex, createColbertAdapter, createColbertRetriever } from 'defuss-search/colbert';
+import type { ColbertTokenIndex } from 'defuss-search/colbert';
 import {
   createLexicalOnlySearch,
   createLexicalSemanticSearch,
@@ -75,6 +76,13 @@ const tokenIndex = createColbertRetriever({
   matrices: [],
   encodeQuery: async (text) => (await colbertModel.encodeQueries([text]))[0]!,
 });
+const built: ColbertTokenIndex = buildColbertTokenIndex([{ data: [1, 0], tokenCount: 1, dimensions: 2 }]);
+const prebuilt = createColbertRetriever({
+  ids: ['a'],
+  index: built,
+  encodeQuery: async (text) => (await colbertModel.encodeQueries([text]))[0]!,
+});
+void prebuilt;
 const weak: WeakLexicalDecision['action'] = 'promoted';
 void lexicalOnly;
 void tiny;

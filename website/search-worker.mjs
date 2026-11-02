@@ -5,7 +5,8 @@
  * index build on page load, notes searchable as you type).
  * Every search runs the factory the reader picked, from defuss-search/strategies:
  * - lexical-only: createLexicalOnlySearch, no model;
- * - tiny: createLexicalSemanticTinySearch over a TurboQuant token index this worker encodes with MoEdernColBERT;
+ * - tiny: createLexicalSemanticTinySearch over the passages' prebuilt TurboQuant token index (scripts/demo-data.mjs);
+ *   MoEdernColBERT encodes only the questions and the user's notes;
  * - semantic: createLexicalSemanticSearch over the recorded Winzling vectors, optionally with the ColBERT reranker.
  * The benchmark restricts BM25 to the question's language, so each factory runs once per language field. The
  * vector source is built once and shared through the factories' `vector` option: one copy of the token index or
@@ -25,9 +26,9 @@ import { createVectorRetriever } from 'defuss-search/vector';
 import { languageCases } from '../fixtures/languages.mjs';
 import { createLanguageIndex } from './bench-search.mjs';
 import { methodOf, modelBytes } from './factories.mjs';
+import { unpackTokenIndex } from './token-index.mjs';
 
 const CANDIDATES = 25;
-const BATCH = 64;
 const CACHE_NAME = 'defuss-search-demo-models';
 const wasmPaths = new URL('./ort/', import.meta.url).href;
 const post = (event) => self.postMessage(event);
@@ -157,36 +158,32 @@ const loadVectors = () =>
   }));
 
 /**
- * The tiny factory's token index: every passage encoded by MoEdernColBERT in batches with progress, then one
- * TurboQuant build. The float tokens are dropped afterwards; only the 4-bit codes stay.
+ * The tiny factory's token index: the passages' TurboQuant codes, built by scripts/demo-data.mjs from the matrices
+ * the strategies benchmark encoded, so this browser runs no passage encoding. Queries need MoEdernColBERT, which
+ * loads in its own lane; the retriever reaches it only when a query is scanned.
  */
-let tokensBuilding;
-const buildTokens = () =>
-  (tokensBuilding ??= (async () => {
-    const texts = bench.documents.map((doc) => doc.text);
+let tokensLoading;
+const loadTokens = () =>
+  (tokensLoading ??= (async () => {
+    const meta = manifest.tokens;
     const started = performance.now();
-    log('info', `encode ${texts.length.toLocaleString('en')} passages with MoEdernColBERT`);
-    const matrices = [];
-    for (let i = 0; i < texts.length; i += BATCH) {
-      matrices.push(
-        ...(await colbert.encodeDocuments(texts.slice(i, i + BATCH), { truncate: true })),
-      );
-      progress('tokens', Math.min(i + BATCH, texts.length), texts.length);
-    }
-    const count = matrices.reduce((sum, m) => sum + m.tokenCount, 0);
+    log('info', `fetch token index · ${mb(meta.bytes)} TurboQuant codes (gzip)`);
+    const bytes = await download(new URL(meta.file, manifestUrl).href, (n) =>
+      progress('tokens', n, meta.bytes),
+    ).then(gunzip);
     bench.tokens = createColbertRetriever({
       ids: bench.documents.map((doc) => doc.id),
-      matrices,
+      index: unpackTokenIndex(meta, bytes),
       encodeQuery: async (text) => (await colbert.encodeQueries([text], { truncate: true }))[0],
     });
     const ms = performance.now() - started;
     log(
       'success',
-      `token index · ${count.toLocaleString('en')} tokens · ${mb(64 * count)} TurboQuant codes · ${Math.round(ms / 100) / 10} s`,
+      `token index · ${meta.size.toLocaleString('en')} tokens · ${mb(meta.rawBytes)} TurboQuant codes · ${Math.round(ms)} ms`,
     );
-    post({ type: 'ready', model: 'tokens', tokens: count, bytes: 64 * count, ms });
+    post({ type: 'ready', model: 'tokens', tokens: meta.size, bytes: meta.rawBytes, ms });
   })().catch((error) => {
-    tokensBuilding = undefined;
+    tokensLoading = undefined;
     throw error;
   }));
 
@@ -206,7 +203,8 @@ async function searchFor(code, { factory, rerank } = choice) {
   let search;
   if (factory === 'lexical-only') search = createLexicalOnlySearch(bench.index, { lexical });
   else if (factory === 'tiny') {
-    if (!bench.tokens) return undefined;
+    // The index scans only with MoEdernColBERT there to encode the query.
+    if (!bench.tokens || !colbert) return undefined;
     search = await createLexicalSemanticTinySearch(bench.index, { vector: bench.tokens, lexical });
   } else {
     if (!bench.vectors) return undefined;
@@ -606,7 +604,8 @@ async function runSearch(job) {
 /** Every benchmark question through the chosen factory; lexical-semantic also reports efficient when reranking. */
 async function measure() {
   const { factory, rerank } = choice;
-  if (factory === 'tiny' && !bench.tokens) throw new Error('The token index is still building');
+  if (factory === 'tiny' && !bench.tokens) throw new Error('The token index is still loading');
+  if (factory === 'tiny' && !colbert) throw new Error('MoEdernColBERT is not loaded');
   if (factory === 'semantic' && !bench.vectors) throw new Error('The vectors are still loading');
   const methods =
     factory === 'semantic'
@@ -647,7 +646,7 @@ async function prepare() {
   const { factory } = choice;
   log('info', `factory · ${factory}${choice.rerank ? ' with the ColBERT reranker' : ''}`);
   if (factory === 'semantic') await loadVectors();
-  if (factory === 'tiny' && colbert) await buildTokens();
+  if (factory === 'tiny') await loadTokens();
   await representPendingNotes({ all: true });
   post({ type: 'chosen', ...choice, ...noteCounts() });
 }
@@ -690,11 +689,8 @@ self.onmessage = ({ data }) => {
     void indexed?.then(measure).catch((error) => fail(error, { measure: true }));
   else if (data.type === 'load')
     queued(async () => {
-      for (const name of data.models) {
+      for (const name of data.models)
         await loadModel(name, data.device).catch((error) => fail(error, { model: name }));
-        if (name === 'colbert' && colbert && choice.factory === 'tiny')
-          await buildTokens().catch((error) => fail(error, { model: 'tokens' }));
-      }
     });
   else if (data.type === 'clear-cache')
     // The catch keeps the queue resolved: a rejected queue would skip every later model load.

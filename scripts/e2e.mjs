@@ -128,6 +128,7 @@ try {
   );
   // The factory picker comes first; its figures are the published strategies benchmark.
   assert.ok(await page.locator('#factory-picker').isVisible());
+  assert.ok(await page.isChecked('#factory-tiny'), 'The picker preselects lexical-semantic tiny');
   assert.equal(
     await page.locator('#demo-window').isVisible(),
     false,
@@ -388,7 +389,7 @@ try {
   if (live) assert.ok(semanticNotes.column.hits.some((hit) => hit.id === 'note-6'));
   await page.click('#tab-bench');
 
-  // ---- lexical-semantic tiny: MoEdernColBERT encodes the passages in this browser --------------------------------
+  // ---- lexical-semantic tiny: the prebuilt token index, MoEdernColBERT encodes the questions in this browser -----
   let tinyMeasure;
   if (live) {
     await startFactory('tiny');
@@ -398,7 +399,7 @@ try {
     assert.match(await page.textContent('#p-tokens-hint'), /181,\d{3} tokens/);
     tinyMeasure = await measure();
     assert.deepEqual(Object.keys(tinyMeasure.ranks), ['tiny']);
-    // WASM ColBERT in Chromium reproduces the native Bun benchmark's tiny figures.
+    // The prebuilt index with WASM ColBERT query encoding in Chromium reproduces the native Bun benchmark's figures.
     const tinyMean = meanOf(tinyMeasure, 'tiny');
     for (const k of K)
       assert.ok(
@@ -415,6 +416,9 @@ try {
     await page.click('#tab-bench');
   } else {
     await startFactory('tiny', { ready: false });
+    // The prebuilt token index is data, not a model: it loads at the pick also with models off.
+    await page.waitForFunction(() => window.tokensReady, {}, { timeout: 120000 });
+    assert.match(await page.textContent('#p-tokens-hint'), /181,\d{3} tokens/);
     const waiting = await ask('tiny', () => page.click('#search'));
     assert.equal(waiting.column.state, 'needs-colbert');
     assert.ok(await page.locator('#compare [data-load="colbert"]').first().isVisible());

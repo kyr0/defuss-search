@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LexicalSearch } from 'defuss-lexicalsearch';
 import en from 'defuss-lexicalsearch/en';
-import { createColbertRetriever } from 'defuss-search/colbert';
+import { buildColbertTokenIndex, createColbertRetriever } from 'defuss-search/colbert';
 import {
   createLexicalOnlySearch,
   createLexicalSemanticSearch,
   createLexicalSemanticTinySearch,
 } from 'defuss-search/strategies';
+import { packTokenIndex, unpackTokenIndex } from '../website/token-index.mjs';
 
 const documents = [
   { id: 'd1', text: 'A cat sleeps on the warm sofa' },
@@ -91,6 +92,40 @@ test('the ColBERT retriever scores averaged MaxSim, exactly or from TurboQuant c
   assert.deepEqual(new Set(approximate.map((hit) => hit.id)), new Set(['d1', 'd3']));
   const restricted = await exact.rescore({ text: 'kitten naps' }, { limit: 4, ids: new Set(['d2', 'd4']) });
   assert.deepEqual(restricted.map((hit) => hit.id).sort(), ['d2', 'd4']);
+});
+
+test('a prebuilt token index ranks like its matrices, also after the demo byte round trip', async () => {
+  const ids = documents.map((doc) => doc.id);
+  const matrices = documents.map((doc) => matrix(doc.text));
+  const encodeQuery = (text) => matrix(text);
+  const fromMatrices = createColbertRetriever({ ids, matrices, encodeQuery });
+  const built = buildColbertTokenIndex(matrices);
+  assert.deepEqual(Array.from(built.tokenCounts), matrices.map((m) => m.tokenCount));
+  const { meta, bytes } = packTokenIndex(built);
+  const restored = unpackTokenIndex(JSON.parse(JSON.stringify(meta)), bytes);
+  for (const index of [built, restored]) {
+    const prebuilt = createColbertRetriever({ ids, index, encodeQuery });
+    for (const text of ['kitten naps', 'morning walk'])
+      assert.deepEqual(
+        await prebuilt.retrieve({ text }, { limit: 4 }),
+        await fromMatrices.retrieve({ text }, { limit: 4 }),
+      );
+  }
+  assert.throws(() => unpackTokenIndex(meta, bytes.subarray(1)), RangeError);
+});
+
+test('a prebuilt token index must match its IDs', () => {
+  const ids = documents.map((doc) => doc.id);
+  const matrices = documents.map((doc) => matrix(doc.text));
+  const index = buildColbertTokenIndex(matrices);
+  const encodeQuery = (text) => matrix(text);
+  assert.throws(() => createColbertRetriever({ ids, matrices, index, encodeQuery }), /either matrices or index/);
+  assert.throws(() => createColbertRetriever({ ids, encodeQuery }), /either matrices or index/);
+  assert.throws(() => createColbertRetriever({ ids: ids.slice(1), index, encodeQuery }), RangeError);
+  const counts = Array.from(index.tokenCounts);
+  counts[0] += 1;
+  assert.throws(() => createColbertRetriever({ ids, index: { ...index, tokenCounts: counts }, encodeQuery }), RangeError);
+  assert.throws(() => buildColbertTokenIndex([]), TypeError);
 });
 
 test('a failed query encoding rejects that search and does not stick to the query', async () => {

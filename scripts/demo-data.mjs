@@ -1,6 +1,8 @@
 /**
  * Writes the website demo's corpus: the 2,000 benchmark passages, the 1,000 questions with their gold passage,
- * and the Winzling vectors of both, from the same dataset bytes and embedding cache as the recall benchmark.
+ * and the Winzling vectors of both, from the same dataset bytes and embedding cache as the recall benchmark; and the
+ * tiny factory's TurboQuant token index of the passages, from the ColBERT matrices the strategies benchmark caches,
+ * so the page searches with the published index instead of encoding 2,000 passages in the browser.
  * Vectors stay float32. VERIFIED: in a 2026-11-01 probe, float16 halved the transfer but changed 9 of 1,000
  * efficient top-25 lists below the gold passage, which the reranker fuses, so the demo could drift from the
  * published figures. Gzip runs here, so every static host sends the same bytes; the worker unpacks them with
@@ -12,10 +14,13 @@
  */
 import { gzipSync } from 'node:zlib';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { WINZLING_PROFILE } from 'defuss-vectorsearch/onnx.js';
+import { buildColbertTokenIndex } from 'defuss-search/colbert';
+import { WINZLING_PROFILE, createColbertReranker } from 'defuss-vectorsearch/onnx.js';
+import { cachedMatrices } from '../bench/corpora.mjs';
 import { datasetSha256, datasetUrl, loadDataset } from '../bench/dataset.mjs';
 import { loadEmbeddings } from '../bench/embeddings.mjs';
-import { downloadModels, modelRoot, releases } from './models.mjs';
+import { packTokenIndex } from '../website/token-index.mjs';
+import { downloadModels, loadModelFile, modelRoot, releases } from './models.mjs';
 
 const log = (message) => console.log(`${new Date().toISOString()} INFO ${message}`);
 const { documents, queries, languages } = await loadDataset();
@@ -67,8 +72,29 @@ for (const { file, bytes, sha256, model } of await downloadModels()) {
   const packed = gzip(await readFile(`${modelRoot}/${name}/${file}`)).length;
   models[name].files[file] = { bytes, sha256, gzip: packed };
 }
+// The strategies benchmark encodes with this model on the CPU and caches the matrices; a cache miss encodes here.
+let colbert;
+const matrices = await cachedMatrices(
+  'belebele',
+  documents.map((doc) => doc.text),
+  async () =>
+    (colbert ??= createColbertReranker({
+      model: '1.5m',
+      precision: 'q8',
+      device: 'cpu',
+      numThreads: 1,
+      loadFile: loadModelFile('colbert'),
+      allowRemoteModels: false,
+    })),
+);
+await colbert?.dispose();
+const tokens = packTokenIndex(buildColbertTokenIndex(matrices));
 await mkdir('docs/data', { recursive: true });
-const files = { corpus: ['corpus.json.gz', json], vectors: ['vectors.bin.gz', binary] };
+const files = {
+  corpus: ['corpus.json.gz', json],
+  vectors: ['vectors.bin.gz', binary],
+  tokens: ['tokens.bin.gz', tokens.bytes],
+};
 const manifest = { schema: 'defuss-search-demo-manifest.v1', models };
 for (const [key, [file, raw]] of Object.entries(files)) {
   const packed = gzip(raw);
@@ -76,7 +102,13 @@ for (const [key, [file, raw]] of Object.entries(files)) {
   manifest[key] = { file, bytes: packed.length, rawBytes: raw.length };
 }
 Object.assign(manifest.vectors, { dims, passages: vectors.length, queries: queryVectors.length });
+// cachedMatrices keys its cache by the pinned ColBERT files, so the matrices come from this release.
+const pin = releases.find((release) => release.name === 'colbert');
+Object.assign(manifest.tokens, {
+  model: `${pin.id}@${pin.revision}:${pin.files['model_q8.onnx']}`,
+  ...tokens.meta,
+});
 await writeFile('docs/data/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
 log(
-  `Demo corpus written passages=${documents.length} questions=${queries.length} corpus=${manifest.corpus.bytes} vectors=${manifest.vectors.bytes}`,
+  `Demo corpus written passages=${documents.length} questions=${queries.length} corpus=${manifest.corpus.bytes} vectors=${manifest.vectors.bytes} tokens=${manifest.tokens.bytes}`,
 );

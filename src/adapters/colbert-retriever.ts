@@ -1,4 +1,5 @@
 import { buildTurboQuantIndex, scoreTurboQuantIndex } from 'defuss-vectorsearch/turboquant.js';
+import type { TurboQuantSearchIndex } from 'defuss-vectorsearch';
 import type { Awaitable, Retriever, RetrievalContext, SearchQuery } from '../types';
 import {
   abortable,
@@ -16,10 +17,22 @@ export interface TokenMatrixLike {
   readonly tokenCount: number;
   readonly dimensions: number;
 }
+/**
+ * A TurboQuant token index built ahead of time with `buildColbertTokenIndex()`: each document's token count, in
+ * document order, and the codes of every token. It holds only numbers and typed arrays, so an application can
+ * store it as bytes and pass it back as `index`; the retriever then skips document encoding and quantization.
+ */
+export interface ColbertTokenIndex {
+  readonly tokenCounts: ArrayLike<number>;
+  readonly turboquant: TurboQuantSearchIndex;
+}
 export interface ColbertRetrieverOptions {
-  /** Stable document IDs in the same order as `matrices`. Copied on creation. */
+  /** Stable document IDs in the same order as `matrices` or `index.tokenCounts`. Copied on creation. */
   ids: readonly string[];
-  matrices: readonly TokenMatrixLike[];
+  /** The documents' token vectors. Pass either `matrices` or `index`. */
+  matrices?: readonly TokenMatrixLike[];
+  /** A token index from `buildColbertTokenIndex()`; replaces `matrices`, `quantization` and `seed`. */
+  index?: ColbertTokenIndex;
   /** The query's token vectors, e.g. `(text) => colbert.encodeQueries([text]).then(([m]) => m)`. */
   encodeQuery: (text: string, context: { signal?: AbortSignal }) => Awaitable<TokenMatrixLike>;
   /**
@@ -62,20 +75,86 @@ function rows(
   return out;
 }
 
+/** All matrices as one float32 array of unit rows, with each document's first token at `offsets[i]`. */
+function flatten(matrices: readonly TokenMatrixLike[]) {
+  const dimensions = matrices[0]?.dimensions;
+  const offsets = new Int32Array(matrices.length + 1);
+  matrices.forEach((matrix, i) => {
+    integer(matrix?.tokenCount, 'tokenCount', 1, 100000);
+    offsets[i + 1] = offsets[i]! + matrix.tokenCount;
+  });
+  const d = dimensions ?? 0;
+  // One float32 copy, written in place, so the peak stays near twice the input size.
+  const flat = new Float32Array(offsets[matrices.length]! * d);
+  matrices.forEach((matrix, i) => rows(matrix, dimensions, flat, offsets[i]! * d));
+  return { offsets, flat, d };
+}
+const quantize = (flat: Float32Array, d: number, seed?: number) =>
+  buildTurboQuantIndex(
+    Array.from({ length: flat.length / d }, (_, t) => flat.subarray(t * d, (t + 1) * d)),
+    seed !== undefined ? { seed } : {},
+  );
+
+/**
+ * Encodes nothing: quantizes token matrices computed earlier into the TurboQuant index that `createColbertRetriever`
+ * would build, so an application can build it once (for example at build time) and ship the codes instead of
+ * encoding every document on each client. VERIFIED: the Belebele index (2,000 passages, 181,361 tokens) is 11.6 MB
+ * of codes, 8.86 MB gzipped, and quantizing took 127 ms in Bun; encoding the passages took 13 to 15 s in Chromium.
+ */
+export function buildColbertTokenIndex(
+  matrices: readonly TokenMatrixLike[],
+  options: { seed?: number } = {},
+): ColbertTokenIndex {
+  if (!Array.isArray(matrices) || !matrices.length)
+    throw new TypeError('Token matrices must be a nonempty array');
+  if (options.seed !== undefined) integer(options.seed, 'seed', 0, 0xffffffff);
+  const { flat, d } = flatten(matrices);
+  return {
+    tokenCounts: Int32Array.from(matrices, (matrix) => matrix.tokenCount),
+    turboquant: quantize(flat, d, options.seed),
+  };
+}
+
+/** Checks a prebuilt index against the IDs and returns its token offsets. */
+function indexOffsets(index: ColbertTokenIndex, documents: number): Int32Array {
+  const counts = index?.tokenCounts,
+    packed = index?.turboquant;
+  if (!counts || typeof counts.length !== 'number' || !packed || typeof packed !== 'object')
+    throw new TypeError('index must hold tokenCounts and turboquant');
+  if (counts.length !== documents)
+    throw new RangeError('index.tokenCounts must hold one count per ID');
+  const offsets = new Int32Array(documents + 1);
+  for (let i = 0; i < documents; i++) {
+    integer(counts[i], 'tokenCount', 1, 100000);
+    offsets[i + 1] = offsets[i]! + counts[i]!;
+  }
+  integer(packed.dims, 'token dimensions', 1, 65536);
+  if (
+    packed.size !== offsets[documents] ||
+    !(packed.codes instanceof Uint8Array) ||
+    packed.codes.length !== packed.size * packed.codeBytes
+  )
+    throw new RangeError('index.turboquant must hold the codes of every counted token');
+  return offsets;
+}
+
 /**
  * ColBERT as a first-stage retriever: every document keeps its token vectors, and a query scores each document by
  * MaxSim (for each query token, the best cosine among the document's tokens, averaged over query tokens, so scores
  * stay in [-1, 1] like a single-vector cosine). The scan visits every stored token.
  * TurboQuant applies because ColBERT token vectors are unit-length. VERIFIED: on 181,361 Belebele passage tokens it
  * cut 92.9 MB of float32 to 11.6 MB of codes, scored a query token in 7.3 ms, and missed exact cosines by 0.009 on
- * average (probe 2026-11-01; bench/strategies.mjs measures recall).
+ * average (probe 2026-11-01; bench/strategies.mjs measures recall). `index` takes the codes from
+ * `buildColbertTokenIndex()` instead of the matrices.
  */
 export function createColbertRetriever(options: ColbertRetrieverOptions): Retriever {
+  if (!options || !Array.isArray(options.ids))
+    throw new TypeError('IDs and token matrices must be arrays of equal length');
+  if ((options.matrices === undefined) === (options.index === undefined))
+    throw new TypeError('Pass either matrices or index');
   if (
-    !options ||
-    !Array.isArray(options.ids) ||
-    !Array.isArray(options.matrices) ||
-    options.ids.length !== options.matrices.length
+    options.matrices !== undefined &&
+    (!Array.isArray(options.matrices) || options.ids.length !== options.matrices.length)
   )
     throw new TypeError('IDs and token matrices must be arrays of equal length');
   if (typeof options.encodeQuery !== 'function') throw new TypeError('encodeQuery is required');
@@ -85,25 +164,24 @@ export function createColbertRetriever(options: ColbertRetrieverOptions): Retrie
   const ids = [...options.ids];
   ids.forEach(id);
   if (new Set(ids).size !== ids.length) throw new Error('Duplicate document IDs');
-  const dimensions = options.matrices[0]?.dimensions;
-  const offsets = new Int32Array(ids.length + 1);
-  options.matrices.forEach((matrix, i) => {
-    integer(matrix?.tokenCount, 'tokenCount', 1, 100000);
-    offsets[i + 1] = offsets[i]! + matrix.tokenCount;
-  });
-  const d = dimensions ?? 0;
-  // One float32 copy, written in place, so the peak stays near twice the input size.
-  const flat = new Float32Array(offsets[ids.length]! * d);
-  options.matrices.forEach((matrix, i) => rows(matrix, dimensions, flat, offsets[i]! * d));
-  const packed =
-    quantization === 'turboquant' && ids.length
-      ? buildTurboQuantIndex(
-          Array.from({ length: offsets[ids.length]! }, (_, t) => flat.subarray(t * d, (t + 1) * d)),
-          options.seed !== undefined ? { seed: options.seed } : {},
-        )
-      : undefined;
-  // With codes built, the float tokens are no longer needed.
-  const tokens = packed ? undefined : flat;
+  let offsets: Int32Array,
+    d: number,
+    packed: TurboQuantSearchIndex | undefined,
+    tokens: Float32Array | undefined;
+  if (options.index) {
+    offsets = indexOffsets(options.index, ids.length);
+    packed = options.index.turboquant;
+    d = packed.dims;
+  } else {
+    const flat = flatten(options.matrices!);
+    ({ offsets, d } = flat);
+    packed =
+      quantization === 'turboquant' && ids.length
+        ? quantize(flat.flat, d, options.seed)
+        : undefined;
+    // With codes built, the float tokens are no longer needed.
+    tokens = packed ? undefined : flat.flat;
+  }
   const position = new Map(ids.map((value, i) => [value, i]));
   const encode = options.encodeQuery;
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add `buildColbertTokenIndex()` to `defuss-search/colbert`, and an `index` option to `createColbertRetriever()` that takes its result instead of `matrices`: a token index built once, for example at build time, ranks as one built from the same matrices without encoding or quantizing the documents again.
+- The website demo preselects lexical-semantic tiny and downloads the passages' prebuilt token index (8.87 MB gzipped) instead of encoding the 2,000 passages in the browser, which took 13 to 15 s; MoEdernColBERT encodes only the questions and notes.
+- The Pages workflow builds the site on every push to `main` and deploys that build. Served from the branch, the site lacked the gitignored ONNX Runtime Web files, so every model load failed with "no available backend found".
+
 ## 0.4.0
 
 - Add an end-to-end recall benchmark: R@1, R@5, R@10 and R@25 per language for both presets through `HybridSearch`, run on Bun, Node.js and Chromium (WASM ColBERT). All three runtimes returned identical ranks for the 1,000 questions, matching the frontier replay.

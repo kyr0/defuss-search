@@ -124,10 +124,10 @@ const WAITING = {
     load: ['colbert', 'cpu', 'Load the reranker'],
   },
   'needs-colbert': {
-    text: 'The tiny factory encodes every passage with MoEdernColBERT before its first search.',
-    load: ['colbert', 'cpu', 'Load MoEdernColBERT and build the index'],
+    text: 'The tiny factory encodes each question with MoEdernColBERT before it scans the token index.',
+    load: ['colbert', 'cpu', 'Load MoEdernColBERT and search'],
   },
-  'needs-tokens': { text: 'Encoding the passages into the token index...', busy: true },
+  'needs-tokens': { text: 'Loading the prebuilt token index...', busy: true },
   'needs-vectors': { text: 'Loading the recorded Winzling vectors...', busy: true },
   pending: { text: 'MoEdernColBERT is reranking...', busy: true },
 };

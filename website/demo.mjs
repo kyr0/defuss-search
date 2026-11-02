@@ -4,7 +4,7 @@
  * load, notes searchable as you type) with the defuss-vectorsearch demo (models with byte progress, cached for the
  * next visit).
  * The reader picks one of the three factories of defuss-search/strategies before the demo shows, because the choice
- * decides what loads: nothing for lexical-only; MoEdernColBERT (3.97 MB) and an in-browser token index for tiny; the
+ * decides what loads: nothing for lexical-only; MoEdernColBERT (3.97 MB) and the prebuilt token index for tiny; the
  * recorded vectors for lexical-semantic, Winzling (39.8 MB) for own text and MoEdernColBERT for its reranker. Models
  * download from their pinned Hugging Face revisions.
  * The corpus downloads while the reader chooses. `?models=off` keeps the page model-free (slow connections, the
@@ -194,7 +194,7 @@ export function initDemo() {
     bars.colbert.closest('.progress-field').hidden = !(factory === 'tiny' || state.choice.rerank);
     $('p-colbert-role').textContent =
       factory === 'tiny'
-        ? 'encodes the passages and each query'
+        ? 'encodes each question and your notes'
         : 'reranker, loads with your first question';
     $('empty-text').textContent = EMPTY[factory];
     el.picker.hidden = true;
@@ -207,7 +207,7 @@ export function initDemo() {
     if (!ready())
       el.status.textContent =
         factory === 'tiny' && modelsMode === 'off'
-          ? 'Models are off (?models=off): load MoEdernColBERT to build the token index.'
+          ? 'Models are off (?models=off): load MoEdernColBERT to encode questions.'
           : `Preparing ${title}...`;
     // The question on screen runs again under the new factory; a benchmark question may load its reranker, while
     // own text waits for an explicit Search before a Winzling download.
@@ -512,8 +512,8 @@ export function initDemo() {
       }
       if (data.model === 'tokens') {
         setBar('tokens', 1, 1, true);
-        $('p-tokens-hint').textContent =
-          `${data.tokens.toLocaleString('en')} tokens · ${mb(data.bytes)} of codes · ${(data.ms / 1000).toFixed(1)} s`;
+        $('p-tokens-detail').textContent =
+          `${data.tokens.toLocaleString('en')} tokens · ${mb(data.bytes)} of codes · loaded in ${(data.ms / 1000).toFixed(1)} s`;
         window.tokensReady = true;
         if (state.bench && !state.benchDone) askBench(state.bench);
         askNotes();
@@ -527,8 +527,6 @@ export function initDemo() {
         el.backend.value = data.device;
       }
       el.status.textContent = `${MODEL_NAMES[data.model]} ready in ${(data.ms / 1000).toFixed(1)} s · ${data.cached ? 'from the browser cache' : `${mb(data.downloadedBytes)} downloaded, now cached`}.`;
-      if (data.model === 'colbert' && state.choice?.factory === 'tiny')
-        el.status.textContent += ' Encoding the passages...';
       window.modelsReady = { ...window.modelsReady, [data.model]: true };
       // Re-run what waited for the model.
       if (state.bench && !state.benchDone) askBench(state.bench);
@@ -596,17 +594,15 @@ export function initDemo() {
       if (data.measure) $('measure-run').disabled = false;
       $('boot-error-title').textContent = data.corpus
         ? 'Loading the corpus failed'
-        : data.model === 'tokens'
-          ? 'Building the token index failed'
-          : data.model
-            ? 'Loading a model failed'
-            : data.factory
-              ? 'Preparing the factory failed'
-              : data.cache
-                ? 'Clearing the model cache failed'
-                : data.notes
-                  ? 'Encoding your notes failed'
-                  : 'Search failed';
+        : data.model
+          ? 'Loading a model failed'
+          : data.factory
+            ? 'Preparing the factory failed'
+            : data.cache
+              ? 'Clearing the model cache failed'
+              : data.notes
+                ? 'Encoding your notes failed'
+                : 'Search failed';
       $('boot-error-text').textContent = data.message;
       el.error.hidden = false;
       el.compare.removeAttribute('aria-busy');
@@ -624,6 +620,7 @@ export function initDemo() {
       state.manifest = manifest;
       $('p-corpus-size').textContent = `${mb(manifest.corpus.bytes)} (gzip)`;
       $('p-vectors-size').textContent = `${mb(manifest.vectors.bytes)} (gzip)`;
+      $('p-tokens-size').textContent = `${mb(manifest.tokens.bytes)} (gzip)`;
       // The file size is what the progress counts and the cache keeps; gzipped is the transfer from a host that
       // compresses the model files, which Hugging Face does only for the ColBERT tokenizer.
       const gzipped = (name) => `${mb(gzipBytes(manifest.models[name].files))} gzipped`;
@@ -634,6 +631,7 @@ export function initDemo() {
         colbert: size('colbert'),
         winzling: size('winzling'),
         vectors: manifest.vectors.bytes,
+        tokens: manifest.tokens.bytes,
       };
       for (const node of document.querySelectorAll('[data-bytes]')) {
         const name = node.dataset.bytes;

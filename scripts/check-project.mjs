@@ -1,7 +1,8 @@
 /**
  * Fail closed on release mismatches that a source-only TypeScript build cannot observe.
- * VERIFIED: it guards the generated recall figures, the demo corpus against the installed Winzling and model pins,
- * and the demo's "highest mean R@5" label against the published means; `make verify` runs it last.
+ * VERIFIED: it guards the generated recall figures, the demo corpus and token index against the installed Winzling,
+ * the ColBERT and model pins, the Pages workflow that ships the gitignored ONNX Runtime files, and the demo's
+ * "highest mean R@5" label against the published means; `make verify` runs it last.
  */
 import assert from 'node:assert/strict';
 import { searchPreset } from 'defuss-search';
@@ -84,6 +85,7 @@ for (const path of [
   'docs/data/manifest.json',
   'docs/data/corpus.json.gz',
   'docs/data/vectors.bin.gz',
+  'docs/data/tokens.bin.gz',
 ])
   await access(path);
 const makefile = await readFile('Makefile', 'utf8');
@@ -104,6 +106,14 @@ for (const verb of [
   assert.match(makefile, new RegExp(`^${verb}:`, 'm'), `Missing make ${verb}`);
 const ci = await readFile('.github/workflows/verify.yml', 'utf8');
 assert.ok(ci.includes('make verify') && ci.includes('make setup'));
+// docs/assets/ort/ is gitignored, so only a Pages artifact built by `make docs` carries the ONNX Runtime files.
+const pages = await readFile('.github/workflows/pages.yml', 'utf8');
+assert.ok(
+  /push:\s+branches: \[main\]/.test(pages) &&
+    pages.includes('run: make docs') &&
+    pages.includes('upload-pages-artifact'),
+  'pages.yml must build docs/ with make docs on every push to main and deploy that artifact',
+);
 for (const page of ['docs/index.html', 'docs/reference.html', 'docs/pareto.html']) {
   const html = await readFile(page, 'utf8');
   for (const [, asset] of html.matchAll(/(?:src|href)="(assets\/[^"#?]+)"/g))
@@ -116,7 +126,7 @@ for (const name of await readdir('node_modules/onnxruntime-web/dist')) {
 
 // The demo corpus: sizes as recorded, the installed model's vectors and pins, the benchmark's shape.
 const demo = await json('docs/data/manifest.json');
-for (const key of ['corpus', 'vectors']) {
+for (const key of ['corpus', 'vectors', 'tokens']) {
   const bytes = await readFile(`docs/data/${demo[key].file}`);
   assert.equal(bytes.length, demo[key].bytes, `${demo[key].file} size; run make bench`);
   assert.equal(gunzipSync(bytes).length, demo[key].rawBytes, `${demo[key].file} unpacked size`);
@@ -133,6 +143,18 @@ assert.equal(
 );
 assert.equal(corpus.dataset.sha256, recall.dataset.sha256);
 assert.equal(corpus.passages.text.length, demo.vectors.passages);
+// The prebuilt token index: one count per passage, the codes of every token, from the pinned ColBERT.
+const colbertPin = releases.find((release) => release.name === 'colbert');
+assert.equal(
+  demo.tokens.model,
+  `${colbertPin.id}@${colbertPin.revision}:${colbertPin.files['model_q8.onnx']}`,
+  'Demo token index comes from another MoEdernColBERT; run make bench',
+);
+assert.equal(demo.tokens.documents, corpus.passages.text.length);
+assert.equal(
+  demo.tokens.rawBytes,
+  4 * demo.tokens.documents + demo.tokens.size * demo.tokens.codeBytes,
+);
 assert.equal(corpus.queries.text.length, demo.vectors.queries);
 for (const release of releases) {
   assert.equal(
