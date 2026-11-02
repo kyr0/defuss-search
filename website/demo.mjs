@@ -40,7 +40,11 @@ export function initDemo() {
   const params = new URL(location.href).searchParams;
   const modelsMode = params.get('models');
   const manifestUrl = new URL('../data/manifest.json', import.meta.url).href;
-  const worker = new Worker(new URL('./search-worker.js', import.meta.url), { type: 'module' });
+  // The page's `?v=<build>` (scripts/website-build.mjs) keys the worker to the same build in the browser cache.
+  const worker = new Worker(
+    new URL(`./search-worker.js${new URL(import.meta.url).search}`, import.meta.url),
+    { type: 'module' },
+  );
   const el = {
     picker: $('factory-picker'),
     window: $('demo-window'),

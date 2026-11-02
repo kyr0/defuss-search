@@ -14,6 +14,7 @@ import { languageCases } from '../fixtures/languages.mjs';
 import { K, renderRecall, renderRecallTable, renderLanguageGlance } from './recall-docs.mjs';
 import { FACTORIES } from '../website/factories.mjs';
 import { factoryFiguresPage } from '../website/render.mjs';
+import { assetVersion, versionPage } from './website-build.mjs';
 const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const pkg = await json('package.json');
 const provenance = await json('docs/upstreams.json');
@@ -56,9 +57,23 @@ for (const [file, pattern, render] of [
     render(recall),
     `${file} is stale; run make docs`,
   );
-// The built page carries the picker's figures as rendered from the strategies report.
+// The built page carries the picker's figures as rendered from the strategies report, and every page names the
+// version of the scripts beside it, so a browser never mixes two deploys' files (scripts/website-build.mjs).
+const version = await assetVersion();
+for (const page of ['docs/index.html', 'docs/reference.html', 'docs/pareto.html']) {
+  const html = await readFile(page, 'utf8');
+  const stamps = [...html.matchAll(/assets\/(?:app|page)\.js\?v=([0-9a-f]+)"/g)].map((m) => m[1]);
+  assert.ok(
+    stamps.length && stamps.every((stamp) => stamp === version),
+    `${page} names scripts version ${stamps} instead of ${version}; run make docs`,
+  );
+}
+assert.ok(
+  !(await readFile('docs/assets/search-worker.js', 'utf8')).includes('chunks/'),
+  'The worker must not import chunks: a cached worker would request files a later deploy removed',
+);
 assert.equal(
-  await readFile('docs/index.html', 'utf8'),
+  versionPage(await readFile('docs/index.html', 'utf8')),
   factoryFiguresPage(
     await readFile('website/index.html', 'utf8'),
     FACTORIES,

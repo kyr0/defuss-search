@@ -4,6 +4,7 @@
 
 - Add `buildColbertTokenIndex()` to `defuss-search/colbert`, and an `index` option to `createColbertRetriever()` that takes its result instead of `matrices`: a token index built once, for example at build time, ranks as one built from the same matrices without encoding or quantizing the documents again.
 - The website demo preselects lexical-semantic tiny and downloads the passages' prebuilt token index (8.87 MB gzipped) instead of encoding the 2,000 passages in the browser, which took 13 to 15 s; MoEdernColBERT encodes only the questions and notes.
+- The website survives a deploy while browsers still cache the previous one: the demo worker is one file without lazy chunks, and pages load their scripts and stylesheet with a build version (`?v=`) that the worker URL repeats. A cached worker had requested a chunk the new deploy no longer served ("Failed to fetch dynamically imported module").
 - The Pages workflow builds the site on every push to `main` and deploys that build. Served from the branch, the site lacked the gitignored ONNX Runtime Web files, so every model load failed with "no available backend found".
 
 ## 0.4.0

@@ -17,8 +17,6 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-01T02:29:51Z s=79e705da FINDING website/index.html:hs-tier-list learn=none: Visual layout; no mechanical check distinguishes intended gaps.
 2026-11-01T02:29:51Z s=79e705da FINDING scripts/docs.mjs:head learn=none: Build-script robustness; the e2e build fails either way.
 2026-11-01T02:29:51Z s=79e705da FINDING THIRD_PARTY.md:3 B02 learn=none: Claim scope is a review judgment.
-2026-11-01T02:29:51Z s=79e705da FINDING website/index.html:762 T06 learn=verifier: CONFIG prose html covers website/index.html.
-2026-11-01T03:20:21Z s=79e705da DONE fp=1cddb6711e36 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+112)
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:loadModel learn=none: Needs fault injection of a chunk or Cache API failure in the browser; no existing harness hook, and a rule could not observe it.
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:onmessage clear-cache learn=none: Requires a failing Cache API in Chromium; reasoning from Promise semantics, no reproducible trigger in the e2e.
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:embedPendingNotes learn=none: Timing race between two worker queues; deterministic reproduction would need a hook into the embedding call.
@@ -106,3 +104,5 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-02T03:43:08Z s=7ec9146b FINDING .github/workflows/pages.yml:on; .gitignore:docs/assets/ort/ learn=verifier: scripts/check-project.mjs (make verify) now fails when pages.yml stops running make docs on push to main and deploying the artifact; the repo's Pages source set
 2026-11-02T03:43:08Z s=7ec9146b FINDING docs/verification.md:18,19,32 (PROSE B evidence) learn=none: Describing coverage is a docs-sync judgment; a string rule would pin wording, not behavior.
 2026-11-02T03:45:37Z s=7ec9146b DONE fp=4bff522ba2c3 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+30)
+2026-11-02T04:01:59Z s=7ec9146b DONE fp=4f541b726764 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+38)
+2026-11-02T04:01:59Z s=7ec9146b FINDING scripts/docs.mjs:Bun.build (splitting for search-worker.js); website/demo.mjs:new Worker learn=verifier: scripts/check-project.mjs fails when docs/assets/search-worker.js references chunks/ or a page's ?v differs from assetVersion(); scripts/e2e.mjs asserts the wor

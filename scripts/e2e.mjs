@@ -108,6 +108,8 @@ try {
     for (const { name, id } of releases)
       if (request.url().startsWith(`https://huggingface.co/${id}/`)) modelRequests[name] += 1;
   });
+  const workers = [];
+  page.on('worker', (worker) => workers.push(worker.url()));
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -121,6 +123,13 @@ try {
   // Live runs load the models from Hugging Face, as a visitor would; the default run stays model-free.
   await page.goto(`${url}/defuss-search/${live ? '' : '?models=off'}`);
   await page.waitForFunction(() => window.corpusReady, {}, { timeout: 120000 });
+  // The worker shares the page's build version, so the browser cache never pairs two deploys' scripts.
+  const stamp = (await page.getAttribute('script[src^="assets/app.js"]', 'src')).split('?v=')[1];
+  assert.match(stamp, /^[0-9a-f]{12}$/);
+  assert.deepEqual(
+    workers.map((url) => new URL(url).pathname.split('/').pop() + new URL(url).search),
+    [`search-worker.js?v=${stamp}`],
+  );
   assert.equal(
     await page.evaluate(() => crossOriginIsolated),
     false,

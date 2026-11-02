@@ -1,23 +1,13 @@
-import { mkdir, readFile, writeFile, copyFile, rm, readdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, copyFile, readdir } from 'node:fs/promises';
 import { marked } from 'marked';
 import { codeBlock } from './highlight.mjs';
 import { writeRecall } from './recall-docs.mjs';
 import { FACTORIES } from '../website/factories.mjs';
 import { factoryFiguresPage } from '../website/render.mjs';
+import { buildWebsite } from './website-build.mjs';
 /** Build static files with relative URLs, so GitHub project Pages and local hosting agree. */
 await mkdir('docs/assets', { recursive: true });
-await rm('docs/assets/chunks', { recursive: true, force: true });
 await mkdir('docs/data', { recursive: true });
-const build = await Bun.build({
-  entrypoints: ['website/app.mjs', 'website/search-worker.mjs', 'website/page.mjs'],
-  outdir: 'docs/assets',
-  target: 'browser',
-  format: 'esm',
-  splitting: true,
-  minify: true,
-  naming: { entry: '[name].js', chunk: 'chunks/[name]-[hash].js', asset: '[name].[ext]' },
-});
-if (!build.success) throw new AggregateError(build.logs, 'Website build failed');
 // VERIFIED: the measured recall section is static markup, regenerated from the committed report.
 const recall = JSON.parse(await readFile('docs/data/recall.json', 'utf8'));
 if (Object.keys(recall.languages).length !== 20)
@@ -30,7 +20,6 @@ await writeFile(
   'docs/index.html',
   factoryFiguresPage(await readFile('website/index.html', 'utf8'), FACTORIES, strategies),
 );
-await copyFile('website/site.css', 'docs/assets/site.css');
 await writeFile('docs/.nojekyll', '');
 // ORT 1.30 selects a loader according to browser capabilities (JSPI, Asyncify or JSEP).
 // Ship every matching loader/wasm pair so deployments do not depend on one test browser.
@@ -101,6 +90,6 @@ ${marked.parse(source)}</main>
 `,
   );
 }
-console.log(
-  `${new Date().toISOString()} INFO Static docs built with ${build.outputs.length} JavaScript assets`,
-);
+// Last, because it stamps the pages written above with the version of the scripts it builds.
+const version = await buildWebsite('docs');
+console.log(`${new Date().toISOString()} INFO Static docs built version=${version}`);

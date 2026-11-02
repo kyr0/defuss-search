@@ -317,7 +317,7 @@ make log
 make stop
 ```
 
-`make dev` runs in the foreground until Ctrl+C. It rebuilds the site when a file under `website/`, `src/` or `fixtures/` changes, and reloads every open page. `make start` serves `http://127.0.0.1:4173` unless `PORT` says otherwise; add `?models=off` to load models only on a click. `make bench` also writes the demo corpus, `docs/data/corpus.json.gz`, `docs/data/vectors.bin.gz`, `docs/data/tokens.bin.gz` and `docs/data/manifest.json`, through `scripts/demo-data.mjs`. `make docs` renders `docs/data/recall.json` into the page and the tables above, and the e2e test compares every rendered figure with that file. Every push to `main` runs the Pages workflow, which builds `docs/` with `make docs` and deploys that build; only it carries the ONNX Runtime Web files, which git ignores.
+`make dev` runs in the foreground until Ctrl+C. It rebuilds the site when a file under `website/`, `src/` or `fixtures/` changes, and reloads every open page. `make start` serves `http://127.0.0.1:4173` unless `PORT` says otherwise; add `?models=off` to load models only on a click. `make bench` also writes the demo corpus, `docs/data/corpus.json.gz`, `docs/data/vectors.bin.gz`, `docs/data/tokens.bin.gz` and `docs/data/manifest.json`, through `scripts/demo-data.mjs`. `make docs` renders `docs/data/recall.json` into the page and the tables above, and the e2e test compares every rendered figure with that file. Every push to `main` runs the Pages workflow, which builds `docs/` with `make docs` and deploys that build; only it carries the ONNX Runtime Web files, which git ignores. `make docs` stamps each page's script and stylesheet URLs with a version of the build, so a reload after a deploy loads the new scripts.
 
 ## Development
 

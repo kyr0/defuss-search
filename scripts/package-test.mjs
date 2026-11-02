@@ -84,24 +84,11 @@ try {
     for (const condition of ['import', 'require'])
       for (const path of Object.values(exports[condition]))
         await readFile(join(temporary, 'node_modules/defuss-search', path));
-  // Build the website in the isolated consumer: its package imports must resolve from the tarball. The chunks of
-  // the source-tree build go first: their hashes differ, and leftovers would ship unreferenced files.
-  await rm(join(root, 'docs/assets/chunks'), { recursive: true, force: true });
+  // Build the website in the isolated consumer with the configuration of `make docs`: its package imports must
+  // resolve from the tarball. The build replaces the source tree's chunks and restamps the pages.
   await cp(join(root, 'website'), join(temporary, 'website'), { recursive: true });
   await cp(join(root, 'fixtures'), join(temporary, 'fixtures'), { recursive: true });
-  run('bun', [
-    'build',
-    'website/app.mjs',
-    'website/search-worker.mjs',
-    'website/page.mjs',
-    '--target=browser',
-    '--format=esm',
-    '--splitting',
-    '--minify',
-    '--entry-naming=[name].js',
-    '--chunk-naming=chunks/[name]-[hash].js',
-    `--outdir=${join(root, 'docs/assets')}`,
-  ]);
+  run('bun', [join(root, 'scripts/website-build.mjs'), join(root, 'docs')]);
   await mkdir(join(root, 'output'), { recursive: true });
   await writeFile(
     join(root, 'output/package-check.json'),
