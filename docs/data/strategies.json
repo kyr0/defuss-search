@@ -1,0 +1,301 @@
+{
+ "generatedAt": "2026-11-02T01:23:18.049Z",
+ "runtime": "Bun 1.4.3",
+ "source": "bun run bench:strategies",
+ "modelBytes": {
+  "colbert": 3974541,
+  "winzling": 39759598
+ },
+ "corpora": {
+  "belebele": {
+   "lexical-only": {
+    "queries": 1000,
+    "r1": 0.903,
+    "r5": 0.973,
+    "r10": 0.98,
+    "r25": 0.984,
+    "ms": 0.1
+   },
+   "tiny": {
+    "queries": 1000,
+    "r1": 0.903,
+    "r5": 0.97,
+    "r10": 0.98,
+    "r25": 0.987,
+    "ms": 116.5
+   },
+   "efficient": {
+    "queries": 1000,
+    "r1": 0.913,
+    "r5": 0.973,
+    "r10": 0.985,
+    "r25": 0.99,
+    "ms": 0.7
+   },
+   "reranked": {
+    "queries": 1000,
+    "r1": 0.913,
+    "r5": 0.974,
+    "r10": 0.985,
+    "r25": 0.99,
+    "ms": 0.7
+   }
+  },
+  "notes translation": {
+   "lexical-only": {
+    "queries": 91,
+    "r1": 0.21978,
+    "r5": 0.241758,
+    "r10": 0.241758,
+    "r25": 0.241758,
+    "ms": 0.4
+   },
+   "tiny": {
+    "queries": 91,
+    "r1": 0.505495,
+    "r5": 0.67033,
+    "r10": 0.692308,
+    "r25": 0.758242,
+    "ms": 3.5
+   },
+   "efficient": {
+    "queries": 91,
+    "r1": 0.978022,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.5
+   },
+   "reranked": {
+    "queries": 91,
+    "r1": 0.978022,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.5
+   }
+  },
+  "notes keyword": {
+   "lexical-only": {
+    "queries": 22,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   },
+   "tiny": {
+    "queries": 22,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 2.7
+   },
+   "efficient": {
+    "queries": 22,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   },
+   "reranked": {
+    "queries": 22,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   }
+  },
+  "notes paraphrase": {
+   "lexical-only": {
+    "queries": 22,
+    "r1": 0.272727,
+    "r5": 0.272727,
+    "r10": 0.272727,
+    "r25": 0.272727,
+    "ms": 0.2
+   },
+   "tiny": {
+    "queries": 22,
+    "r1": 0.5,
+    "r5": 0.772727,
+    "r10": 0.818182,
+    "r25": 1,
+    "ms": 2.9
+   },
+   "efficient": {
+    "queries": 22,
+    "r1": 0.863636,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.3
+   },
+   "reranked": {
+    "queries": 22,
+    "r1": 0.863636,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.4
+   }
+  },
+  "api fixture exact": {
+   "lexical-only": {
+    "queries": 5,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   },
+   "tiny": {
+    "queries": 5,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 1.9
+   },
+   "efficient": {
+    "queries": 5,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   },
+   "reranked": {
+    "queries": 5,
+    "r1": 1,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.1
+   }
+  },
+  "api fixture paraphrase": {
+   "lexical-only": {
+    "queries": 10,
+    "r1": 0.6,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.2
+   },
+   "tiny": {
+    "queries": 10,
+    "r1": 0.6,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 2.2
+   },
+   "efficient": {
+    "queries": 10,
+    "r1": 0.7,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.2
+   },
+   "reranked": {
+    "queries": 10,
+    "r1": 0.7,
+    "r5": 1,
+    "r10": 1,
+    "r25": 1,
+    "ms": 0.3
+   }
+  },
+  "api docs exact": {
+   "lexical-only": {
+    "queries": 100,
+    "r1": 0.98,
+    "r5": 0.98,
+    "r10": 0.99,
+    "r25": 1,
+    "ms": 0.6
+   },
+   "tiny": {
+    "queries": 100,
+    "r1": 0.98,
+    "r5": 0.98,
+    "r10": 0.99,
+    "r25": 1,
+    "ms": 1507.3
+   },
+   "efficient": {
+    "queries": 100,
+    "r1": 0.98,
+    "r5": 0.98,
+    "r10": 0.99,
+    "r25": 1,
+    "ms": 3.9
+   },
+   "reranked": {
+    "queries": 100,
+    "r1": 0.98,
+    "r5": 0.98,
+    "r10": 0.99,
+    "r25": 1,
+    "ms": 7
+   }
+  },
+  "api docs natural": {
+   "lexical-only": {
+    "queries": 100,
+    "r1": 0.4,
+    "r5": 0.7,
+    "r10": 0.8,
+    "r25": 0.92,
+    "ms": 5.7
+   },
+   "tiny": {
+    "queries": 100,
+    "r1": 0.4,
+    "r5": 0.72,
+    "r10": 0.82,
+    "r25": 0.93,
+    "ms": 1589
+   },
+   "efficient": {
+    "queries": 100,
+    "r1": 0.4,
+    "r5": 0.76,
+    "r10": 0.83,
+    "r25": 0.94,
+    "ms": 8.6
+   },
+   "reranked": {
+    "queries": 100,
+    "r1": 0.4,
+    "r5": 0.77,
+    "r10": 0.83,
+    "r25": 0.94,
+    "ms": 77.6
+   }
+  }
+ },
+ "indexBytesPerDocument": {
+  "belebele": {
+   "colbertTurboQuant": 5804,
+   "winzlingFloat32": 1536
+  },
+  "notes": {
+   "colbertTurboQuant": 1112,
+   "winzlingFloat32": 1536
+  },
+  "api fixture": {
+   "colbertTurboQuant": 1079,
+   "winzlingFloat32": 1536
+  },
+  "api docs": {
+   "colbertTurboQuant": 16472,
+   "winzlingFloat32": 1536
+  }
+ }
+}

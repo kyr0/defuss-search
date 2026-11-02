@@ -1,0 +1,530 @@
+{
+  "version": "0.4.0",
+  "dataset": {
+    "url": "https://github.com/kyr0/tiny-embedding-bench/raw/refs/heads/main/datasets/tiny-embedding-bench-v1/dataset.json",
+    "sha256": "3d09d3653b72cf19c5226cd134bdd7d92ac31f2822cf45bc60879e7a95a75e6d",
+    "passages": 2000,
+    "questions": 1000,
+    "perLanguage": 50
+  },
+  "peers": {
+    "lexical": "0.3.0",
+    "vector": "0.2.1"
+  },
+  "embedding": "winzling:bfa8af8a8fbf3beb12a93a14d6f5b51875a36214:uint4:mean-mask:l2:384:no-prefix",
+  "candidates": 25,
+  "queryLanguageKnown": true,
+  "runtimes": [
+    {
+      "runtime": "Bun 1.4.3",
+      "icu": "78.1",
+      "reranker": "MoEdernColBERT 1.5M q8, onnxruntime-node CPU, 1 thread, truncation on",
+      "differences": {
+        "efficient": 0,
+        "reranked": 0
+      }
+    },
+    {
+      "runtime": "Node.js 26.11.1",
+      "icu": "78.3",
+      "reranker": "MoEdernColBERT 1.5M q8, onnxruntime-node CPU, 1 thread, truncation on",
+      "differences": {
+        "efficient": 0,
+        "reranked": 0
+      }
+    },
+    {
+      "runtime": "Chromium 156.0.8078.4",
+      "icu": null,
+      "reranker": "MoEdernColBERT 1.5M q8, onnxruntime-web WASM, 1 thread, truncation on",
+      "differences": {
+        "efficient": 0,
+        "reranked": 0
+      }
+    }
+  ],
+  "languages": {
+    "eng_Latn": {
+      "entry": "en",
+      "name": "English",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "deu_Latn": {
+      "entry": "de",
+      "name": "German",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "fra_Latn": {
+      "entry": "fr",
+      "name": "French",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "spa_Latn": {
+      "entry": "es",
+      "name": "Spanish",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "por_Latn": {
+      "entry": "pt",
+      "name": "Portuguese",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "ita_Latn": {
+      "entry": "it",
+      "name": "Italian",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "nld_Latn": {
+      "entry": "nl",
+      "name": "Dutch",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "pol_Latn": {
+      "entry": "pl",
+      "name": "Polish",
+      "analysis": "Snowball",
+      "target": false
+    },
+    "rus_Cyrl": {
+      "entry": "ru",
+      "name": "Russian",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "tur_Latn": {
+      "entry": "tr",
+      "name": "Turkish",
+      "analysis": "Snowball",
+      "target": false
+    },
+    "arb_Arab": {
+      "entry": "ar",
+      "name": "Arabic",
+      "analysis": "Snowball",
+      "target": false
+    },
+    "hin_Deva": {
+      "entry": "hi",
+      "name": "Hindi",
+      "analysis": "Snowball",
+      "target": false
+    },
+    "ben_Beng": {
+      "entry": "bn",
+      "name": "Bangla",
+      "analysis": "trigrams",
+      "target": false
+    },
+    "urd_Arab": {
+      "entry": "ur",
+      "name": "Urdu",
+      "analysis": "trigrams",
+      "target": false
+    },
+    "ind_Latn": {
+      "entry": "id",
+      "name": "Indonesian",
+      "analysis": "Snowball",
+      "target": true
+    },
+    "vie_Latn": {
+      "entry": "vi",
+      "name": "Vietnamese",
+      "analysis": "tone folding",
+      "target": false
+    },
+    "tha_Thai": {
+      "entry": "th",
+      "name": "Thai",
+      "analysis": "segmenter",
+      "target": false
+    },
+    "zho_Hans": {
+      "entry": "zh",
+      "name": "Chinese",
+      "analysis": "segmenter",
+      "target": false
+    },
+    "jpn_Jpan": {
+      "entry": "ja",
+      "name": "Japanese",
+      "analysis": "segmenter",
+      "target": false
+    },
+    "kor_Hang": {
+      "entry": "ko",
+      "name": "Korean",
+      "analysis": "bigrams",
+      "target": false
+    }
+  },
+  "presets": [
+    {
+      "id": "efficient",
+      "name": "Efficient",
+      "description": "searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=1 and weights 3:1, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.",
+      "mean": {
+        "r1": 0.9129999999999997,
+        "r5": 0.9730000000000001,
+        "r10": 0.9850000000000001,
+        "r25": 0.9900000000000002
+      },
+      "target": {
+        "r1": 0.9444444444444444,
+        "r5": 0.9933333333333333,
+        "r10": 0.9955555555555556,
+        "r25": 0.9977777777777779
+      },
+      "neuralQueries": 0,
+      "languages": {
+        "eng_Latn": {
+          "questions": 50,
+          "r1": 0.96,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "deu_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "fra_Latn": {
+          "questions": 50,
+          "r1": 0.98,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "spa_Latn": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "por_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 0.98,
+          "r25": 0.98,
+          "neuralQueries": 0
+        },
+        "ita_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "nld_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 0.98,
+          "r10": 0.98,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "pol_Latn": {
+          "questions": 50,
+          "r1": 0.88,
+          "r5": 0.96,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "rus_Cyrl": {
+          "questions": 50,
+          "r1": 1,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "tur_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 0.96,
+          "r10": 0.96,
+          "r25": 0.96,
+          "neuralQueries": 0
+        },
+        "arb_Arab": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.96,
+          "r10": 0.96,
+          "r25": 0.96,
+          "neuralQueries": 0
+        },
+        "hin_Deva": {
+          "questions": 50,
+          "r1": 0.7,
+          "r5": 0.84,
+          "r10": 0.88,
+          "r25": 0.92,
+          "neuralQueries": 0
+        },
+        "ben_Beng": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.94,
+          "r10": 0.96,
+          "r25": 0.98,
+          "neuralQueries": 0
+        },
+        "urd_Arab": {
+          "questions": 50,
+          "r1": 0.84,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "ind_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "vie_Latn": {
+          "questions": 50,
+          "r1": 0.96,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "tha_Thai": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "zho_Hans": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "jpn_Jpan": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 0
+        },
+        "kor_Hang": {
+          "questions": 50,
+          "r1": 0.88,
+          "r5": 0.96,
+          "r10": 0.98,
+          "r25": 1,
+          "neuralQueries": 0
+        }
+      }
+    },
+    {
+      "id": "reranked",
+      "name": "Reranked",
+      "description": "searchPreset('reranked'): the same retrieval, then MoEdernColBERT 1.5M refines the top 25 unless both sources agree on a clear vector winner.",
+      "mean": {
+        "r1": 0.9129999999999997,
+        "r5": 0.974,
+        "r10": 0.9850000000000001,
+        "r25": 0.9900000000000002
+      },
+      "target": {
+        "r1": 0.9444444444444444,
+        "r5": 0.9933333333333333,
+        "r10": 0.9955555555555556,
+        "r25": 0.9977777777777779
+      },
+      "neuralQueries": 885,
+      "languages": {
+        "eng_Latn": {
+          "questions": 50,
+          "r1": 0.96,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 41
+        },
+        "deu_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 40
+        },
+        "fra_Latn": {
+          "questions": 50,
+          "r1": 0.98,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 39
+        },
+        "spa_Latn": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 43
+        },
+        "por_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 0.98,
+          "r25": 0.98,
+          "neuralQueries": 43
+        },
+        "ita_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 43
+        },
+        "nld_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 0.98,
+          "r10": 0.98,
+          "r25": 1,
+          "neuralQueries": 40
+        },
+        "pol_Latn": {
+          "questions": 50,
+          "r1": 0.88,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 41
+        },
+        "rus_Cyrl": {
+          "questions": 50,
+          "r1": 1,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 34
+        },
+        "tur_Latn": {
+          "questions": 50,
+          "r1": 0.92,
+          "r5": 0.96,
+          "r10": 0.96,
+          "r25": 0.96,
+          "neuralQueries": 39
+        },
+        "arb_Arab": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.96,
+          "r10": 0.96,
+          "r25": 0.96,
+          "neuralQueries": 50
+        },
+        "hin_Deva": {
+          "questions": 50,
+          "r1": 0.7,
+          "r5": 0.84,
+          "r10": 0.88,
+          "r25": 0.92,
+          "neuralQueries": 49
+        },
+        "ben_Beng": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.94,
+          "r10": 0.96,
+          "r25": 0.98,
+          "neuralQueries": 50
+        },
+        "urd_Arab": {
+          "questions": 50,
+          "r1": 0.84,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 50
+        },
+        "ind_Latn": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 1,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 42
+        },
+        "vie_Latn": {
+          "questions": 50,
+          "r1": 0.96,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 45
+        },
+        "tha_Thai": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 0.98,
+          "r25": 1,
+          "neuralQueries": 50
+        },
+        "zho_Hans": {
+          "questions": 50,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 50
+        },
+        "jpn_Jpan": {
+          "questions": 50,
+          "r1": 0.9,
+          "r5": 0.98,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 48
+        },
+        "kor_Hang": {
+          "questions": 50,
+          "r1": 0.88,
+          "r5": 0.96,
+          "r10": 1,
+          "r25": 1,
+          "neuralQueries": 48
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,378 @@
+{
+  "version": "0.4.0",
+  "dataset": {
+    "url": "https://github.com/kyr0/tiny-embedding-bench/raw/refs/heads/main/datasets/tiny-embedding-bench-v1/dataset.json",
+    "sha256": "3d09d3653b72cf19c5226cd134bdd7d92ac31f2822cf45bc60879e7a95a75e6d",
+    "documents": 2000,
+    "queries": 1000
+  },
+  "selected": {
+    "fusion": {
+      "name": "rrf-k1-lex3",
+      "k": 1,
+      "lexicalWeight": 3,
+      "queries": 500,
+      "r1": 0.9,
+      "r5": 0.98,
+      "r10": 0.986,
+      "r25": 0.988,
+      "candidateRecall": 0.99,
+      "vectorQueries": 500,
+      "neuralQueries": 0,
+      "neuralDocuments": 0
+    },
+    "neural": {
+      "name": "neural-k1-w0.25-gated",
+      "k": 1,
+      "weight": 0.25,
+      "gated": true,
+      "queries": 500,
+      "r1": 0.9,
+      "r5": 0.98,
+      "r10": 0.986,
+      "r25": 0.988,
+      "candidateRecall": 0.99,
+      "vectorQueries": 500,
+      "neuralQueries": 441,
+      "neuralDocuments": 11025
+    }
+  },
+  "development": {
+    "results": [
+      {
+        "name": "lexical",
+        "queries": 500,
+        "r1": 0.892,
+        "r5": 0.976,
+        "r10": 0.98,
+        "r25": 0.982,
+        "candidateRecall": 0.982,
+        "vectorQueries": 0,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector",
+        "queries": 500,
+        "r1": 0.432,
+        "r5": 0.616,
+        "r10": 0.688,
+        "r25": 0.776,
+        "candidateRecall": 0.776,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector-first",
+        "queries": 500,
+        "r1": 0.746,
+        "r5": 0.772,
+        "r10": 0.774,
+        "r25": 0.776,
+        "candidateRecall": 0.776,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "lexical-first",
+        "queries": 500,
+        "r1": 0.616,
+        "r5": 0.74,
+        "r10": 0.826,
+        "r25": 0.982,
+        "candidateRecall": 0.982,
+        "vectorQueries": 496,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "legacy-fusion",
+        "queries": 500,
+        "r1": 0.686,
+        "r5": 0.82,
+        "r10": 0.978,
+        "r25": 0.988,
+        "candidateRecall": 0.99,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient",
+        "queries": 500,
+        "r1": 0.902,
+        "r5": 0.98,
+        "r10": 0.986,
+        "r25": 0.988,
+        "candidateRecall": 0.99,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "reranked-always",
+        "queries": 500,
+        "r1": 0.9,
+        "r5": 0.98,
+        "r10": 0.986,
+        "r25": 0.988,
+        "candidateRecall": 0.99,
+        "vectorQueries": 500,
+        "neuralQueries": 500,
+        "neuralDocuments": 12500,
+        "summedMeasuredNeuralMs": 41276.399131000086
+      },
+      {
+        "name": "reranked",
+        "queries": 500,
+        "r1": 0.902,
+        "r5": 0.98,
+        "r10": 0.986,
+        "r25": 0.988,
+        "candidateRecall": 0.99,
+        "vectorQueries": 500,
+        "neuralQueries": 441,
+        "neuralDocuments": 11025,
+        "summedMeasuredNeuralMs": 35581.45787900006
+      }
+    ],
+    "frontier": [
+      "lexical",
+      "efficient"
+    ]
+  },
+  "holdout": {
+    "results": [
+      {
+        "name": "lexical",
+        "queries": 500,
+        "r1": 0.914,
+        "r5": 0.97,
+        "r10": 0.98,
+        "r25": 0.986,
+        "candidateRecall": 0.986,
+        "vectorQueries": 0,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector",
+        "queries": 500,
+        "r1": 0.402,
+        "r5": 0.594,
+        "r10": 0.64,
+        "r25": 0.74,
+        "candidateRecall": 0.74,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector-first",
+        "queries": 500,
+        "r1": 0.704,
+        "r5": 0.734,
+        "r10": 0.736,
+        "r25": 0.74,
+        "candidateRecall": 0.74,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "lexical-first",
+        "queries": 500,
+        "r1": 0.616,
+        "r5": 0.72,
+        "r10": 0.792,
+        "r25": 0.986,
+        "candidateRecall": 0.986,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "legacy-fusion",
+        "queries": 500,
+        "r1": 0.664,
+        "r5": 0.796,
+        "r10": 0.956,
+        "r25": 0.99,
+        "candidateRecall": 0.998,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient",
+        "queries": 500,
+        "r1": 0.924,
+        "r5": 0.966,
+        "r10": 0.984,
+        "r25": 0.992,
+        "candidateRecall": 0.998,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "reranked-always",
+        "queries": 500,
+        "r1": 0.92,
+        "r5": 0.968,
+        "r10": 0.984,
+        "r25": 0.992,
+        "candidateRecall": 0.998,
+        "vectorQueries": 500,
+        "neuralQueries": 500,
+        "neuralDocuments": 12500,
+        "summedMeasuredNeuralMs": 41683.431199999926
+      },
+      {
+        "name": "reranked",
+        "queries": 500,
+        "r1": 0.924,
+        "r5": 0.968,
+        "r10": 0.984,
+        "r25": 0.992,
+        "candidateRecall": 0.998,
+        "vectorQueries": 500,
+        "neuralQueries": 444,
+        "neuralDocuments": 11100,
+        "summedMeasuredNeuralMs": 36418.32915899994
+      }
+    ],
+    "frontier": [
+      "lexical",
+      "efficient",
+      "reranked"
+    ]
+  },
+  "all": {
+    "results": [
+      {
+        "name": "lexical",
+        "queries": 1000,
+        "r1": 0.903,
+        "r5": 0.973,
+        "r10": 0.98,
+        "r25": 0.984,
+        "candidateRecall": 0.984,
+        "vectorQueries": 0,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector",
+        "queries": 1000,
+        "r1": 0.417,
+        "r5": 0.605,
+        "r10": 0.664,
+        "r25": 0.758,
+        "candidateRecall": 0.758,
+        "vectorQueries": 1000,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "vector-first",
+        "queries": 1000,
+        "r1": 0.725,
+        "r5": 0.753,
+        "r10": 0.755,
+        "r25": 0.758,
+        "candidateRecall": 0.758,
+        "vectorQueries": 1000,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "lexical-first",
+        "queries": 1000,
+        "r1": 0.616,
+        "r5": 0.73,
+        "r10": 0.809,
+        "r25": 0.984,
+        "candidateRecall": 0.984,
+        "vectorQueries": 996,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "legacy-fusion",
+        "queries": 1000,
+        "r1": 0.675,
+        "r5": 0.808,
+        "r10": 0.967,
+        "r25": 0.989,
+        "candidateRecall": 0.994,
+        "vectorQueries": 1000,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient",
+        "queries": 1000,
+        "r1": 0.913,
+        "r5": 0.973,
+        "r10": 0.985,
+        "r25": 0.99,
+        "candidateRecall": 0.994,
+        "vectorQueries": 1000,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "reranked-always",
+        "queries": 1000,
+        "r1": 0.91,
+        "r5": 0.974,
+        "r10": 0.985,
+        "r25": 0.99,
+        "candidateRecall": 0.994,
+        "vectorQueries": 1000,
+        "neuralQueries": 1000,
+        "neuralDocuments": 25000,
+        "summedMeasuredNeuralMs": 82959.830331
+      },
+      {
+        "name": "reranked",
+        "queries": 1000,
+        "r1": 0.913,
+        "r5": 0.974,
+        "r10": 0.985,
+        "r25": 0.99,
+        "candidateRecall": 0.994,
+        "vectorQueries": 1000,
+        "neuralQueries": 885,
+        "neuralDocuments": 22125,
+        "summedMeasuredNeuralMs": 71999.78703800001
+      }
+    ],
+    "frontier": [
+      "lexical",
+      "efficient",
+      "reranked"
+    ]
+  }
+}

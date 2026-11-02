@@ -1,0 +1,1216 @@
+/* Page layout and the demo's own composition, following the defuss-lexicalsearch and defuss-vectorsearch sites:
+   the same defuss-shadcn 0.9.11 components and tokens, with an hs- prefix where those sites use ls- and vs-. */
+@layer components {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    line-height: 1.6;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* component rules set display, which would otherwise beat the hidden attribute */
+  [hidden] {
+    display: none !important;
+  }
+  .hs-page {
+    overflow-x: clip;
+  }
+  .hs-main {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(5rem, 11vw, 9rem);
+    padding-block-end: clamp(5rem, 11vw, 9rem);
+  }
+  .hs-section {
+    width: 100%;
+    max-width: 76rem;
+    padding-inline: 1rem;
+    scroll-margin-top: 5rem;
+  }
+  .hs-icon {
+    width: 1em;
+    height: 1em;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .hs-icon-fill {
+    fill: currentColor;
+    stroke: none;
+  }
+  .hs-ext {
+    width: 0.75em;
+    height: 0.75em;
+    margin-inline-start: 0.15em;
+    vertical-align: -0.05em;
+    opacity: 0.75;
+  }
+  .mk-hero-note a,
+  .mk-footer-copy a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .mk-hero-desc code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  .hs-hero-pill a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .hs-hero-pill > a:last-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-hero-pill > a:last-child:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .hs-npm-tag .badge,
+  .mk-header-sheet-actions .badge {
+    margin-inline-start: 0.125rem;
+  }
+  a.badge {
+    text-decoration: none;
+  }
+  .hs-flip {
+    margin: 0;
+    font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  .hs-accent {
+    background: linear-gradient(90deg, var(--chart-1), var(--chart-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* the hero's intro: six muted items under the CTA, so the buttons stay above the fold */
+  .hs-intro {
+    display: grid;
+    gap: 2rem 2.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    width: 100%;
+    max-width: 64rem;
+    margin: clamp(5.5rem, 13vw, 10rem) auto 0;
+    padding-inline: 1.25rem;
+    text-align: start;
+  }
+  .hs-intro-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .hs-intro-icon {
+    display: grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--radius-xl);
+    font-size: 2.25rem;
+    color: var(--foreground);
+    background: color-mix(in oklch, var(--chart-2) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--chart-2) 35%, transparent);
+  }
+  .hs-intro h3 {
+    margin: 0.25rem 0 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  .hs-intro p {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+    text-wrap: pretty;
+  }
+  .hs-intro code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  /* between the intro and the demo: the viewport-high stage shows only its middle band */
+  .hs-flythrough {
+    padding-inline: 1rem;
+    margin-block: calc(-1 * clamp(4rem, 12vh, 9rem));
+  }
+  .hs-flythrough .parallax-stage {
+    clip-path: inset(max(0px, calc((100dvh - 28rem) / 2)) 0 round var(--radius-xl));
+  }
+  .hs-fly-word {
+    margin: 0;
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(90deg, #9db2ff, #e3a6ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* the demo window */
+  .hs-window {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-block-start: 2.5rem;
+    padding: clamp(0.75rem, 2.5vw, 1.5rem);
+    background-color: var(--card);
+    border-radius: var(--radius-xl);
+    box-shadow:
+      var(--shadow-2xl),
+      0 30px 80px -30px color-mix(in oklch, var(--chart-2) 45%, transparent);
+  }
+  .hs-inline-link {
+    height: auto;
+    padding: 0;
+    font-size: inherit;
+    vertical-align: baseline;
+  }
+
+  /* the runtime card: ring, one bar per download or build step, the figures, the worker log */
+  .hs-boot {
+    container-type: inline-size;
+  }
+  .hs-boot-body {
+    display: grid;
+    gap: 1.25rem 1.75rem;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+  .hs-phases {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    min-width: 0;
+  }
+  .hs-phases .progress-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hs-boot-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-stats {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  }
+  .hs-stats .statistic {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklch, var(--muted) 45%, transparent);
+  }
+  .hs-stats .statistic-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .hs-stats .hs-stat-text {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+  }
+  .hs-boot-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .hs-log {
+    max-height: 13rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  @container (max-width: 34rem) {
+    .hs-boot-body {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .hs-phases,
+    .hs-stats {
+      justify-self: stretch;
+    }
+  }
+
+  /* demo tabs: bigger, centred, an icon and a two-line label */
+  .hs-tabs > .tab-list {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto 1.25rem;
+    scroll-margin-top: 6rem;
+  }
+  .hs-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: auto;
+    padding-block: 0.625rem;
+    text-align: start;
+    white-space: normal;
+    overflow: visible;
+  }
+  .hs-tab-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .hs-tab-title {
+    display: block;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  .hs-tab-desc {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(--muted-foreground);
+  }
+
+  /* the query row */
+  .hs-query {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    scroll-margin-top: 6rem;
+  }
+  .hs-search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  /* The basis is a width only in the benchmark's row; in the notes column it would become a 30rem height. */
+  .hs-query > .hs-search {
+    flex: 1 1 30rem;
+  }
+  .hs-search .search-box {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+  .hs-language {
+    flex: 0 1 13rem;
+    min-width: 0;
+  }
+  .hs-cta {
+    padding-block: clamp(2rem, 6vw, 4rem);
+    min-width: 0;
+  }
+  .hs-examples .btn {
+    max-width: 100%;
+    height: auto;
+    min-height: 2rem;
+    padding-block: 0.375rem;
+    white-space: normal;
+    text-align: start;
+  }
+  .mk-search-summary {
+    margin-block-start: 1rem;
+  }
+  .hs-tally {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+
+  /* the factory picker shown before the demo */
+  .hs-picker {
+    margin-block-end: 1.5rem;
+  }
+  .hs-factories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .hs-factory {
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .hs-factory:has(.radio:checked) {
+    border-color: color-mix(in oklch, var(--chart-2) 60%, var(--border));
+    background: color-mix(in oklch, var(--chart-2) 6%, transparent);
+  }
+  .hs-factory-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-factory-title {
+    font-weight: 600;
+    flex: 1;
+  }
+  .hs-factory-fn,
+  .hs-method-fn {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    overflow-wrap: anywhere;
+  }
+  .hs-factory-cost {
+    font-size: 0.8125rem;
+  }
+  .hs-factory-cost .hs-icon {
+    vertical-align: -0.125em;
+    margin-inline-end: 0.25rem;
+  }
+  .hs-factory-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+  }
+  .hs-factory-table th,
+  .hs-factory-table td {
+    padding: 0.125rem 0;
+    font-weight: 400;
+  }
+  .hs-factory-table thead th,
+  .hs-factory-table tbody th {
+    color: var(--muted-foreground);
+    text-align: start;
+  }
+  .hs-factory-table thead th:not(:first-child),
+  .hs-factory-table td {
+    padding-inline-start: 0.75rem;
+    text-align: end;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hs-factory-note {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .hs-picker-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-block-start: 1rem;
+  }
+  .hs-picker-foot .switch-item {
+    margin-inline-end: auto;
+  }
+  .hs-boot-head {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .hs-figure-wait {
+    display: flex;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  .hs-figure-wait .spinner {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* the result column of the chosen factory */
+  .hs-compare {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    margin-block-start: 1.25rem;
+  }
+  .hs-compare:empty {
+    display: none;
+  }
+  .hs-compare[aria-busy='true'] .hs-method:not([data-state='pending']) {
+    opacity: 0.7;
+  }
+  .hs-method {
+    min-width: 0;
+    transition: opacity 0.2s ease;
+  }
+  .hs-method[data-method='reranked'] {
+    border-color: color-mix(in oklch, var(--chart-2) 60%, var(--border));
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--chart-2) 35%, transparent),
+      0 16px 40px -24px color-mix(in oklch, var(--chart-2) 70%, transparent);
+  }
+  .hs-method-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .hs-method .card-description {
+    font-size: 0.8125rem;
+  }
+  .hs-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.625rem;
+    padding-block-end: 0.75rem;
+    margin-block-end: 0.5rem;
+    border-block-end: 1px solid var(--border);
+  }
+  .hs-figure[data-state='needs-model'],
+  .hs-figure[data-state='busy'] {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hs-figure-value {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hs-figure[data-gold-rank='1'] .hs-figure-value {
+    color: var(--chart-2);
+  }
+  .hs-figure-label {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  .hs-figure-meta {
+    flex-basis: 100%;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .hs-figure .spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .hs-hits {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hs-hit {
+    display: flex;
+    gap: 0.625rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+  }
+  .hs-hit[data-gold='exact'] {
+    background: color-mix(in oklch, var(--chart-4) 22%, transparent);
+  }
+  .hs-hit[data-gold='translation'] {
+    background: color-mix(in oklch, var(--chart-4) 9%, transparent);
+  }
+  .hs-hit-rank {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .hs-hit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .hs-hit-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .hs-hit-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.375rem;
+    margin: 0;
+  }
+  /* a note hit's text is a button that shows the note on the board */
+  .hs-hit-jump {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: start;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .hs-hit-jump:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .hs-hit-jump:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* the scoring explanation of a note hit */
+  .hs-why {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .hs-why summary {
+    width: fit-content;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .hs-why summary:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .hs-why-body {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.25rem 0.75rem;
+    margin: 0.375rem 0 0;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 0.375rem);
+    background: var(--muted);
+  }
+  .hs-why-body dt {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .hs-why-body dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .hs-why-body code {
+    font-size: 0.6875rem;
+  }
+  .hs-why-list {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hs-why-list li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 0.5rem;
+  }
+  .hs-why-dim {
+    opacity: 0.75;
+  }
+  /* the note a result points at, highlighted for a moment */
+  .hs-note[data-flash] {
+    outline: 3px solid oklch(0.62 0.15 80);
+    outline-offset: 3px;
+    transition: outline-color 0.3s;
+  }
+  .hs-hit-meta .badge {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .hs-source {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-gold.aura {
+    display: inline-grid;
+  }
+  .hs-method-empty {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+
+  /* the in-browser benchmark */
+  .hs-measure {
+    margin-block-start: 1.5rem;
+  }
+  .hs-measure-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    overflow-x: auto;
+  }
+  .hs-measure-body .progress {
+    width: 100%;
+  }
+  .hs-credit {
+    margin-block-start: 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+  .hs-credit a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* the notes tab: board beside the notes search on wide screens, stacked on narrow ones */
+  .hs-notes-layout {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    min-height: 34rem;
+  }
+  @media (max-width: 56rem) {
+    .hs-notes-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .hs-board {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .hs-board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .hs-board-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .hs-notes-scroll {
+    max-height: 32rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.5rem 0.25rem 1rem;
+  }
+  .hs-notes {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  }
+  .hs-notes-search {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .hs-compare-notes {
+    margin: 0;
+  }
+  /* a yellow sticky note: paper colours have no token, so they are literals here */
+  .hs-note {
+    --hs-note-paper: oklch(0.95 0.12 100);
+    --hs-note-ink: oklch(0.28 0.04 85);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 0.875rem 0.625rem;
+    background: var(--hs-note-paper);
+    color: var(--hs-note-ink);
+    border-radius: 2px 2px 1.25rem 2px;
+    box-shadow: var(--shadow-md);
+    rotate: -0.6deg;
+  }
+  .hs-note:nth-child(even) {
+    rotate: 0.5deg;
+  }
+  .hs-note:focus-within {
+    outline: 2px solid oklch(0.62 0.15 80);
+    outline-offset: 2px;
+  }
+  .hs-note-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+  }
+  .hs-note-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  /* the note's language: a native select in the paper's ink, so the analyzer choice stays visible and editable */
+  .hs-note-lang {
+    min-width: 0;
+    max-width: 60%;
+    padding: 0.0625rem 0.25rem;
+    font: inherit;
+    font-size: 0.6875rem;
+    color: inherit;
+    background: transparent;
+    border: 1px solid color-mix(in oklch, var(--hs-note-ink) 25%, transparent);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .hs-note-lang:focus-visible {
+    outline: 2px solid oklch(0.62 0.15 80);
+    outline-offset: 1px;
+  }
+  .hs-note .textarea {
+    min-height: 6.5rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    box-shadow: none;
+    resize: vertical;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .hs-note .textarea:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .hs-note .textarea::placeholder {
+    color: color-mix(in oklch, var(--hs-note-ink) 50%, transparent);
+  }
+  .hs-note-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    min-height: 1.5rem;
+    margin: 0;
+    font-size: 0.75rem;
+  }
+  .hs-note-time {
+    font-family: var(--font-mono);
+    opacity: 0.8;
+  }
+  .hs-note-hint {
+    opacity: 0.75;
+  }
+
+  /* how it works: the strategies and the ranking contract under the diagram */
+  .hs-strategies {
+    display: grid;
+    gap: 1.5rem 2.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    margin-block-start: 2.5rem;
+  }
+  .hs-strategy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .hs-strategy .hs-way-title {
+    font-size: 1rem;
+  }
+  .hs-tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-block-start: 2.5rem;
+  }
+  .hs-tier-list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: tier;
+  }
+  .hs-tier-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    counter-increment: tier;
+  }
+  .hs-tier-list li::before {
+    content: counter(tier);
+    width: 1.25rem;
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: end;
+  }
+  .hs-tier-list .badge {
+    flex: none;
+    min-width: 6.5rem;
+    justify-content: center;
+  }
+  .hs-tier-list code,
+  .hs-way-desc code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  /* the frontier table */
+  .hs-bench {
+    margin: 0;
+    align-self: start;
+    aspect-ratio: auto;
+    overflow: visible;
+    background: var(--card);
+  }
+  .hs-bench .card-content {
+    overflow-x: auto;
+  }
+  .hs-bench-table th {
+    text-align: start;
+    white-space: nowrap;
+  }
+  .hs-bench-table :is(th, td) {
+    padding-inline: 0.5rem;
+  }
+  .hs-bench-table td:first-child {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+  }
+  .hs-num {
+    text-align: end;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hs-bench-table th.hs-num {
+    text-align: end;
+  }
+  /* a figure the page has not filled yet */
+  .mk-stat-value:empty::before {
+    content: '\2013';
+    color: var(--muted-foreground);
+  }
+  .mk-stats-desc a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .mk-stats-desc code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  /* "Measured, not promised": the recall card with nested preset and R@k tabs */
+  .hs-recall {
+    margin: 0;
+    align-self: start;
+    aspect-ratio: auto;
+    overflow: visible;
+    background: var(--card);
+  }
+  .hs-recall-tabs > .tab-list {
+    margin-block-end: 0.75rem;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .hs-recall-note {
+    margin: 0 0 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  .hs-recall-list {
+    display: grid;
+    gap: 0.5rem 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  }
+  .hs-recall-list .progress-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .hs-footnote {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .hs-footnote-mark {
+    font-size: 0.5em;
+    color: var(--muted-foreground);
+  }
+
+  /* consulting CTA: a leaf-cornered mesh panel; portrait + heading, then the text, then the action */
+  .hs-consult {
+    --shape-round: 3rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background-color: var(--card);
+  }
+  .hs-consult .mk-cta,
+  .hs-consult .mk-cta[data-variant] {
+    background: transparent;
+  }
+  .hs-consult .mk-cta[data-variant] .mk-cta-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+    align-items: center;
+    gap: 1.25rem 2rem;
+    text-align: start;
+    padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.5rem, 3vw, 2.5rem);
+    background: transparent;
+    border-radius: 0;
+  }
+  .hs-consult .mk-cta[data-variant] .mk-cta-copy {
+    display: contents;
+  }
+  .hs-consult .hs-cta-head {
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .hs-consult .mk-cta[data-variant] .mk-cta-title {
+    margin: 0;
+    font-size: clamp(1.25rem, 2.2vw, 1.625rem);
+  }
+  .hs-consult .mk-cta[data-variant] .mk-cta-desc {
+    grid-column: 2;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  .hs-consult .mk-cta[data-variant] .mk-cta-actions {
+    grid-column: 3;
+    justify-content: flex-end;
+  }
+  .hs-cta-portrait {
+    width: 4rem;
+    flex: none;
+  }
+  .hs-cta-portrait img,
+  .hs-ad-portrait img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  @media (max-width: 56rem) {
+    .hs-consult .mk-cta[data-variant] .mk-cta-inner {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hs-consult .hs-cta-head,
+    .hs-consult .mk-cta[data-variant] .mk-cta-desc,
+    .hs-consult .mk-cta[data-variant] .mk-cta-actions {
+      grid-column: auto;
+      justify-content: flex-start;
+    }
+  }
+
+  /* "Use it": one leaf-cornered panel on a faint dot pattern, two ways in */
+  .hs-use {
+    --shape-round: 3rem;
+    --shape-ink: color-mix(in oklch, var(--foreground) 9%, transparent);
+    --shape-pattern: 18px;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid var(--border);
+    background-color: color-mix(in oklch, var(--card) 75%, transparent);
+    box-shadow:
+      var(--shadow-xl),
+      0 30px 80px -40px color-mix(in oklch, var(--chart-2) 45%, transparent);
+  }
+  .hs-ways {
+    display: flex;
+    gap: 2.5rem;
+    margin-block-start: 2.5rem;
+  }
+  .hs-way {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .hs-way-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  .hs-way-desc {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .hs-way-desc a:not(.badge) {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .hs-way .mk-code-block {
+    margin: 0;
+  }
+  /* a half-width column: wrap instead of cutting, continuation lines hang past the number column */
+  .hs-way .mk-code-block code > span {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-inline-start: 3rem;
+    text-indent: -3rem;
+  }
+  .hs-sep-horizontal {
+    display: none;
+  }
+  @media (max-width: 56rem) {
+    .hs-ways {
+      flex-direction: column;
+    }
+    .hs-sep-vertical {
+      display: none;
+    }
+    .hs-sep-horizontal {
+      display: block;
+      width: 100%;
+      margin: 0;
+    }
+  }
+  .hs-prompt {
+    position: relative;
+  }
+  .hs-prompt .mockup-code {
+    margin: 0;
+  }
+  .hs-prompt-copy {
+    position: absolute;
+    inset-block-start: 0.3rem;
+    inset-inline-end: 0.5rem;
+  }
+
+  /* footer ad: a leaf-cornered panel with a squircle portrait in a gold halo */
+  .hs-ad {
+    --shape-round: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--chart-1) 16%, var(--card)),
+      var(--card) 65%
+    );
+  }
+  .hs-ad-head {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+  .hs-ad-portrait {
+    width: 5.5rem;
+    flex: none;
+  }
+  .hs-ad-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .hs-ad-role {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+  .hs-ad .btn {
+    align-self: flex-start;
+  }
+  @media (min-width: 64rem) {
+    .hs-footer-nav.mk-footer-nav {
+      grid-template-columns: 1fr 1fr 1fr 1.8fr;
+    }
+  }
+
+  /* reference and frontier pages: rendered Markdown in the same frame */
+  .hs-prose {
+    max-width: 56rem;
+    margin-inline: auto;
+    padding-block: 7rem 4rem;
+  }
+  .hs-prose h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  .hs-prose h2 {
+    margin-block-start: 3rem;
+    letter-spacing: -0.02em;
+  }
+  .hs-prose h3 {
+    margin-block-start: 2rem;
+  }
+  .hs-prose p,
+  .hs-prose li {
+    overflow-wrap: anywhere;
+  }
+  .hs-prose a {
+    color: var(--foreground);
+    text-underline-offset: 2px;
+  }
+  .hs-prose :not(pre) > code {
+    padding: 0.1em 0.3em;
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+  .hs-prose table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .hs-prose :is(th, td) {
+    padding: 0.5rem 0.75rem;
+    border-block-end: 1px solid var(--border);
+    text-align: start;
+  }
+  .hs-prose th {
+    font-weight: 600;
+  }
+  .hs-prose .mk-code-block {
+    margin-block: 1.25rem;
+  }
+  .hs-prose .mk-code-block code > span {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .hs-prose img {
+    max-width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hs-method {
+      transition: none;
+    }
+  }
+  @media (forced-colors: active) {
+    .hs-accent,
+    .hs-fly-word {
+      color: CanvasText;
+      background: none;
+    }
+  }
+}

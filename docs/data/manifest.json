@@ -1,0 +1,63 @@
+{
+  "schema": "defuss-search-demo-manifest.v1",
+  "models": {
+    "winzling": {
+      "base": "https://huggingface.co/kyr0/Winzling-Embed-a8m-64k/resolve/bfa8af8a8fbf3beb12a93a14d6f5b51875a36214/",
+      "files": {
+        "tokenizer.json": {
+          "bytes": 9292544,
+          "sha256": "1500c16e2ad682e31dceffcff0a62bda448741c1b61120a3a398afdc3851de82",
+          "gzip": 1249423
+        },
+        "tokenizer_config.json": {
+          "bytes": 2448,
+          "sha256": "0ec4307a0de6ad9c6ac3412082ebcae2f6dfa2864e327e756a8b9a67e6d0a6fc",
+          "gzip": 477
+        },
+        "onnx/model_uint4.onnx": {
+          "bytes": 30464606,
+          "sha256": "68ebb344e88e3d88763d0d5ced34de818128bc704b60b3fc6ef1bbd7c3897115",
+          "gzip": 27831037
+        }
+      }
+    },
+    "colbert": {
+      "base": "https://huggingface.co/kyr0/SauerkrautLM-MoEdernColBERT-1.5M-ONNX/resolve/f386a021490a5cd9202a049024561420655065ae/",
+      "files": {
+        "tokenizer.json": {
+          "bytes": 1955903,
+          "sha256": "8f71b9c566af030a896c8c4e21fd49dd734915707a3f1d4cffdf6c2adaa9fd06",
+          "gzip": 400066
+        },
+        "tokenizer_config.json": {
+          "bytes": 730,
+          "sha256": "02db1534a52b9af97be6a6a066af67ad2d3ff1eb10cc0af928bed5ae70a04ecd",
+          "gzip": 350
+        },
+        "runtime.json": {
+          "bytes": 946,
+          "sha256": "aea3c634e5efad4f5aa31b85884582ca0106cb96c42482aa5ae7143fb5ab7822",
+          "gzip": 489
+        },
+        "model_q8.onnx": {
+          "bytes": 2016962,
+          "sha256": "7d709c97fd59c8eaea361faeb20f55c7a61a9c718587f2f4d3023dcce77e8d11",
+          "gzip": 1691818
+        }
+      }
+    }
+  },
+  "corpus": {
+    "file": "corpus.json.gz",
+    "bytes": 429584,
+    "rawBytes": 955227
+  },
+  "vectors": {
+    "file": "vectors.bin.gz",
+    "bytes": 4288876,
+    "rawBytes": 4608000,
+    "dims": 384,
+    "passages": 2000,
+    "queries": 1000
+  }
+}

@@ -1,0 +1,42 @@
+name: Verify
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      live_models:
+        description: Run pinned CPU, WASM and full multilingual model checks
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: make setup PLAYWRIGHT_FLAGS=--with-deps
+      - run: make verify
+      - run: bun run bench
+      - if: inputs.live_models
+        run: |
+          bun run test:models:bun
+          bun run test:models
+          bun run test:wasm:bun
+          bun run test:wasm
+          bun run test:gate
+          bun run test:gate:bun
+          bun run test:gate:wasm
+          bun run test:gate:wasm:bun
+          DEFUSS_LIVE_BROWSER=1 make e2e
+          make bench
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: search-verification
+          path: |
+            output/**/*.json
+            output/coverage/lcov.info
+            output/package/*.tgz

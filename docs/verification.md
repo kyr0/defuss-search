@@ -1,0 +1,63 @@
+# Verification of v0.4.0
+
+VERIFIED: the checks below ran on macOS arm64 with Bun 1.4.3, Node.js 26.11.1, TypeScript 5.9.3, Playwright 1.64.1 with Chrome Headless Shell 156.0.8078.4, defuss-lexicalsearch 0.3.0 and defuss-vectorsearch 0.2.1. `mise.toml` pins Node.js 26.13.0; this machine ran 26.11.1 because mise was not installed, which the `engines` range (Node.js 26 or newer) allows.
+
+VERIFIED: for v0.4.0, the build, lint, tests, coverage, package and browser checks, the native, WASM and gate model checks and the recall, frontier, API, strategies and surface benchmarks ran on 2026-11-02. The rows on when BM25 helps, ColBERT as the retriever, per-query BM25 confidence and the error analysis ran on 2026-10-31 and 2026-11-01.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| ESM/CommonJS build and declarations | Pass | `dist/`, package export map |
+| Strict TypeScript, oxlint and source formatting | Pass | `make lint` |
+| Behavioral tests | 82 passed on Bun; 82 passed on Node.js | `test/*.test.mjs` |
+| Compiled package coverage | 99.81% lines; 98.73% functions | `output/coverage-summary.json`, `output/coverage/lcov.info` |
+| Preset winner preservation | All 5,040 permutations of seven candidates, plus the general algebraic bound | `test/presets.test.mjs`, [frontier report](pareto.md) |
+| README examples | All three examples on both runtimes, each printing the output its comment states | `test/readme.test.mjs` |
+| Dev server | `make dev` serves `/` and `/defuss-search/` with the reload script, opens the event stream and exits 0 on SIGTERM; in a manual probe a `website/` edit and a `src/` edit each rebuilt the site and reloaded an open Chromium page | `output/e2e/dev.json` |
+| Isolated tarball consumers | Node.js ESM and CommonJS, Bun, declarations, all entries | `output/package-check.json` |
+| Optional peer boundary | Root works without peers; adapter browser bundle excludes model runtimes | `output/package-check.json` |
+| Packed-package browser demo, model-free (`?models=off`) | Three pages, theme, mobile layout, project subpath; the factory picker shows before the demo, with the R@1 and R@5 of `docs/data/strategies.json` for each factory; lexical-only answers examples, palette questions and typed text with one column whose gold rank matches the worker's result and requests no model; its in-browser measurement equals the published lexical-only R@1 to R@25; lexical-semantic ranks benchmark questions with recorded vectors, typed text waits for Winzling, and its measurement reproduces the efficient preset's R@1, R@5, R@10 and R@25 of `docs/data/recall.json` for every language; tiny asks for MoEdernColBERT; random notes are searchable lexically; a German note does not match the stopword "mit", its "Why" panel names the matched word and its result focuses the note; 160 recall figures equal `docs/data/recall.json`; nested tabs by mouse and keyboard, both copy buttons, the phone menu and highlighted reference code | `output/e2e/browser.json`, `output/e2e/demo.png` |
+| Browser Winzling and ColBERT WASM (`DEFUSS_LIVE_BROWSER=1`) | Lexical-semantic loads ColBERT at the first benchmark question and Winzling at the first typed text, Winzling never for a benchmark question; the reranked column completes; its measurement reproduces the efficient and reranked figures for every language with the published 885 ColBERT calls; tiny encodes the 181,361 passage tokens in the browser, and its measurement equals the published Bun R@1 to R@25 of the tiny factory; six notes get Winzling vectors and then ColBERT tokens | `output/e2e/browser-live.json` |
+| Native CPU models | 75 comparisons per runtime: 15 queries across three strategies and two presets | `output/live-bun.json`, `output/live-node.json` |
+| Browser entry with WASM in CLI runtimes | Three strategies on Bun and Node.js | `output/live-wasm-bun.json`, `output/live-wasm-node.json` |
+| Early-exit gate with real models | Bun and Node.js, CPU and WASM: the qualifying query reads no ColBERT file; forced inference loads and scores | `output/gate-bun-cpu.json`, `output/gate-node-cpu.json`, `output/gate-bun-wasm.json`, `output/gate-node-wasm.json` |
+| Recall per language, end to end | R@1, R@5, R@10 and R@25 for both presets over 1,000 questions in 20 languages; Bun and Node.js with native ColBERT and Chromium with WASM ColBERT returned the same rank for every question | `output/bench/recall-bun.json`, `output/bench/recall-node.json`, `output/bench/recall-chromium.json`, `docs/data/recall.json` |
+| Frontier replay against the end-to-end run | Same efficient and reranked R@k for every language | `scripts/recall-report.mjs` during `make bench` |
+| Finite quality/work frontier | 36 fusion and 32 neural configurations; grouped 500-question development and 500-question parameter holdout | `output/bench/pareto.json`, `output/bench/selection.json` |
+| When BM25 helps | Six methods on Belebele subsets of 20 to 2,000 passages (57 subsets with at least one question, 7,000 question runs), on the 2,000 passages cut to 6 to 32 words, and on the 100 sample notes (91 translation queries, 44 assistant-written queries); switching rules by index size, average document length and the lexical top hit's coverage | `output/bench/bm25-switch.json` |
+| Short-text routing | `vectorOnlyBelow` routes fusion to the vector source below the threshold and skips the reranker; text-only queries embed; cascades and unset options stay hybrid; invalid values throw; exact promotion still applies; `averageLength()` over keyword, single and disjoint fields | `test/route.test.mjs` |
+| Weak-lexical rule | `matchShare()` weighs words by index IDF and skips stopwords; the presets move the vector first hit up for "Mehr Kontakt mit Tieren" and keep the order for a full lexical match or a small vector lead; the rescore path, also for a text-only query with one embedding, and the bound path without a rescore; the vector retriever embeds a repeated text once and retries a failed embedding; requested exact matches stay first; unavailable reasons; validation | `test/weak-lexical.test.mjs` |
+| Unstemmed companions | A companion ranks the word as written first, also when `search.fields` names only its field, and leaves `averageLength()` unchanged; `withSurfaceFields()` adds companions only to stemming fields, with source, weight and `b`, adds nothing twice and survives a snapshot round trip; `createHybridIndex()` adds them by default and not with `surface: false`; the packed package repeats the default on Node.js and Bun | `test/surface.test.mjs`, `scripts/package-test.mjs` |
+| ColBERT against Winzling as the retriever | Full MaxSim scan against cosine on Belebele, the sample notes and the API fixture, alone and inside the efficient preset | `output/bench/colbert-retrieval.json` |
+| Per-query BM25 confidence | 17 fusion variants against lexical, vector, efficient and reranked: BM25's weight scaled by a background-IDF confidence, and gates on that confidence and on cosine agreement. Corpora: Belebele (full and cut to 6 and 16 words), the sample notes, the API fixture, and the defuss-shadcn documentation in 8,043 sections with 100 exact-word and 100 assistant-written queries. The in-script fusion replica ranks the first relevant document like the efficient preset in 97.1% of records. A 3 x 3 grid of the library rule runs through `HybridSearch`, next to both presets with and without it | `output/bench/confidence-fusion.json` |
+| Ready-made strategies | Lexical-only keeps the BM25 order without a vector source; the ColBERT retriever scores exact MaxSim, finds the same top two from TurboQuant codes, restricts rescoring to eligible IDs, rejects only the search whose query encoding fails and validates its input; the tiny factory encodes documents once and skips encoding for supplied matrices; the semantic factory picks the efficient preset without a reranker and the reranked one with it, and skips embedding for supplied vectors; two searches with different lexical options share one vector source and one query scan | `test/strategies.test.mjs` |
+| Strategies benchmark | The three factories on Belebele, the sample notes, the API fixture and the defuss-shadcn documentation (8,043 sections, 2,070,075 ColBERT tokens), the tiny search over TurboQuant and exact token indexes with four weak-lexical gaps, R@1 to R@25, time per query and index bytes per document | `output/bench/strategies.json`, `docs/data/strategies.json` |
+| Surface benchmark | Stemmed fields against companions of weight 1 and 0.5 on Belebele, the sample notes and the defuss-shadcn documentation, BM25 alone and the efficient preset, with indexed tokens and build time | `output/bench/surface.json` |
+| Error analysis | Every rank-1 miss of the efficient preset on Belebele (87), the sample notes (5) and the defuss-shadcn documentation (92), classified by source retrieval, BM25 winner, stemming collision, same page and translation | `output/bench/error-analysis.json` |
+| API relevance and vector-scan benchmark | Executed | [evaluation](evaluation.md), `output/benchmark.json` |
+| Demo model pins | The manifest names the pinned Hugging Face revision and SHA-256 of every model file; the live e2e loads both models from Hugging Face | `scripts/check-project.mjs` in `make verify`, `output/e2e/browser-live.json` |
+| Generated figures | Website section and README tables equal what `docs/data/recall.json` renders; the built page's factory picker tables equal what `docs/data/strategies.json` renders | `scripts/check-project.mjs` in `make verify` |
+| Mermaid diagrams | Both `ARCH.md` diagrams rendered and inspected | `bunx @mermaid-js/mermaid-cli`; images in the gitignored `tmp/` |
+
+Coverage measures the compiled public modules and shared chunks, not branches. Small deterministic vectors test the ranking contracts; real pinned models exercise inference. The frontier analysis measures raw neural scores once for all 1,000 prefixes with explicit truncation and replays alternative fusion weights and gates; its gated work counts are counterfactual estimates, not measured end-to-end latency. The recall benchmark runs both presets end to end through `HybridSearch`, so its neural decisions are the engine's own. The grouped holdout keeps the translations of one question on one side of the split; the fixture was already used in v0.2.0, so the holdout is not a new external quality test.
+
+VERIFIED: browser checks fail on page errors, console errors, HTTP errors and failed requests. The website is built from the tarball installed in an isolated consumer. The build ships every ONNX Runtime Web loader variant, and the live WASM check passed without cross-origin isolation headers, as on GitHub Pages.
+
+VERIFIED: model files are SHA-256 checked and recorded in `output/model-assets.json`. The live checks load the verified local files with remote loading disabled. In Chromium the loader verifies them with `crypto.subtle`, which needs a secure context: the e2e serves 127.0.0.1, and the benchmark routes an `https` origin.
+
+UNKNOWN: the results of the GitHub Actions and Pages workflows, which run after a push; the local checks above are the evidence for this release. Nothing was published to npm.
+
+## Reproduce
+
+```sh
+make setup
+make verify
+bun run test:models:bun && bun run test:models
+bun run test:wasm:bun && bun run test:wasm
+bun run test:gate:bun && bun run test:gate
+bun run test:gate:wasm:bun && bun run test:gate:wasm
+DEFUSS_LIVE_BROWSER=1 make e2e
+make bench
+bun run bench
+```
+
+`make start`, `make dev` and `make e2e` run the website server on a port of 127.0.0.1; `PORT=0` picks a free one. `DEFUSS_MODEL_DIR` selects a shared model directory and `DEFUSS_CHROMIUM` an existing Chromium executable. The default checks, including the demo at `?models=off`, need no model download; the model checks fetch missing pinned model files once, and `make bench` the dataset as well.

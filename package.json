@@ -1,0 +1,147 @@
+{
+  "name": "defuss-search",
+  "version": "0.4.0",
+  "description": "Hybrid lexical/vector retrieval, candidate reranking and explainable rank fusion for defuss.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Aron Homberg",
+  "sideEffects": false,
+  "packageManager": "bun@1.4.3",
+  "engines": {
+    "node": ">=26",
+    "bun": ">=1.4.3"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./lexical": {
+      "import": {
+        "types": "./dist/lexical.d.ts",
+        "default": "./dist/lexical.js"
+      },
+      "require": {
+        "types": "./dist/lexical.d.cts",
+        "default": "./dist/lexical.cjs"
+      }
+    },
+    "./vector": {
+      "import": {
+        "types": "./dist/vector.d.ts",
+        "default": "./dist/vector.js"
+      },
+      "require": {
+        "types": "./dist/vector.d.cts",
+        "default": "./dist/vector.cjs"
+      }
+    },
+    "./colbert": {
+      "import": {
+        "types": "./dist/colbert.d.ts",
+        "default": "./dist/colbert.js"
+      },
+      "require": {
+        "types": "./dist/colbert.d.cts",
+        "default": "./dist/colbert.cjs"
+      }
+    },
+    "./indexing": {
+      "import": {
+        "types": "./dist/indexing.d.ts",
+        "default": "./dist/indexing.js"
+      },
+      "require": {
+        "types": "./dist/indexing.d.cts",
+        "default": "./dist/indexing.cjs"
+      }
+    },
+    "./strategies": {
+      "import": {
+        "types": "./dist/strategies.d.ts",
+        "default": "./dist/strategies.js"
+      },
+      "require": {
+        "types": "./dist/strategies.d.cts",
+        "default": "./dist/strategies.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "defuss-lexicalsearch": "^0.3.0",
+    "defuss-vectorsearch": "^0.2.1"
+  },
+  "peerDependenciesMeta": {
+    "defuss-lexicalsearch": {
+      "optional": true
+    },
+    "defuss-vectorsearch": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "defuss-lexicalsearch": "0.3.0",
+    "defuss-vectorsearch": "0.2.1",
+    "marked": "16.4.2",
+    "onnxruntime-node": "1.21.0",
+    "oxlint": "1.90.0",
+    "pkgroll": "2.29.0",
+    "playwright": "1.64.1",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "pkgroll --clean-dist",
+    "lint": "oxlint --deny-warnings src test scripts examples bench website fixtures && tsc --noEmit && prettier --check src",
+    "test": "bun run test:bun && bun run test:node && bun run test:types",
+    "test:node": "node --test test/*.test.mjs",
+    "test:types": "tsc -p test/tsconfig.json",
+    "coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir=output/coverage test/ && node scripts/coverage.mjs",
+    "e2e": "bun scripts/e2e.mjs",
+    "models": "node scripts/models.mjs",
+    "test:models": "node scripts/live.mjs",
+    "bench": "bun bench/benchmark.mjs",
+    "demo": "make demo",
+    "verify": "make verify",
+    "prepack": "tsc --noEmit && pkgroll --clean-dist",
+    "test:package": "node scripts/package-test.mjs",
+    "test:wasm": "node scripts/wasm.mjs",
+    "format": "prettier --write src test scripts examples bench website fixtures",
+    "pretest": "bun run build",
+    "prelint": "bun run build",
+    "precoverage": "bun run build",
+    "pretest:package": "bun run build",
+    "pretest:types": "bun run build",
+    "test:bun": "bun test test/",
+    "docs": "bun scripts/docs.mjs",
+    "test:models:bun": "bun scripts/live.mjs",
+    "test:wasm:bun": "bun scripts/wasm.mjs",
+    "bench:pareto": "bun bench/pareto.mjs && bun scripts/pareto-docs.mjs && bun scripts/recall-report.mjs && bun scripts/demo-data.mjs",
+    "test:gate": "node scripts/gate-live.mjs",
+    "test:gate:bun": "bun scripts/gate-live.mjs",
+    "test:gate:wasm": "node scripts/gate-live.mjs --wasm",
+    "test:gate:wasm:bun": "bun scripts/gate-live.mjs --wasm",
+    "bench:colbert-retrieval": "bun bench/colbert-retrieval.mjs",
+    "bench:bm25-switch": "bun bench/bm25-switch.mjs",
+    "bench:semantic-first": "bun bench/semantic-first.mjs",
+    "bench:recall": "bun bench/recall.mjs && node bench/recall.mjs && bun bench/recall-browser.mjs",
+    "bench:confidence-fusion": "bun bench/confidence-fusion.mjs",
+    "bench:strategies": "bun bench/strategies.mjs && bun scripts/strategies-report.mjs",
+    "bench:errors": "bun bench/error-analysis.mjs",
+    "bench:surface": "bun bench/surface.mjs"
+  }
+}

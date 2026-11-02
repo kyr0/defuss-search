@@ -1,0 +1,2595 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>defuss-search · hybrid search in your browser</title>
+    <meta
+      name="description"
+      content="Hybrid search for JavaScript and browsers: lexical and vector retrieval fused into one ranking, exact symbol matching and an optional ColBERT reranker that skips inference when both sources agree."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c8cff' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M3 5h7M3 12h5M3 19h7'/%3E%3Ccircle cx='16' cy='12' r='4'/%3E%3Cpath d='m19 15 2.5 2.5'/%3E%3C/svg%3E"
+    />
+    <script>
+      // Before paint, before df$ exists (defuss-shadcn Dark Mode guide): the saved choice, else the OS default.
+      let saved = '';
+      try {
+        const raw = JSON.parse(localStorage.getItem('defuss-shadcn-theme'));
+        saved = raw && raw.format === 'defuss-store' ? raw.value : raw;
+      } catch {}
+      if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
+      }
+    </script>
+    <link rel="stylesheet" href="assets/vendor/core.min.css" />
+    <link rel="stylesheet" href="assets/vendor/shapes.min.css" />
+    <link rel="stylesheet" href="assets/vendor/all.min.css" />
+    <link rel="stylesheet" href="assets/site.css" />
+  </head>
+  <body>
+    <svg class="sr-only" aria-hidden="true">
+      <symbol id="i-logo" viewBox="0 0 24 24">
+        <path d="M3 5h7M3 12h5M3 19h7" />
+        <circle cx="16" cy="12" r="4" />
+        <path d="m19 15 2.5 2.5" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+        />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7" /></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14m7-7-7 7-7-7" /></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5" /></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24">
+        <rect width="16" height="16" x="4" y="4" rx="2" />
+        <rect width="6" height="6" x="9" y="9" rx="1" />
+        <path d="M15 2v2m0 16v2M2 15h2m-2-6h2m16 6h2m-2-6h2M9 2v2m0 16v2" />
+      </symbol>
+      <symbol id="i-languages" viewBox="0 0 24 24">
+        <path d="m5 8 6 6m-7 0 6-6 2-3M2 5h12M7 2h1m14 20-5-10-5 10m2-4h6" />
+      </symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path
+          d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"
+        />
+      </symbol>
+      <symbol id="i-braces" viewBox="0 0 24 24">
+        <path
+          d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"
+        />
+      </symbol>
+      <symbol id="i-merge" viewBox="0 0 24 24">
+        <circle cx="18" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <path d="M6 21V9a9 9 0 0 0 9 9" />
+      </symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path
+          d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"
+        />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-bot" viewBox="0 0 24 24">
+        <path d="M12 8V4H8" />
+        <rect width="16" height="12" x="4" y="8" rx="2" />
+        <path d="M2 14h2m16 0h2m-7-1v2m-6-2v2" />
+      </symbol>
+      <symbol id="i-package" viewBox="0 0 24 24">
+        <path
+          d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+        />
+        <path d="M12 22V12m0 0 8.7-5M12 12 3.3 7" />
+      </symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24">
+        <path
+          d="m12.83 2.18 8.58 3.9a1 1 0 0 1 0 1.83l-8.58 3.9a2 2 0 0 1-1.66 0L2.6 7.91a1 1 0 0 1 0-1.83l8.58-3.9a2 2 0 0 1 1.66 0Z"
+        />
+        <path
+          d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65M22 12.65l-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"
+        />
+      </symbol>
+      <symbol id="i-file" viewBox="0 0 24 24">
+        <path d="M10 12.5 8 15l2 2.5m4-5 2 2.5-2 2.5M14 2v4a2 2 0 0 0 2 2h4" />
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
+      </symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24">
+        <rect width="14" height="14" x="8" y="8" rx="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </symbol>
+      <symbol id="i-linkedin" viewBox="0 0 24 24">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z" />
+        <circle cx="4" cy="4" r="2" />
+      </symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 7h10v10M7 17 17 7" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24">
+        <path
+          d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+        />
+        <path d="M9 18c-4.51 2-5-2-7-2" />
+      </symbol>
+      <symbol id="i-db" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="9" ry="3" />
+        <path d="M3 5v14a9 3 0 0 0 18 0V5M3 12a9 3 0 0 0 18 0" />
+      </symbol>
+      <symbol id="i-sticky" viewBox="0 0 24 24">
+        <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z" />
+        <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" /></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24">
+        <path
+          d="m18 14 4 4-4 4M18 2l4 4-4 4M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"
+        />
+      </symbol>
+      <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6m8 14h8" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4m0 4h.01" />
+      </symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24">
+        <path d="m12 14 4-4" />
+        <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+      </symbol>
+    </svg>
+
+    <div id="top" class="hs-page">
+      <header class="mk-header" data-variant="floating">
+        <div class="mk-header-inner">
+          <a href="#top" class="mk-header-brand"
+            ><svg class="hs-icon" aria-hidden="true"><use href="#i-logo" /></svg
+            ><span class="mk-header-name">defuss-search</span></a
+          >
+          <nav class="mk-header-nav" aria-label="Main">
+            <ul class="nav-menu-list">
+              <li class="nav-menu-item"><a class="nav-menu-link" href="#demo">Demo</a></li>
+              <li class="nav-menu-item"><a class="nav-menu-link" href="#how">How it works</a></li>
+              <li class="nav-menu-item"><a class="nav-menu-link" href="#pareto">Frontier</a></li>
+              <li class="nav-menu-item"><a class="nav-menu-link" href="#recall">Languages</a></li>
+              <li class="nav-menu-item"><a class="nav-menu-link" href="#use">Use it</a></li>
+            </ul>
+          </nav>
+          <div class="mk-header-actions">
+            <label class="swap" data-variant="rotate" data-size="sm">
+              <input type="checkbox" id="theme-toggle" aria-label="Dark mode" />
+              <span class="swap-on"
+                ><svg class="hs-icon" aria-hidden="true"><use href="#i-moon" /></svg
+              ></span>
+              <span class="swap-off"
+                ><svg class="hs-icon" aria-hidden="true"><use href="#i-sun" /></svg
+              ></span>
+            </label>
+            <a
+              class="btn mk-header-wide hs-npm-tag"
+              data-variant="outline"
+              data-size="sm"
+              href="https://www.npmjs.com/package/defuss-search"
+              target="_blank"
+              rel="noopener"
+              ><svg class="hs-icon" aria-hidden="true"><use href="#i-package" /></svg>npm
+              <span class="badge" data-variant="secondary" data-size="xs">v0.4.0</span
+              ><span class="sr-only"> (opens in a new tab)</span></a
+            >
+            <a
+              class="btn mk-header-wide"
+              data-variant="ghost"
+              data-size="icon"
+              href="https://github.com/kyr0/defuss-search"
+              aria-label="defuss-search on GitHub"
+              ><svg class="hs-icon" aria-hidden="true"><use href="#i-github" /></svg
+            ></a>
+            <button
+              type="button"
+              class="btn mk-header-menu"
+              data-variant="ghost"
+              data-size="icon"
+              data-sheet-trigger="hs-menu"
+              aria-haspopup="dialog"
+              aria-label="Open menu"
+            >
+              <svg class="hs-icon" aria-hidden="true"><use href="#i-menu" /></svg>
+            </button>
+          </div>
+        </div>
+        <dialog
+          id="hs-menu"
+          class="sheet"
+          data-side="right"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hs-menu-title"
+        >
+          <div class="sheet-content">
+            <div class="sheet-header">
+              <h2 class="sheet-title" id="hs-menu-title">defuss-search</h2>
+            </div>
+            <div class="sheet-body">
+              <p class="mk-header-sheet-label">This page</p>
+              <ul class="mk-header-sheet-nav">
+                <li>
+                  <a href="#demo" data-sheet-close
+                    >Demo <small>Pick a factory, then search</small></a
+                  >
+                </li>
+                <li><a href="#how" data-sheet-close>How it works</a></li>
+                <li>
+                  <a href="#pareto" data-sheet-close
+                    >Frontier <small>Quality against inference work</small></a
+                  >
+                </li>
+                <li>
+                  <a href="#recall" data-sheet-close
+                    >Languages <small>R@1 to R@25 in 20 languages</small></a
+                  >
+                </li>
+                <li><a href="#use" data-sheet-close>Use it</a></li>
+              </ul>
+            </div>
+            <div class="sheet-footer mk-header-sheet-actions">
+              <a class="btn" data-variant="outline" href="https://github.com/kyr0/defuss-search"
+                ><svg class="hs-icon" aria-hidden="true"><use href="#i-github" /></svg>GitHub</a
+              >
+              <a
+                class="btn"
+                data-variant="outline"
+                href="https://www.npmjs.com/package/defuss-search"
+                ><svg class="hs-icon" aria-hidden="true"><use href="#i-package" /></svg>npm
+                <span class="badge" data-variant="secondary" data-size="xs">v0.4.0</span></a
+              >
+            </div>
+          </div>
+        </dialog>
+      </header>
+
+      <main class="hs-main">
+        <section
+          class="parallax"
+          aria-label="Introduction"
+          style="padding-block: clamp(4rem, 10vw, 7rem) 1rem"
+        >
+          <div class="parallax-layer" data-depth="far" aria-hidden="true">
+            <div
+              class="pattern-grid"
+              style="
+                width: 100%;
+                height: 100%;
+                --shape-ink: color-mix(in oklch, var(--foreground) 7%, transparent);
+                --shape-pattern: 32px;
+                mask-image: radial-gradient(55% 60% at 50% 45%, #000, transparent 75%);
+              "
+            ></div>
+          </div>
+          <div
+            class="parallax-layer"
+            data-depth="mid"
+            aria-hidden="true"
+            style="--parallax-speed: 22%; mask-image: linear-gradient(#000 55%, transparent 92%)"
+          >
+            <div
+              class="corner-blob"
+              style="
+                position: absolute;
+                inset-block-start: 10%;
+                inset-inline-start: 8%;
+                width: min(22rem, 45%);
+                aspect-ratio: 1;
+                background: color-mix(in oklch, var(--chart-4) 40%, transparent);
+                filter: blur(60px);
+                opacity: 0.55;
+              "
+            ></div>
+            <div
+              class="corner-blob-3"
+              style="
+                position: absolute;
+                inset-block-start: 28%;
+                inset-inline-end: 6%;
+                width: min(18rem, 40%);
+                aspect-ratio: 1;
+                background: color-mix(in oklch, var(--chart-2) 40%, transparent);
+                filter: blur(60px);
+                opacity: 0.5;
+              "
+            ></div>
+          </div>
+          <div class="parallax-content">
+            <section class="mk-hero" style="width: 100%">
+              <div class="mk-hero-copy">
+                <div class="mk-hero-pill hs-hero-pill">
+                  <a
+                    class="badge"
+                    data-variant="default"
+                    data-size="sm"
+                    href="https://www.npmjs.com/package/defuss-search"
+                    target="_blank"
+                    rel="noopener"
+                    >npm&nbsp;v0.4.0<span class="sr-only"> (opens in a new tab)</span></a
+                  ><a href="#demo"
+                    >Lexical, vector and ColBERT in one ranking
+                    <svg class="hs-icon" aria-hidden="true"><use href="#i-arrow" /></svg
+                  ></a>
+                </div>
+                <h1 class="mk-hero-title">
+                  <strong>Hybrid</strong> search that finds the <i>exact</i> symbol and what you
+                  meant
+                </h1>
+                <p class="hs-flip">
+                  <span class="text-rotate"
+                    ><span>
+                      <span class="hs-accent">with weighted rank fusion</span>
+                      <span class="hs-accent">with exact matching for symbols and IDs</span>
+                      <span class="hs-accent">with an optional ColBERT reranker</span>
+                      <span class="hs-accent">that skips the reranker when sources agree</span>
+                      <span class="hs-accent">in browsers, Bun and Node.js</span>
+                      <span class="hs-accent">measured in 20 languages</span>
+                    </span></span
+                  >
+                </p>
+                <p class="mk-hero-desc">
+                  defuss-search runs a lexical and a vector retriever over the same document IDs and
+                  fuses their rankings. <strong>Exact promotion</strong> keeps a document whose symbol
+                  or ID equals the query on top, <strong>weighted rank fusion</strong> orders
+                  everything after them, and an optional ColBERT stage reorders the top 25. Every
+                  result carries the ranks and scores behind its position.
+                </p>
+                <div class="mk-hero-actions">
+                  <a class="btn" data-size="lg" href="#demo"
+                    >Try it now (live)<svg class="hs-icon" aria-hidden="true">
+                      <use href="#i-arrow-down" /></svg
+                  ></a>
+                  <a class="btn" data-variant="outline" data-size="lg" href="#how">How it works</a>
+                </div>
+                <p class="mk-hero-note">
+                  Search algorithms and engineering brought to you by
+                  <a href="https://www.linkedin.com/in/aronhomberg/" target="_blank" rel="noopener"
+                    >Aron Homberg (kyr0)<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                  · Open Source (MIT) · built on
+                  <a
+                    href="https://github.com/kyr0/defuss-lexicalsearch"
+                    target="_blank"
+                    rel="noopener"
+                    >defuss-lexicalsearch<span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                  and
+                  <a
+                    href="https://github.com/kyr0/defuss-vectorsearch"
+                    target="_blank"
+                    rel="noopener"
+                    >defuss-vectorsearch<span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </p>
+              </div>
+            </section>
+            <div class="hs-intro" id="intro">
+              <section class="hs-intro-item" aria-labelledby="intro-1">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-braces" /></svg
+                ></span>
+                <h3 id="intro-1">Exact where it matters</h3>
+                <p>
+                  Symbols, IDs and error codes need exact matches. With
+                  <code>exact: 'promote'</code>, a document whose exact field equals the query ranks
+                  first, even when the query vector points at another one. Stemmed fields get an
+                  unstemmed companion, so a word as written beats words that only share its stem.
+                </p>
+              </section>
+              <section class="hs-intro-item" aria-labelledby="intro-2">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-merge" /></svg
+                ></span>
+                <h3 id="intro-2">Fusion or a cascade</h3>
+                <p>
+                  Fuse independent lexical and vector top-25 lists with weighted reciprocal rank
+                  fusion, or rescore one source's candidates with the other: <code>fusion</code>,
+                  <code>vector-first</code> or <code>lexical-first</code>, chosen per query.
+                </p>
+              </section>
+              <section class="hs-intro-item" aria-labelledby="intro-3">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-sparkles" /></svg
+                ></span>
+                <h3 id="intro-3">Neural only where it helps</h3>
+                <p>
+                  <code>searchPreset('reranked')</code> lets ColBERT reorder the top 25 and skips
+                  the model when the vector winner already ranks first by a clear margin and lexical
+                  retrieval agrees. <code>searchPreset('efficient')</code> runs no reranker at all.
+                </p>
+              </section>
+              <section class="hs-intro-item" aria-labelledby="intro-4">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-eye" /></svg
+                ></span>
+                <h3 id="intro-4">Every rank explained</h3>
+                <p>
+                  Each hit reports its rank and raw score in every source, each fusion contribution
+                  and the reasons for a promotion. Each response says whether the gate ran or
+                  skipped the reranker, and why.
+                </p>
+              </section>
+              <section class="hs-intro-item" aria-labelledby="intro-5">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-package" /></svg
+                ></span>
+                <h3 id="intro-5">Small core, optional peers</h3>
+                <p>
+                  The root entry has <strong>no runtime dependencies</strong> and ships as ESM and
+                  CommonJS with TypeScript types. Adapters for defuss-lexicalsearch,
+                  defuss-vectorsearch and ColBERT load only when you import them; your own
+                  retrievers and rerankers plug in the same way.
+                </p>
+              </section>
+              <section class="hs-intro-item" aria-labelledby="intro-6">
+                <span class="hs-intro-icon" aria-hidden="true"
+                  ><svg class="hs-icon"><use href="#i-languages" /></svg
+                ></span>
+                <h3 id="intro-6">20 languages, measured</h3>
+                <p>
+                  Per-language analyzers from defuss-lexicalsearch and multilingual Winzling vectors
+                  cover
+                  <strong>20 languages</strong>. The benchmark below reports R@1 to R@25 for each,
+                  with the same ranks on Bun, Node.js and Chromium.
+                </p>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <div class="hs-flythrough">
+          <section
+            class="parallax"
+            data-sticky
+            style="--parallax-length: 2"
+            aria-label="Retrieve, fuse, rerank"
+          >
+            <div
+              class="parallax-stage"
+              style="
+                background: radial-gradient(
+                  circle at 50% 50%,
+                  color-mix(in oklch, var(--chart-4) 50%, #05060f),
+                  #05060f 72%
+                );
+                color: #fff;
+                border-radius: var(--radius-xl);
+              "
+            >
+              <div class="parallax-layer" data-motion="zoom fade" style="--parallax-scale: 6">
+                <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <circle
+                    cx="170"
+                    cy="200"
+                    r="70"
+                    fill="none"
+                    stroke="#7cf0ff"
+                    stroke-width="1.5"
+                    opacity=".7"
+                  />
+                  <circle
+                    cx="230"
+                    cy="200"
+                    r="70"
+                    fill="none"
+                    stroke="#b07cff"
+                    stroke-width="1.5"
+                    opacity=".7"
+                  />
+                  <circle
+                    cx="200"
+                    cy="200"
+                    r="150"
+                    fill="none"
+                    stroke="#7c8cff"
+                    stroke-width=".8"
+                    opacity=".35"
+                  />
+                </svg>
+              </div>
+              <div
+                class="parallax-layer"
+                data-motion="pass"
+                style="animation-range: contain 0% contain 40%; z-index: 1"
+              >
+                <p class="hs-fly-word">Retrieve.</p>
+              </div>
+              <div
+                class="parallax-layer"
+                data-motion="pass"
+                style="animation-range: contain 30% contain 70%; z-index: 2"
+              >
+                <p class="hs-fly-word">Fuse.</p>
+              </div>
+              <div
+                class="parallax-layer"
+                data-motion="pass"
+                style="animation-range: contain 60% contain 100%; z-index: 3"
+              >
+                <p class="hs-fly-word">Rerank.</p>
+              </div>
+              <div
+                class="parallax-layer"
+                data-motion="spin"
+                style="--parallax-turn: 90deg; --parallax-speed: 0%; z-index: -1; opacity: 0.25"
+              >
+                <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                  <g fill="none" stroke="#fff" stroke-width=".6">
+                    <path d="M-60 80h520M-60 140h520M-60 200h520M-60 260h520M-60 320h520" />
+                    <path d="M80-60v520M200-60v520M320-60v520" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section
+          id="demo"
+          class="container hs-section parallax-reveal"
+          data-reveal="zoom"
+          aria-labelledby="demo-title"
+        >
+          <header class="mk-section-header" data-align="center">
+            <div class="mk-section-header-copy">
+              <span class="mk-section-header-eyebrow">Live demo</span>
+              <h2 class="mk-section-header-title" id="demo-title">
+                Pick a factory, then search
+              </h2>
+              <p class="mk-section-header-desc">
+                The recall benchmark's 2,000 passages in 20 languages, indexed in your browser by
+                the factory you choose. Pick one of the 1,000 benchmark questions with
+                <kbd class="kbd-group"><kbd class="kbd">⌘</kbd><kbd class="kbd">K</kbd></kbd> and
+                watch where it ranks the gold passage, or type your own question. In the
+                <button
+                  type="button"
+                  class="btn hs-inline-link"
+                  data-variant="link"
+                  data-tab="tab-notes"
+                >
+                  My data (custom)
+                </button>
+                tab you build a hybrid index of your own notes.
+              </p>
+            </div>
+          </header>
+
+          <div class="card hs-picker" id="factory-picker" aria-labelledby="picker-title">
+            <div class="card-header">
+              <h3 class="card-title" id="picker-title">Choose a search factory</h3>
+              <p class="card-description">
+                Each factory of <code>defuss-search/strategies</code> needs a different download.
+                The figures are R@1 / R@5 from <code>bun run bench:strategies</code>. The API docs
+                are defuss-shadcn's 8,043 documentation sections, indexed with unstemmed companion
+                fields, which took exact words from 71% to 98% R@1.
+                <span id="picker-corpus">The benchmark corpus is loading meanwhile.</span>
+              </p>
+            </div>
+            <div class="card-content">
+              <fieldset class="radio-group hs-factories" data-orientation="horizontal" id="factory-group">
+                <legend class="sr-only">Search factory</legend>
+                <label class="radio-card hs-factory" for="factory-lexical-only">
+                  <span class="hs-factory-head"
+                    ><input class="radio" type="radio" name="factory" id="factory-lexical-only" value="lexical-only" checked /><span class="hs-factory-title">Lexical-only</span
+                    ><span class="badge" data-variant="secondary" data-size="sm">No model</span></span
+                  >
+                  <code class="hs-factory-fn">createLexicalOnlySearch(index)</code>
+                  <span class="radio-description"
+                    >BM25 with each language's analyzer and stopwords. Finds shared words; misses
+                    paraphrases and translations.</span
+                  >
+                  <span class="hs-factory-cost"
+                    ><svg class="hs-icon" aria-hidden="true"><use href="#i-db" /></svg>Download:
+                    <strong>the passage text, <span data-bytes="corpus">0.43 MB</span></strong></span
+                  >
+                  <span class="hs-factory-figures" data-figures="lexical-only"></span>
+                </label>
+                <label class="radio-card hs-factory" for="factory-tiny">
+                  <span class="hs-factory-head"
+                    ><input class="radio" type="radio" name="factory" id="factory-tiny" value="tiny" /><span class="hs-factory-title">Lexical-semantic tiny</span
+                    ><span class="badge" data-variant="secondary" data-size="sm">ColBERT only</span></span
+                  >
+                  <code class="hs-factory-fn">createLexicalSemanticTinySearch(index, &#123; documents, colbert &#125;)</code>
+                  <span class="radio-description"
+                    >BM25 fused with MoEdernColBERT 1.5M, the only vector model. Your browser
+                    encodes the 2,000 passages into a TurboQuant token index, then each query scans
+                    every token.</span
+                  >
+                  <span class="hs-factory-cost"
+                    ><svg class="hs-icon" aria-hidden="true"><use href="#i-sparkles" /></svg>Download:
+                    <strong>MoEdernColBERT, <span data-bytes="colbert" data-gzipped>3.97 MB (2.09 MB gzipped)</span></strong>, then
+                    about 15 s of encoding</span
+                  >
+                  <span class="hs-factory-figures" data-figures="tiny"></span>
+                </label>
+                <label class="radio-card hs-factory" for="factory-semantic">
+                  <span class="hs-factory-head"
+                    ><input class="radio" type="radio" name="factory" id="factory-semantic" value="semantic" /><span class="hs-factory-title">Lexical-semantic</span
+                    ><span class="badge" data-size="sm">Measured default</span></span
+                  >
+                  <code class="hs-factory-fn">createLexicalSemanticSearch(index, &#123; documents, embedder, reranker &#125;)</code>
+                  <span class="radio-description"
+                    >BM25 fused with Winzling vectors; the optional ColBERT reranker reorders the
+                    top 25 unless both sources agree on a clear winner.</span
+                  >
+                  <span class="hs-factory-cost"
+                    ><svg class="hs-icon" aria-hidden="true"><use href="#i-cpu" /></svg>Download:
+                    <strong>recorded vectors, <span data-bytes="vectors">3.3 MB</span></strong>; Winzling,
+                    <span data-bytes="winzling" data-gzipped>39.8 MB (29.1 MB gzipped)</span>, only for your own text</span
+                  >
+                  <span class="hs-factory-figures" data-figures="semantic"></span>
+                </label>
+              </fieldset>
+              <div class="hs-picker-foot">
+                <div class="switch-item" id="factory-options" hidden>
+                  <input class="switch" type="checkbox" role="switch" id="factory-rerank" checked /><label
+                    for="factory-rerank"
+                    >Rerank with MoEdernColBERT (<span data-bytes="colbert">3.97 MB</span>, loads
+                    with the first question)</label
+                  >
+                </div>
+                <button type="button" class="btn" data-size="lg" id="factory-start">
+                  <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg
+                  ><span>Start the demo with <span id="factory-start-name">Lexical-only</span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hs-window frame-window" id="demo-window" hidden>
+            <div class="card hs-boot" aria-labelledby="boot-title">
+              <div class="card-header hs-boot-head">
+                <div>
+                  <h3 class="card-title" id="boot-title">
+                    Runtime · <span id="factory-name">Lexical-only</span>
+                  </h3>
+                  <p class="card-description" id="boot-status" aria-live="polite">
+                    Downloading the benchmark corpus...
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="btn"
+                  data-variant="outline"
+                  data-size="sm"
+                  id="factory-change"
+                >
+                  Change factory
+                </button>
+              </div>
+              <div class="card-content hs-boot-body">
+                <div
+                  class="radial-progress hs-ring"
+                  id="ring"
+                  role="progressbar"
+                  aria-label="Overall loading progress"
+                  aria-valuenow="0"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  style="--value: 0; --size: 7.5rem; --thickness: 6px"
+                >
+                  <span class="radial-progress-value">0%</span>
+                  <span class="radial-progress-caption">corpus</span>
+                </div>
+                <div class="hs-phases">
+                  <div class="progress-field">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-corpus-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-db" /></svg>Corpus ·
+                        2,000 passages, 1,000 questions</span
+                      >
+                      <output class="progress-value" for="p-corpus">0%</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-corpus"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-corpus-label"
+                    ></progress>
+                    <span class="progress-hint"
+                      >tiny-embedding-bench-v1 · <span id="p-corpus-size">gzip</span></span
+                    >
+                  </div>
+                  <div class="progress-field">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-index-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-layers" /></svg>Index
+                        · built in a Web Worker</span
+                      >
+                      <output class="progress-value" for="p-index">waiting</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-index"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-index-label"
+                    ></progress>
+                    <span class="progress-hint" id="p-index-hint"
+                      >one analyzer field per language, as in the recall benchmark</span
+                    >
+                  </div>
+                  <div class="progress-field" data-for="semantic">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-vectors-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-db" /></svg>Vectors ·
+                        recorded Winzling vectors</span
+                      >
+                      <output class="progress-value" for="p-vectors">waiting</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-vectors"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-vectors-label"
+                    ></progress>
+                    <span class="progress-hint"
+                      ><span id="p-vectors-size">gzip</span> · float32, passages and questions, as
+                      the recall benchmark recorded them</span
+                    >
+                  </div>
+                  <div class="progress-field" data-for="tiny semantic">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-colbert-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-sparkles" /></svg
+                        >MoEdernColBERT 1.5M q8</span
+                      >
+                      <output class="progress-value" for="p-colbert">not loaded</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-colbert"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-colbert-label"
+                    ></progress>
+                    <span class="progress-hint"
+                      ><span id="p-colbert-size">3.97 MB, 2.09 MB gzipped</span> ·
+                      <span id="p-colbert-role">reranker, loads with your first question</span></span
+                    >
+                  </div>
+                  <div class="progress-field" data-for="tiny">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-tokens-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-layers" /></svg>Token
+                        index · built in a Web Worker</span
+                      >
+                      <output class="progress-value" for="p-tokens">waiting</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-tokens"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-tokens-label"
+                    ></progress>
+                    <span class="progress-hint" id="p-tokens-hint"
+                      >every passage encoded by MoEdernColBERT, 64 bytes per token</span
+                    >
+                  </div>
+                  <div class="progress-field" data-for="semantic">
+                    <div class="progress-header">
+                      <span class="progress-label" id="p-winzling-label"
+                        ><svg class="hs-icon" aria-hidden="true"><use href="#i-cpu" /></svg>Embedder
+                        · Winzling uint4</span
+                      >
+                      <output class="progress-value" for="p-winzling">not loaded</output>
+                    </div>
+                    <progress
+                      class="progress"
+                      id="p-winzling"
+                      value="0"
+                      max="1"
+                      aria-labelledby="p-winzling-label"
+                    ></progress>
+                    <span class="progress-hint"
+                      ><span id="p-winzling-size">39.8 MB, 29.1 MB gzipped</span> · loads with your first own text or
+                      note</span
+                    >
+                  </div>
+                  <div class="hs-boot-actions">
+                    <label class="sr-only" for="backend">Embedder backend</label>
+                    <select class="select" id="backend" data-size="sm" data-for="semantic">
+                      <option value="wasm" selected>WASM · CPU</option>
+                      <option value="webgpu">WebGPU · experimental</option>
+                    </select>
+                    <button
+                      type="button"
+                      class="btn"
+                      data-size="sm"
+                      data-load="factory"
+                      data-for="tiny semantic"
+                    >
+                      Load this factory's models · <span id="load-all-size">43.7 MB</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn"
+                      data-variant="ghost"
+                      data-size="sm"
+                      id="clear-cache"
+                    >
+                      Clear cached models
+                    </button>
+                  </div>
+                </div>
+                <div class="hs-stats">
+                  <div class="statistic">
+                    <p class="statistic-title">Corpus</p>
+                    <p class="statistic-value" data-stat="passages">...</p>
+                    <p class="statistic-description" data-stat="languages">passages</p>
+                  </div>
+                  <div class="statistic">
+                    <p class="statistic-title">Indexed in</p>
+                    <p class="statistic-value" data-stat="indexed">...</p>
+                    <p class="statistic-description">lexical index, 20 analyzers</p>
+                  </div>
+                  <div class="statistic">
+                    <p class="statistic-title">Models</p>
+                    <p class="statistic-value hs-stat-text" data-stat="models">none yet</p>
+                    <p class="statistic-description" data-stat="device">
+                      ONNX Runtime Web, 1 thread
+                    </p>
+                  </div>
+                  <div class="statistic">
+                    <p class="statistic-title">Last query</p>
+                    <p class="statistic-value hs-stat-text" data-stat="query">none yet</p>
+                    <p class="statistic-description" data-stat="query-detail">
+                      the chosen factory
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer hs-boot-foot">
+                <div class="alert" data-variant="destructive" id="boot-error" role="alert" hidden>
+                  <svg class="alert-icon hs-icon" aria-hidden="true"><use href="#i-alert" /></svg>
+                  <div class="alert-content">
+                    <h5 class="alert-title" id="boot-error-title">Loading failed</h5>
+                    <p class="alert-description" id="boot-error-text"></p>
+                  </div>
+                  <div class="alert-action">
+                    <button
+                      type="button"
+                      class="btn"
+                      data-variant="outline"
+                      data-size="sm"
+                      id="boot-retry"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+                <details
+                  class="collapsible"
+                  data-variant="ghost"
+                  data-size="sm"
+                  data-marker="arrow"
+                  id="log-panel"
+                >
+                  <summary class="collapsible-trigger">
+                    <span class="collapsible-icon" aria-hidden="true"
+                      ><svg class="hs-icon"><use href="#i-terminal" /></svg></span
+                    >Worker log
+                  </summary>
+                  <div class="collapsible-content">
+                    <div
+                      class="mockup-code hs-log"
+                      data-size="sm"
+                      data-wrap
+                      data-title="search-worker.js"
+                      id="log"
+                      aria-live="off"
+                    >
+                      <pre data-prefix="$" data-cursor><code>starting the search worker</code></pre>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <div class="tabs hs-tabs">
+              <div class="tab-list" role="tablist" aria-label="Demo" id="demo-tabs" data-size="xl">
+                <button
+                  class="tab-trigger hs-tab"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="panel-bench"
+                  id="tab-bench"
+                >
+                  <svg class="hs-icon hs-tab-icon" aria-hidden="true"><use href="#i-db" /></svg
+                  ><span class="hs-tab-text"
+                    ><span class="hs-tab-title">Benchmark data</span
+                    ><span class="hs-tab-desc">2,000 passages · 20 languages</span></span
+                  >
+                </button>
+                <button
+                  class="tab-trigger hs-tab"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="panel-notes"
+                  id="tab-notes"
+                  tabindex="-1"
+                >
+                  <svg class="hs-icon hs-tab-icon" aria-hidden="true"><use href="#i-sticky" /></svg
+                  ><span class="hs-tab-text"
+                    ><span class="hs-tab-title">My data (custom)</span
+                    ><span class="hs-tab-desc">Your own hybrid index, in-browser</span></span
+                  >
+                </button>
+              </div>
+              <div
+                class="tab-content"
+                role="tabpanel"
+                id="panel-bench"
+                aria-labelledby="tab-bench"
+                tabindex="0"
+              >
+                <div class="hs-query">
+                  <form id="form" role="search" class="hs-search">
+                    <div class="search-box" data-size="lg" data-variant="muted">
+                      <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg>
+                      <input
+                        type="search"
+                        id="query"
+                        aria-label="Question"
+                        aria-controls="compare"
+                        placeholder="Ask a question, in any of the 20 languages..."
+                        autocomplete="off"
+                        enterkeyhint="search"
+                      />
+                      <kbd class="kbd" data-size="sm">⌘K</kbd>
+                    </div>
+                    <label class="sr-only" for="language">Question language</label>
+                    <select class="select hs-language" id="language"></select>
+                    <button class="btn" type="submit" id="search">
+                      <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg>Search
+                    </button>
+                  </form>
+                  <button
+                    type="button"
+                    class="btn"
+                    data-variant="outline"
+                    data-command-trigger="cmd"
+                    data-needs-corpus
+                    disabled
+                  >
+                    Browse 1,000 benchmark questions
+                  </button>
+                </div>
+
+                <div class="mk-search-summary" role="status" id="summary" hidden>
+                  <p>
+                    <q id="summary-query"></q>
+                    <span class="badge" data-variant="secondary" id="summary-gold" hidden></span>
+                  </p>
+                  <span class="mk-search-summary-time" id="summary-time"></span>
+                </div>
+                <p class="hs-tally" id="tally" hidden></p>
+
+                <section class="mk-empty-state hs-cta" aria-labelledby="empty-title" id="empty">
+                  <span class="mk-empty-state-icon" aria-hidden="true"
+                    ><svg class="hs-icon"><use href="#i-search" /></svg
+                  ></span>
+                  <h2 class="mk-empty-state-title" id="empty-title">
+                    Ask the factory a question
+                  </h2>
+                  <p class="mk-empty-state-text" id="empty-text">
+                    A benchmark question shows where the factory ranks its gold passage, which the
+                    published figures count.
+                  </p>
+                  <div class="mk-empty-state-actions hs-examples" id="examples"></div>
+                </section>
+
+                <div class="hs-compare" id="compare" aria-live="polite"></div>
+
+                <div class="card hs-measure" aria-labelledby="measure-title">
+                  <div class="card-header">
+                    <h3 class="card-title" id="measure-title">Measure all 1,000 questions here</h3>
+                    <p class="card-description" id="measure-status">
+                      Runs every benchmark question through the chosen factory in this browser and
+                      compares the means with the published figures. Each factory you measure adds
+                      a row.
+                    </p>
+                  </div>
+                  <div class="card-content hs-measure-body">
+                    <button
+                      type="button"
+                      class="btn"
+                      data-size="sm"
+                      id="measure-run"
+                      data-needs-corpus
+                      disabled
+                    >
+                      <svg class="hs-icon" aria-hidden="true"><use href="#i-gauge" /></svg>Run the
+                      benchmark in this browser
+                    </button>
+                    <progress
+                      class="progress"
+                      id="measure-progress"
+                      value="0"
+                      max="1000"
+                      aria-label="Measurement progress"
+                      hidden
+                    ></progress>
+                    <table class="table hs-bench-table" data-size="sm" id="measure-table" hidden>
+                      <thead>
+                        <tr>
+                          <th scope="col">Configuration</th>
+                          <th scope="col" class="hs-num">R@1</th>
+                          <th scope="col" class="hs-num">R@5</th>
+                          <th scope="col" class="hs-num">R@10</th>
+                          <th scope="col" class="hs-num">R@25</th>
+                          <th scope="col" class="hs-num">ColBERT calls</th>
+                          <th scope="col">Published</th>
+                        </tr>
+                      </thead>
+                      <tbody id="measure-rows"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <p class="hs-credit">
+                  Passages and questions:
+                  <a
+                    href="https://github.com/kyr0/tiny-embedding-bench/tree/main/datasets/tiny-embedding-bench-v1"
+                    target="_blank"
+                    rel="noopener"
+                    >tiny-embedding-bench-v1</a
+                  >, a short-passage subset of
+                  <a
+                    href="https://aclanthology.org/2024.acl-long.44/"
+                    target="_blank"
+                    rel="noopener"
+                    >Belebele</a
+                  >
+                  (Lucas Bandarkar et al., ACL 2024; Meta; underlying Wikimedia contributors) with
+                  binary question-to-passage labels, licensed
+                  <a
+                    href="https://creativecommons.org/licenses/by-sa/4.0/"
+                    target="_blank"
+                    rel="noopener"
+                    >CC BY-SA 4.0</a
+                  >. This page serves the text unchanged, regrouped into gzipped JSON, with recorded
+                  Winzling vectors in a separate file.
+                </p>
+              </div>
+              <div
+                class="tab-content"
+                role="tabpanel"
+                id="panel-notes"
+                aria-labelledby="tab-notes"
+                tabindex="0"
+                hidden
+              >
+                <div class="hs-notes-layout">
+                  <section class="hs-board" aria-labelledby="notes-title">
+                    <header class="hs-board-head">
+                      <h3 class="hs-way-title" id="notes-title">
+                        <svg class="hs-icon" aria-hidden="true"><use href="#i-sticky" /></svg>Your
+                        notes
+                      </h3>
+                      <div class="hs-board-actions">
+                        <span class="badge" data-variant="outline" id="notes-count"
+                          >0 notes · 0 embedded</span
+                        >
+                        <button type="button" class="btn" data-size="sm" id="add-note">
+                          <svg class="hs-icon" aria-hidden="true"><use href="#i-plus" /></svg>Add
+                          note
+                        </button>
+                        <button
+                          type="button"
+                          class="btn"
+                          data-variant="outline"
+                          data-size="sm"
+                          id="add-random-notes"
+                        >
+                          <svg class="hs-icon" aria-hidden="true"><use href="#i-shuffle" /></svg>Add
+                          random notes
+                        </button>
+                      </div>
+                    </header>
+                    <p class="hs-way-desc">
+                      Write anything and pick its language: the lexical index then uses that
+                      language's analyzer and stopwords. A note joins it 500 ms after you stop
+                      typing; the semantic factories add its vector or ColBERT tokens once their
+                      model is loaded. An empty note leaves the index.
+                    </p>
+                    <div class="hs-notes-scroll">
+                      <div class="hs-notes" id="notes"></div>
+                      <section
+                        class="mk-empty-state"
+                        data-variant="dashed"
+                        aria-labelledby="notes-empty-title"
+                        id="notes-empty"
+                      >
+                        <span class="mk-empty-state-icon" aria-hidden="true"
+                          ><svg class="hs-icon"><use href="#i-sticky" /></svg
+                        ></span>
+                        <h2 class="mk-empty-state-title" id="notes-empty-title">No notes yet</h2>
+                        <p class="mk-empty-state-text">
+                          Add a note, or five random ones in German, English and Russian.
+                        </p>
+                      </section>
+                    </div>
+                  </section>
+                  <div class="hs-notes-search">
+                    <form id="notes-form" role="search" class="hs-search">
+                      <div class="search-box" data-size="lg" data-variant="muted">
+                        <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg>
+                        <input
+                          type="search"
+                          id="notes-query"
+                          aria-label="Search your notes"
+                          aria-controls="notes-compare"
+                          placeholder="Search your notes..."
+                          autocomplete="off"
+                          enterkeyhint="search"
+                        />
+                      </div>
+                      <button class="btn" type="submit" id="notes-search">
+                        <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg>Search
+                      </button>
+                    </form>
+                    <section
+                      class="mk-empty-state hs-cta"
+                      aria-labelledby="notes-cta-title"
+                      id="notes-cta"
+                    >
+                      <span class="mk-empty-state-icon" aria-hidden="true"
+                        ><svg class="hs-icon"><use href="#i-search" /></svg
+                      ></span>
+                      <h2 class="mk-empty-state-title" id="notes-cta-title">
+                        Search what you wrote
+                      </h2>
+                      <p class="mk-empty-state-text">
+                        Lexical matching finds shared words as you type. The semantic factories also
+                        find notes by meaning, across languages, once their model has encoded them.
+                      </p>
+                    </section>
+                    <div
+                      class="hs-compare hs-compare-notes"
+                      id="notes-compare"
+                      aria-live="polite"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how" class="container hs-section parallax-reveal" aria-labelledby="how-title">
+          <section class="mk-features" style="width: 100%">
+            <div class="mk-features-head">
+              <span class="mk-features-eyebrow">How it works</span>
+              <h2 class="mk-features-title" id="how-title">
+                Retrieve twice, fuse once, rerank only when needed
+              </h2>
+              <p class="mk-features-desc">
+                The lexical retriever gets the query text, the vector retriever its embedding; both
+                return their top 25 within the same eligible IDs. Pure functions fuse the two
+                rankings and apply exact promotion and source coverage. The gate then decides
+                whether ColBERT reorders the top 25, and the policies apply again before the page is
+                cut.
+              </p>
+            </div>
+            <figure
+              class="diagram hs-pipeline"
+              id="pipeline"
+              data-type="data-flow"
+              data-steps
+              data-autoplay="400"
+              aria-label="How a query is retrieved, fused and reranked"
+            >
+              <div
+                class="diagram-canvas"
+                style="
+                  grid-template-columns: 6.5rem repeat(4, minmax(9rem, 1fr));
+                  --diagram-node-w: 11rem;
+                "
+              >
+                <div
+                  class="diagram-group"
+                  data-shape="lane"
+                  data-step="0"
+                  style="--col: 1; --row: 2; --span: 5"
+                >
+                  <span class="diagram-group-label">Lexical · defuss-lexicalsearch</span>
+                </div>
+                <div
+                  class="diagram-group"
+                  data-shape="lane"
+                  data-step="0"
+                  style="--col: 1; --row: 3; --span: 5"
+                >
+                  <span class="diagram-group-label">Vector · defuss-vectorsearch</span>
+                </div>
+                <div class="diagram-cell" data-role="head" data-step="0" style="--col: 2; --row: 1">
+                  01 · Query
+                </div>
+                <div class="diagram-cell" data-role="head" data-step="0" style="--col: 3; --row: 1">
+                  02 · Retrieve
+                </div>
+                <div class="diagram-cell" data-role="head" data-step="0" style="--col: 4; --row: 1">
+                  03 · Fuse and gate
+                </div>
+                <div class="diagram-cell" data-role="head" data-step="0" style="--col: 5; --row: 1">
+                  04 · Rerank and rank
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="text"
+                  data-shape="pill"
+                  data-step="1"
+                  data-step-label="Query: the text"
+                  style="--col: 2; --row: 2"
+                >
+                  <span class="diagram-node-name">Query text</span>
+                  <span class="diagram-node-meta">words · symbols · IDs</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="embedding"
+                  data-shape="pill"
+                  data-step="1"
+                  data-step-label="Query: the vector"
+                  style="--col: 2; --row: 3"
+                >
+                  <span class="diagram-node-name">Query vector</span>
+                  <span class="diagram-node-meta">same model as the documents</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="lexical"
+                  data-step="2"
+                  data-step-label="Retrieve: lexical top 25"
+                  style="--col: 3; --row: 2"
+                >
+                  <span class="diagram-node-eyebrow">BM25 · exact fields</span>
+                  <span class="diagram-node-name">Lexical top 25</span>
+                  <span class="diagram-node-meta">analyzer per language</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="vector"
+                  data-step="2"
+                  data-step-label="Retrieve: vector top 25"
+                  style="--col: 3; --row: 3"
+                >
+                  <span class="diagram-node-eyebrow">Cosine similarity</span>
+                  <span class="diagram-node-name">Vector top 25</span>
+                  <span class="diagram-node-meta">exact or TurboQuant scan</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="fusion"
+                  data-tone="accent"
+                  data-step="3"
+                  data-step-label="Fuse: weighted RRF and policies"
+                  style="--col: 4; --row: 2"
+                >
+                  <span class="diagram-node-eyebrow">Weighted RRF · k=1 · 3:1</span>
+                  <span class="diagram-node-name">Fuse and promote</span>
+                  <span class="diagram-node-meta">exact promotion · coverage</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="gate"
+                  data-step="4"
+                  data-step-label="Gate: skip a clear, agreed winner"
+                  style="--col: 4; --row: 3"
+                >
+                  <span class="diagram-node-eyebrow">Reranked preset</span>
+                  <span class="diagram-node-name">Agreement gate</span>
+                  <span class="diagram-node-meta">vector margin at least 0.1 · lexical agrees</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="colbert"
+                  data-step="5"
+                  data-step-label="Rerank: ColBERT reorders the top 25"
+                  style="--col: 5; --row: 3"
+                >
+                  <span class="diagram-node-eyebrow">MoEdernColBERT</span>
+                  <span class="diagram-node-name">Rerank top 25</span>
+                  <span class="diagram-node-meta">neural weight 0.25</span>
+                </div>
+                <div
+                  class="diagram-node"
+                  data-node="results"
+                  data-shape="pill"
+                  data-step="6"
+                  data-step-label="Rank: final order with evidence"
+                  style="--col: 5; --row: 2"
+                >
+                  <span class="diagram-node-name">Final ranking</span>
+                  <span class="diagram-node-meta">ranks · scores · reasons</span>
+                </div>
+              </div>
+              <ol class="diagram-edges">
+                <li class="diagram-edge" data-from="text" data-to="lexical">text</li>
+                <li class="diagram-edge" data-from="embedding" data-to="vector">vector</li>
+                <li
+                  class="diagram-edge"
+                  data-from="lexical"
+                  data-to="fusion"
+                  data-flow="2400"
+                  data-flow-delay="0"
+                >
+                  ranks
+                </li>
+                <li
+                  class="diagram-edge"
+                  data-from="vector"
+                  data-to="fusion"
+                  data-flow="2400"
+                  data-flow-delay="300"
+                >
+                  ranks
+                </li>
+                <li class="diagram-edge" data-from="fusion" data-to="gate">top 25</li>
+                <li class="diagram-edge" data-from="gate" data-to="colbert" data-tone="accent">
+                  rerank
+                </li>
+                <li class="diagram-edge" data-from="colbert" data-to="results">reorder</li>
+                <li class="diagram-edge" data-from="gate" data-to="results" data-line="dashed">
+                  skip
+                </li>
+              </ol>
+            </figure>
+            <div class="hs-strategies">
+              <div class="hs-strategy">
+                <h3 class="hs-way-title">
+                  Fusion <span class="badge" data-variant="secondary" data-size="sm">default</span>
+                </h3>
+                <p class="hs-way-desc">
+                  Retrieve both sources independently, deduplicate the union and combine the ranks.
+                  A document that only one source finds can still win.
+                </p>
+              </div>
+              <div class="hs-strategy">
+                <h3 class="hs-way-title">Vector first</h3>
+                <p class="hs-way-desc">
+                  Retrieve semantic candidates, then order that pool with the lexical index.
+                  Candidates without a lexical hit stay in the tail.
+                </p>
+              </div>
+              <div class="hs-strategy">
+                <h3 class="hs-way-title">Lexical first</h3>
+                <p class="hs-way-desc">
+                  Retrieve lexical candidates, then rescore those IDs by vector similarity. The
+                  second stage cannot recover a candidate the first one missed.
+                </p>
+              </div>
+            </div>
+            <div class="hs-tiers">
+              <h3 class="hs-way-title">The ranking contract, in order</h3>
+              <p class="hs-way-desc">
+                Final rank is authoritative; scores from different stages are not comparable, so
+                each hit states its <code>scoreKind</code>.
+              </p>
+              <ol class="hs-tier-list">
+                <li>
+                  <span class="badge" data-variant="default" data-size="sm">retrieve</span>
+                  <span>each source returns its top 25 among the eligible IDs</span>
+                </li>
+                <li>
+                  <span class="badge" data-variant="default" data-size="sm">fuse</span>
+                  <span>weighted reciprocal rank fusion, or the second stage of a cascade</span>
+                </li>
+                <li>
+                  <span class="badge" data-variant="secondary" data-size="sm">exact</span>
+                  <span>with <code>exact: 'promote'</code>, literal matches move to the front</span>
+                </li>
+                <li>
+                  <span class="badge" data-variant="secondary" data-size="sm">coverage</span>
+                  <span
+                    ><code>balance</code> reserves early ranks for each source's best
+                    candidate</span
+                  >
+                </li>
+                <li>
+                  <span class="badge" data-variant="outline" data-size="sm">gate</span>
+                  <span
+                    >a clear vector winner that lexical retrieval agrees with skips the
+                    reranker</span
+                  >
+                </li>
+                <li>
+                  <span class="badge" data-variant="outline" data-size="sm">rerank</span>
+                  <span>ColBERT reorders the top 25; exact promotion and coverage apply again</span>
+                </li>
+                <li>
+                  <span class="badge" data-variant="outline" data-size="sm">page</span>
+                  <span>ranks are assigned before the page is cut</span>
+                </li>
+              </ol>
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="pareto"
+          class="container hs-section parallax-reveal"
+          aria-labelledby="pareto-title"
+        >
+          <section class="mk-stats" style="width: 100%">
+            <div class="mk-stats-layout">
+              <div class="mk-stats-copy">
+                <div class="mk-stats-head">
+                  <h2 class="mk-stats-title" id="pareto-title">
+                    A measured frontier, an explicit choice
+                  </h2>
+                  <p class="mk-stats-desc">
+                    Fusion weights, RRF constants and reranker gates were chosen on 500 development
+                    questions and then scored once on 500 held-out questions in 20 languages. The
+                    table lists the configurations that span quality against inference work; the
+                    presets ship the chosen ones. Gated neural counts replay real ColBERT scores and
+                    are not latency measurements.
+                    <a href="pareto.html">Methodology and limits</a>.
+                  </p>
+                </div>
+                <div class="mk-stats-grid">
+                  <div class="mk-stat">
+                    <span class="mk-stat-value" data-pareto="efficient-r1"></span
+                    ><span class="mk-stat-label"
+                      >held-out R@1 with the efficient preset, no reranker</span
+                    >
+                  </div>
+                  <div class="mk-stat">
+                    <span class="mk-stat-value" data-pareto="reranked-r5"></span
+                    ><span class="mk-stat-label"
+                      >held-out R@5 with the reranked preset, the demo default</span
+                    >
+                  </div>
+                  <div class="mk-stat">
+                    <span class="mk-stat-value" data-pareto="reranked-neural"></span
+                    ><span class="mk-stat-label"
+                      >held-out questions that still need ColBERT with the reranked preset</span
+                    >
+                  </div>
+                  <div class="mk-stat">
+                    <span class="mk-stat-value" data-pareto="lexical-r5"></span
+                    ><span class="mk-stat-label"
+                      >R@5 of lexical search alone, the cheapest point on the frontier</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <figure class="mk-stats-media card hs-bench">
+                <figcaption class="card-header">
+                  <h3 class="card-title">Held-out quality and work</h3>
+                  <p class="card-description">
+                    500 questions; vector and neural columns count the questions that needed each
+                    model.
+                  </p>
+                </figcaption>
+                <div class="card-content">
+                  <table class="table hs-bench-table" data-size="sm">
+                    <thead>
+                      <tr>
+                        <th scope="col">Configuration</th>
+                        <th scope="col" class="hs-num">R@1</th>
+                        <th scope="col" class="hs-num">R@5</th>
+                        <th scope="col" class="hs-num">Candidates</th>
+                        <th scope="col" class="hs-num">Vector</th>
+                        <th scope="col" class="hs-num">Neural</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pareto-results"></tbody>
+                  </table>
+                </div>
+              </figure>
+            </div>
+          </section>
+        </section>
+
+        <!-- recall:start -->
+        <!-- Generated by scripts/recall-docs.mjs from docs/data/recall.json (make bench); run make docs instead of editing. -->
+        <!-- prettier-ignore -->
+        <section id="recall" class="container hs-section parallax-reveal" aria-labelledby="recall-title">
+          <section class="mk-stats" style="width: 100%">
+            <div class="mk-stats-layout">
+              <div class="mk-stats-copy">
+                <div class="mk-stats-head">
+                  <h2 class="mk-stats-title" id="recall-title">Measured, not promised<sup class="hs-footnote-mark">*</sup></h2>
+                  <p class="mk-stats-desc">Each of the 2,000 passages of <a href="https://github.com/kyr0/tiny-embedding-bench/tree/main/datasets/tiny-embedding-bench-v1" target="_blank" rel="noopener">tiny-embedding-bench-v1<span class="sr-only"> (opens in a new tab)</span></a> is indexed once, and 1,000 questions in 20 languages search them. R@k is the share of a language's 50 questions whose gold passage, in the question's language, ranks in the top k. Lexical search knows the question's language; vector search scans every passage, so a question also competes with the 19 translations of its gold passage. From <code>make bench</code>, version 0.4.0.</p>
+                </div>
+                <div class="mk-stats-grid">
+                  <div class="mk-stat" data-recall-stat="r1"><span class="mk-stat-value">91.3%</span><span class="mk-stat-label">mean R@1 over 20 languages with the efficient preset, no neural inference</span></div>
+                  <div class="mk-stat" data-recall-stat="r5"><span class="mk-stat-value">97.3%</span><span class="mk-stat-label">mean R@5; the gold passage is among the first five results</span></div>
+                  <div class="mk-stat" data-recall-stat="neural"><span class="mk-stat-value">885</span><span class="mk-stat-label">of 1,000 questions need ColBERT inference with the reranked preset, for a mean R@5 of 97.4%</span></div>
+                  <div class="mk-stat" data-recall-stat="perfect"><span class="mk-stat-value">6 of 20</span><span class="mk-stat-label">languages reach 100% R@5 with the efficient preset: English, German, French, Italian, Russian and Indonesian</span></div>
+                </div>
+                <p class="hs-footnote">* Runtime comparison: Bun 1.4.3, Node.js 26.11.1 and Chromium 156.0.8078.4 returned the same rank for each of the 1,000 questions under both presets. Word segmentation for Japanese, Chinese and Thai follows the runtime's ICU data (Bun 78.1, Node.js 78.3).</p>
+              </div>
+              <figure class="mk-stats-media card hs-recall">
+                <figcaption class="card-header"><h3 class="card-title">Recall by query language</h3><p class="card-description">Share of a language's 50 questions whose gold passage ranks in the top k of 2,000; one question is 2 points. The badge names how the language's lexical analyzer works. Reranking reorders only the top 25, so R@25 is the same for both presets.</p></figcaption>
+                <div class="card-content tabs hs-recall-tabs">
+                  <div class="tab-list" role="tablist" aria-label="Ranking preset" id="recall-tabs">
+              <button class="tab-trigger" role="tab" aria-selected="true" aria-controls="recall-panel-efficient" id="recall-tab-efficient">Efficient</button>
+              <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-reranked" id="recall-tab-reranked" tabindex="-1">Reranked</button>
+                  </div>
+            <div class="tab-content" role="tabpanel" id="recall-panel-efficient" aria-labelledby="recall-tab-efficient" tabindex="0">
+              <p class="hs-recall-note">searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=1 and weights 3:1, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads. Mean over 20 languages: R@1 <strong data-recall-mean="efficient-1">91.3%</strong> · R@5 <strong data-recall-mean="efficient-5">97.3%</strong> · R@10 <strong data-recall-mean="efficient-10">98.5%</strong> · R@25 <strong data-recall-mean="efficient-25">99.0%</strong>.</p>
+              <div class="tabs hs-recall-tabs">
+                <div class="tab-list" role="tablist" aria-label="Recall at k, Efficient" data-size="sm">
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-efficient-1" id="recall-tab-efficient-1" tabindex="-1">R@1</button>
+                  <button class="tab-trigger" role="tab" aria-selected="true" aria-controls="recall-panel-efficient-5" id="recall-tab-efficient-5">R@5</button>
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-efficient-10" id="recall-tab-efficient-10" tabindex="-1">R@10</button>
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-efficient-25" id="recall-tab-efficient-25" tabindex="-1">R@25</button>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-efficient-1" aria-labelledby="recall-tab-efficient-1" data-preset="efficient" data-k="1" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r1-efficient-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r1-efficient-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-fra_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r1-efficient-fra_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r1-efficient-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-eng_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r1-efficient-eng_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r1-efficient-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r1-efficient-vie_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r1-efficient-vie_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r1-efficient-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-deu_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-efficient-deu_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-efficient-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-por_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-efficient-por_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-efficient-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-ind_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-efficient-ind_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-efficient-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-efficient-tha_Thai-bar">94%</output></div>
+                    <progress class="progress" id="r1-efficient-tha_Thai-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-efficient-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-efficient-zho_Hans-bar">94%</output></div>
+                    <progress class="progress" id="r1-efficient-zho_Hans-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-efficient-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-ita_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-efficient-ita_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-efficient-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-nld_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-efficient-nld_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-efficient-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-tur_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-efficient-tur_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-efficient-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-spa_Latn-bar">90%</output></div>
+                    <progress class="progress" id="r1-efficient-spa_Latn-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-efficient-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-arb_Arab-bar">90%</output></div>
+                    <progress class="progress" id="r1-efficient-arb_Arab-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-efficient-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r1-efficient-ben_Beng-bar">90%</output></div>
+                    <progress class="progress" id="r1-efficient-ben_Beng-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-efficient-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-efficient-jpn_Jpan-bar">90%</output></div>
+                    <progress class="progress" id="r1-efficient-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-efficient-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-pol_Latn-bar">88%</output></div>
+                    <progress class="progress" id="r1-efficient-pol_Latn-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r1-efficient-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r1-efficient-kor_Hang-bar">88%</output></div>
+                    <progress class="progress" id="r1-efficient-kor_Hang-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r1-efficient-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r1-efficient-urd_Arab-bar">84%</output></div>
+                    <progress class="progress" id="r1-efficient-urd_Arab-bar" data-size="xs" data-tone="auto" value="84" max="100" aria-labelledby="r1-efficient-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r1-efficient-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-efficient-hin_Deva-bar">70%</output></div>
+                    <progress class="progress" id="r1-efficient-hin_Deva-bar" data-size="xs" data-tone="auto" value="70" max="100" aria-labelledby="r1-efficient-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-efficient-5" aria-labelledby="recall-tab-efficient-5" data-preset="efficient" data-k="5" tabindex="0">
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-efficient-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-efficient-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-spa_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-spa_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-nld_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-nld_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r5-efficient-urd_Arab-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-urd_Arab-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r5-efficient-vie_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-vie_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-efficient-tha_Thai-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-tha_Thai-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-efficient-zho_Hans-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-zho_Hans-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-efficient-jpn_Jpan-bar">98%</output></div>
+                    <progress class="progress" id="r5-efficient-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-efficient-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-pol_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r5-efficient-pol_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-efficient-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r5-efficient-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-efficient-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r5-efficient-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-efficient-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r5-efficient-kor_Hang-bar">96%</output></div>
+                    <progress class="progress" id="r5-efficient-kor_Hang-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-efficient-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r5-efficient-ben_Beng-bar">94%</output></div>
+                    <progress class="progress" id="r5-efficient-ben_Beng-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r5-efficient-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r5-efficient-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-efficient-hin_Deva-bar">84%</output></div>
+                    <progress class="progress" id="r5-efficient-hin_Deva-bar" data-size="xs" data-tone="auto" value="84" max="100" aria-labelledby="r5-efficient-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-efficient-10" aria-labelledby="recall-tab-efficient-10" data-preset="efficient" data-k="10" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-spa_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-spa_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-pol_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-pol_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r10-efficient-urd_Arab-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-urd_Arab-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r10-efficient-vie_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-vie_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-efficient-tha_Thai-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-tha_Thai-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-efficient-zho_Hans-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-zho_Hans-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-efficient-jpn_Jpan-bar">100%</output></div>
+                    <progress class="progress" id="r10-efficient-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-efficient-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r10-efficient-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-efficient-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-nld_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r10-efficient-nld_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-efficient-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r10-efficient-kor_Hang-bar">98%</output></div>
+                    <progress class="progress" id="r10-efficient-kor_Hang-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-efficient-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r10-efficient-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-efficient-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r10-efficient-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-efficient-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r10-efficient-ben_Beng-bar">96%</output></div>
+                    <progress class="progress" id="r10-efficient-ben_Beng-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-efficient-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r10-efficient-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-efficient-hin_Deva-bar">88%</output></div>
+                    <progress class="progress" id="r10-efficient-hin_Deva-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r10-efficient-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-efficient-25" aria-labelledby="recall-tab-efficient-25" data-preset="efficient" data-k="25" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-spa_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-spa_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-nld_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-nld_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-pol_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-pol_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r25-efficient-urd_Arab-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-urd_Arab-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r25-efficient-vie_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-vie_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-efficient-tha_Thai-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-tha_Thai-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-efficient-zho_Hans-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-zho_Hans-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-efficient-jpn_Jpan-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r25-efficient-kor_Hang-bar">100%</output></div>
+                    <progress class="progress" id="r25-efficient-kor_Hang-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-efficient-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r25-efficient-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r25-efficient-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r25-efficient-ben_Beng-bar">98%</output></div>
+                    <progress class="progress" id="r25-efficient-ben_Beng-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r25-efficient-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r25-efficient-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r25-efficient-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r25-efficient-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r25-efficient-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r25-efficient-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-efficient-hin_Deva-bar">92%</output></div>
+                    <progress class="progress" id="r25-efficient-hin_Deva-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r25-efficient-hin_Deva"></progress>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-content" role="tabpanel" id="recall-panel-reranked" aria-labelledby="recall-tab-reranked" tabindex="0" hidden>
+              <p class="hs-recall-note">searchPreset('reranked'): the same retrieval, then MoEdernColBERT 1.5M refines the top 25 unless both sources agree on a clear vector winner. Mean over 20 languages: R@1 <strong data-recall-mean="reranked-1">91.3%</strong> · R@5 <strong data-recall-mean="reranked-5">97.4%</strong> · R@10 <strong data-recall-mean="reranked-10">98.5%</strong> · R@25 <strong data-recall-mean="reranked-25">99.0%</strong>. ColBERT ran for <strong data-recall-neural>885</strong> of 1,000 questions.</p>
+              <div class="tabs hs-recall-tabs">
+                <div class="tab-list" role="tablist" aria-label="Recall at k, Reranked" data-size="sm">
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-reranked-1" id="recall-tab-reranked-1" tabindex="-1">R@1</button>
+                  <button class="tab-trigger" role="tab" aria-selected="true" aria-controls="recall-panel-reranked-5" id="recall-tab-reranked-5">R@5</button>
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-reranked-10" id="recall-tab-reranked-10" tabindex="-1">R@10</button>
+                  <button class="tab-trigger" role="tab" aria-selected="false" aria-controls="recall-panel-reranked-25" id="recall-tab-reranked-25" tabindex="-1">R@25</button>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-reranked-1" aria-labelledby="recall-tab-reranked-1" data-preset="reranked" data-k="1" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r1-reranked-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r1-reranked-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-fra_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r1-reranked-fra_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r1-reranked-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-eng_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r1-reranked-eng_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r1-reranked-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r1-reranked-vie_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r1-reranked-vie_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r1-reranked-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-deu_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-reranked-deu_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-reranked-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-por_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-reranked-por_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-reranked-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-ind_Latn-bar">94%</output></div>
+                    <progress class="progress" id="r1-reranked-ind_Latn-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-reranked-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-reranked-tha_Thai-bar">94%</output></div>
+                    <progress class="progress" id="r1-reranked-tha_Thai-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-reranked-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-reranked-zho_Hans-bar">94%</output></div>
+                    <progress class="progress" id="r1-reranked-zho_Hans-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r1-reranked-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-ita_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-reranked-ita_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-reranked-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-nld_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-reranked-nld_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-reranked-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-tur_Latn-bar">92%</output></div>
+                    <progress class="progress" id="r1-reranked-tur_Latn-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r1-reranked-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-spa_Latn-bar">90%</output></div>
+                    <progress class="progress" id="r1-reranked-spa_Latn-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-reranked-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-arb_Arab-bar">90%</output></div>
+                    <progress class="progress" id="r1-reranked-arb_Arab-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-reranked-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r1-reranked-ben_Beng-bar">90%</output></div>
+                    <progress class="progress" id="r1-reranked-ben_Beng-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-reranked-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r1-reranked-jpn_Jpan-bar">90%</output></div>
+                    <progress class="progress" id="r1-reranked-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="90" max="100" aria-labelledby="r1-reranked-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-pol_Latn-bar">88%</output></div>
+                    <progress class="progress" id="r1-reranked-pol_Latn-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r1-reranked-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r1-reranked-kor_Hang-bar">88%</output></div>
+                    <progress class="progress" id="r1-reranked-kor_Hang-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r1-reranked-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r1-reranked-urd_Arab-bar">84%</output></div>
+                    <progress class="progress" id="r1-reranked-urd_Arab-bar" data-size="xs" data-tone="auto" value="84" max="100" aria-labelledby="r1-reranked-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r1-reranked-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r1-reranked-hin_Deva-bar">70%</output></div>
+                    <progress class="progress" id="r1-reranked-hin_Deva-bar" data-size="xs" data-tone="auto" value="70" max="100" aria-labelledby="r1-reranked-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-reranked-5" aria-labelledby="recall-tab-reranked-5" data-preset="reranked" data-k="5" tabindex="0">
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r5-reranked-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r5-reranked-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-spa_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-spa_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-nld_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-nld_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-pol_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-pol_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r5-reranked-urd_Arab-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-urd_Arab-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r5-reranked-vie_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-vie_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-reranked-tha_Thai-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-tha_Thai-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-reranked-zho_Hans-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-zho_Hans-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r5-reranked-jpn_Jpan-bar">98%</output></div>
+                    <progress class="progress" id="r5-reranked-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r5-reranked-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r5-reranked-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-reranked-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r5-reranked-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-reranked-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r5-reranked-kor_Hang-bar">96%</output></div>
+                    <progress class="progress" id="r5-reranked-kor_Hang-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r5-reranked-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r5-reranked-ben_Beng-bar">94%</output></div>
+                    <progress class="progress" id="r5-reranked-ben_Beng-bar" data-size="xs" data-tone="auto" value="94" max="100" aria-labelledby="r5-reranked-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r5-reranked-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r5-reranked-hin_Deva-bar">84%</output></div>
+                    <progress class="progress" id="r5-reranked-hin_Deva-bar" data-size="xs" data-tone="auto" value="84" max="100" aria-labelledby="r5-reranked-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-reranked-10" aria-labelledby="recall-tab-reranked-10" data-preset="reranked" data-k="10" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-spa_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-spa_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-pol_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-pol_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r10-reranked-urd_Arab-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-urd_Arab-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r10-reranked-vie_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-vie_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-reranked-zho_Hans-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-zho_Hans-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-reranked-jpn_Jpan-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r10-reranked-kor_Hang-bar">100%</output></div>
+                    <progress class="progress" id="r10-reranked-kor_Hang-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r10-reranked-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r10-reranked-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-reranked-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-nld_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r10-reranked-nld_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-reranked-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r10-reranked-tha_Thai-bar">98%</output></div>
+                    <progress class="progress" id="r10-reranked-tha_Thai-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r10-reranked-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r10-reranked-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-reranked-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r10-reranked-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-reranked-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r10-reranked-ben_Beng-bar">96%</output></div>
+                    <progress class="progress" id="r10-reranked-ben_Beng-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r10-reranked-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r10-reranked-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r10-reranked-hin_Deva-bar">88%</output></div>
+                    <progress class="progress" id="r10-reranked-hin_Deva-bar" data-size="xs" data-tone="auto" value="88" max="100" aria-labelledby="r10-reranked-hin_Deva"></progress>
+                  </div>
+                </div>
+                <div class="tab-content hs-recall-list" role="tabpanel" id="recall-panel-reranked-25" aria-labelledby="recall-tab-reranked-25" data-preset="reranked" data-k="25" tabindex="0" hidden>
+                  <div class="progress-field" data-recall="eng_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-eng_Latn">English <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-eng_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-eng_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-eng_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="deu_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-deu_Latn">German <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-deu_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-deu_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-deu_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="fra_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-fra_Latn">French <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-fra_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-fra_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-fra_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="spa_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-spa_Latn">Spanish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-spa_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-spa_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-spa_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ita_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-ita_Latn">Italian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-ita_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-ita_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-ita_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="nld_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-nld_Latn">Dutch <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-nld_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-nld_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-nld_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="pol_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-pol_Latn">Polish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-pol_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-pol_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-pol_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="rus_Cyrl">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-rus_Cyrl">Russian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-rus_Cyrl-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-rus_Cyrl-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-rus_Cyrl"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="urd_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-urd_Arab">Urdu <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r25-reranked-urd_Arab-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-urd_Arab-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-urd_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ind_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-ind_Latn">Indonesian <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-ind_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-ind_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-ind_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="vie_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-vie_Latn">Vietnamese <span class="badge" data-variant="outline" data-size="xs">tone folding</span></span><output class="progress-value" for="r25-reranked-vie_Latn-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-vie_Latn-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-vie_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tha_Thai">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-tha_Thai">Thai <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-reranked-tha_Thai-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-tha_Thai-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-tha_Thai"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="zho_Hans">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-zho_Hans">Chinese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-reranked-zho_Hans-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-zho_Hans-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-zho_Hans"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="jpn_Jpan">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-jpn_Jpan">Japanese <span class="badge" data-variant="outline" data-size="xs">segmenter</span></span><output class="progress-value" for="r25-reranked-jpn_Jpan-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-jpn_Jpan-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-jpn_Jpan"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="kor_Hang">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-kor_Hang">Korean <span class="badge" data-variant="outline" data-size="xs">bigrams</span></span><output class="progress-value" for="r25-reranked-kor_Hang-bar">100%</output></div>
+                    <progress class="progress" id="r25-reranked-kor_Hang-bar" data-size="xs" data-tone="auto" value="100" max="100" aria-labelledby="r25-reranked-kor_Hang"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="por_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-por_Latn">Portuguese <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-por_Latn-bar">98%</output></div>
+                    <progress class="progress" id="r25-reranked-por_Latn-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r25-reranked-por_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="ben_Beng">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-ben_Beng">Bangla <span class="badge" data-variant="outline" data-size="xs">trigrams</span></span><output class="progress-value" for="r25-reranked-ben_Beng-bar">98%</output></div>
+                    <progress class="progress" id="r25-reranked-ben_Beng-bar" data-size="xs" data-tone="auto" value="98" max="100" aria-labelledby="r25-reranked-ben_Beng"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="tur_Latn">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-tur_Latn">Turkish <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-tur_Latn-bar">96%</output></div>
+                    <progress class="progress" id="r25-reranked-tur_Latn-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r25-reranked-tur_Latn"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="arb_Arab">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-arb_Arab">Arabic <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-arb_Arab-bar">96%</output></div>
+                    <progress class="progress" id="r25-reranked-arb_Arab-bar" data-size="xs" data-tone="auto" value="96" max="100" aria-labelledby="r25-reranked-arb_Arab"></progress>
+                  </div>
+                  <div class="progress-field" data-recall="hin_Deva">
+                    <div class="progress-header"><span class="progress-label" id="r25-reranked-hin_Deva">Hindi <span class="badge" data-variant="outline" data-size="xs">Snowball</span></span><output class="progress-value" for="r25-reranked-hin_Deva-bar">92%</output></div>
+                    <progress class="progress" id="r25-reranked-hin_Deva-bar" data-size="xs" data-tone="auto" value="92" max="100" aria-labelledby="r25-reranked-hin_Deva"></progress>
+                  </div>
+                </div>
+              </div>
+            </div>
+                </div>
+              </figure>
+            </div>
+          </section>
+        </section>
+        <!-- recall:end -->
+
+        <div class="container hs-section parallax-reveal" id="consulting">
+          <div class="corner-leaf-reverse pattern-mesh hs-consult">
+            <section class="mk-cta" data-variant="split" aria-labelledby="consult-title">
+              <div class="mk-cta-inner">
+                <div class="mk-cta-copy">
+                  <div class="hs-cta-head">
+                    <div
+                      class="aura aura-glow aura-gold hs-cta-portrait"
+                      style="--shape-round: 1.25rem"
+                    >
+                      <img
+                        class="shape-squircle"
+                        src="assets/aron-homberg.jpg"
+                        width="400"
+                        height="400"
+                        alt="Portrait of Aron Homberg"
+                        loading="lazy"
+                      />
+                    </div>
+                    <h2 class="mk-cta-title" id="consult-title">Need search tuned to your data?</h2>
+                  </div>
+                  <p class="mk-cta-desc">
+                    Aron Homberg, freelance and independent AI researcher: search and retrieval,
+                    embedding models and on-device AI, offers consulting services worldwide.
+                  </p>
+                </div>
+                <div class="mk-cta-actions">
+                  <a
+                    class="btn"
+                    data-size="lg"
+                    href="https://www.linkedin.com/in/aronhomberg/"
+                    target="_blank"
+                    rel="noopener"
+                    ><svg class="hs-icon hs-icon-fill" aria-hidden="true">
+                      <use href="#i-linkedin" /></svg
+                    >Talk to Aron on LinkedIn<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <section id="use" class="container hs-section parallax-reveal" aria-labelledby="use-title">
+          <div class="corner-leaf pattern-dots hs-use">
+            <header class="mk-section-header">
+              <div class="mk-section-header-copy">
+                <span class="mk-section-header-eyebrow">Use it</span>
+                <h2 class="mk-section-header-title" id="use-title">Add it to your own app</h2>
+                <p class="mk-section-header-desc">
+                  Write the index yourself, or hand one prompt to your coding agent.
+                </p>
+              </div>
+            </header>
+            <div class="hs-ways">
+              <div class="hs-way">
+                <h3 class="hs-way-title">
+                  <svg class="hs-icon" aria-hidden="true"><use href="#i-package" /></svg>Package
+                </h3>
+                <p class="hs-way-desc">
+                  Install
+                  <a
+                    class="badge"
+                    data-variant="outline"
+                    data-size="sm"
+                    href="https://www.npmjs.com/package/defuss-search"
+                    target="_blank"
+                    rel="noopener"
+                    >npm&nbsp;v0.4.0<span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                  with <code>bun add defuss-search defuss-lexicalsearch defuss-vectorsearch</code>.
+                  Then, in Node.js, Bun or the browser:
+                </p>
+                <!-- prettier-ignore -->
+                <figure class="mk-code-block" data-variant="file">
+                  <div class="mk-code-block-head"><span class="mk-code-block-file"><svg class="hs-icon" aria-hidden="true"><use href="#i-file" /></svg>search.js</span><button class="mk-code-block-copy" type="button" aria-label="Copy code"><svg class="hs-icon" aria-hidden="true"><use href="#i-copy" /></svg></button></div>
+                  <pre data-numbers><code id="usage-code"><span><span class="mk-code-block-k">import</span> { apiSearchPreset } <span class="mk-code-block-k">from</span> <span class="mk-code-block-s">'defuss-lexicalsearch'</span>;</span><span><span class="mk-code-block-k">import</span> { searchPreset } <span class="mk-code-block-k">from</span> <span class="mk-code-block-s">'defuss-search'</span>;</span><span><span class="mk-code-block-k">import</span> { createHybridIndex } <span class="mk-code-block-k">from</span> <span class="mk-code-block-s">'defuss-search/indexing'</span>;</span><span></span><span><span class="mk-code-block-k">const</span> search = createHybridIndex({</span><span>  documents: [</span><span>    { id: <span class="mk-code-block-s">'push'</span>, fields: { symbol: <span class="mk-code-block-s">'Array.prototype.push()'</span>, description: <span class="mk-code-block-s">'Add elements to the end of an array'</span> } },</span><span>    { id: <span class="mk-code-block-s">'pop'</span>, fields: { symbol: <span class="mk-code-block-s">'Array.prototype.pop()'</span>, description: <span class="mk-code-block-s">'Remove the last element of an array'</span> } },</span><span>  ],</span><span>  vectors: [[<span class="mk-code-block-n">1</span>, <span class="mk-code-block-n">0</span>], [<span class="mk-code-block-n">0</span>, <span class="mk-code-block-n">1</span>]],</span><span>  defaults: searchPreset(<span class="mk-code-block-s">'efficient'</span>),</span><span>  lexical: apiSearchPreset,</span><span>  lexicalSearch: { exact: { fields: [<span class="mk-code-block-s">'symbol'</span>] } },</span><span>});</span><span><span class="mk-code-block-k">const</span> hits = <span class="mk-code-block-k">await</span> search.search({ text: <span class="mk-code-block-s">'Array.prototype.push()'</span>, vector: [<span class="mk-code-block-n">0</span>, <span class="mk-code-block-n">1</span>] }, {</span><span>  strategy: <span class="mk-code-block-s">'fusion'</span>, exact: <span class="mk-code-block-s">'promote'</span>,</span><span>});</span><span>console.log(hits[<span class="mk-code-block-n">0</span>].id); <span class="mk-code-block-c">// "push": the exact symbol match ranks first</span></span></code></pre>
+                  <span class="mk-code-block-status" role="status"></span>
+                </figure>
+                <p class="hs-way-desc">
+                  The <a href="reference.html">API reference</a> covers real embedding models,
+                  ColBERT, adapters for existing indexes, filters, pagination and cancellation.
+                </p>
+              </div>
+              <div
+                class="separator hs-sep-vertical"
+                data-orientation="vertical"
+                role="separator"
+              ></div>
+              <hr class="separator hs-sep-horizontal" />
+              <div class="hs-way">
+                <h3 class="hs-way-title">
+                  <svg class="hs-icon" aria-hidden="true"><use href="#i-bot" /></svg>Vibe coding
+                </h3>
+                <p class="hs-way-desc">
+                  Paste this prompt into your coding agent. It links the repository, so the agent
+                  works from the current README.
+                </p>
+                <div class="hs-prompt">
+                  <div
+                    class="mockup-code"
+                    data-chrome="mac"
+                    data-title="coding agent · ~/your-app"
+                    data-wrap
+                    id="agent-prompt"
+                  >
+                    <pre
+                      data-prefix=">"
+                    ><code>Integrate defuss-search into this app: https://github.com/kyr0/defuss-search</code></pre>
+                    <pre
+                      data-prefix=""
+                    ><code>Install defuss-search with its peers defuss-lexicalsearch and defuss-vectorsearch, and read the README first. Build the index with createHybridIndex({ documents, vectors, defaults: searchPreset('efficient') }) from defuss-search/indexing, or connect existing indexes with createLexicalRetriever, createVectorRetriever and new HybridSearch({ lexical, vector }).</code></pre>
+                    <pre
+                      data-prefix=""
+                    ><code>Embed documents and queries with the same model; defuss-vectorsearch's Winzling runs in the browser. Pass exact: 'promote' so a query that equals a symbol or ID field ranks that document first.</code></pre>
+                    <pre
+                      data-prefix=""
+                    ><code>For neural reranking, wrap a ColBERT model with createColbertAdapter from defuss-search/colbert and use searchPreset('reranked'), which skips the model when both sources agree.</code></pre>
+                    <pre data-prefix="" data-tone="muted" data-cursor><code>send</code></pre>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn hs-prompt-copy"
+                    data-variant="secondary"
+                    data-size="sm"
+                    id="copy-prompt"
+                  >
+                    <svg class="hs-icon" aria-hidden="true"><use href="#i-copy" /></svg
+                    ><span>Copy prompt</span>
+                  </button>
+                  <span class="sr-only" role="status" id="copy-prompt-status"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="container hs-section parallax-reveal" data-reveal="zoom">
+          <section class="mk-cta" data-variant="dark" aria-labelledby="cta-title">
+            <div class="mk-cta-inner">
+              <div class="mk-cta-copy">
+                <h2 class="mk-cta-title" id="cta-title">
+                  Exact and semantic search anywhere, for free
+                </h2>
+                <p class="mk-cta-desc">
+                  Lexical precision, vector recall and an optional ColBERT reranker run wherever
+                  JavaScript runs: no search server, no hosted index, no per-query bill.
+                </p>
+              </div>
+              <div class="mk-cta-actions">
+                <a
+                  class="btn"
+                  data-size="lg"
+                  href="https://github.com/kyr0/defuss-search"
+                  target="_blank"
+                  rel="noopener"
+                  >View on GitHub<svg class="hs-icon hs-ext" aria-hidden="true">
+                    <use href="#i-external" /></svg
+                  ><span class="sr-only"> (opens in a new tab)</span></a
+                >
+                <a
+                  class="btn"
+                  data-variant="outline"
+                  data-size="lg"
+                  href="https://github.com/kyr0/defuss-search/blob/main/ARCH.md"
+                  target="_blank"
+                  rel="noopener"
+                  >Read the architecture<svg class="hs-icon hs-ext" aria-hidden="true">
+                    <use href="#i-external" /></svg
+                  ><span class="sr-only"> (opens in a new tab)</span></a
+                >
+              </div>
+              <p class="mk-cta-note">MIT licensed · benchmark data credited below</p>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="mk-footer" style="width: 100%">
+        <div class="mk-footer-inner">
+          <nav class="mk-footer-nav hs-footer-nav" aria-label="Footer">
+            <div class="mk-footer-col">
+              <h3 class="mk-footer-heading">Project</h3>
+              <ul class="mk-footer-list">
+                <li>
+                  <a href="https://github.com/kyr0/defuss-search" target="_blank" rel="noopener"
+                    >Source code<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://www.npmjs.com/package/defuss-search"
+                    target="_blank"
+                    rel="noopener"
+                    >npm package<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li><a href="reference.html">API reference</a></li>
+                <li>
+                  <a
+                    href="https://github.com/kyr0/defuss-search/blob/main/ARCH.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Architecture<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/kyr0/defuss-search/blob/main/CHANGELOG.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Changelog<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="mk-footer-col">
+              <h3 class="mk-footer-heading">Benchmark data</h3>
+              <ul class="mk-footer-list">
+                <li>
+                  <a
+                    href="https://github.com/kyr0/tiny-embedding-bench/tree/main/datasets/tiny-embedding-bench-v1"
+                    target="_blank"
+                    rel="noopener"
+                    >tiny-embedding-bench-v1<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/kyr0/defuss-search/blob/main/THIRD_PARTY.md"
+                    target="_blank"
+                    rel="noopener"
+                    >Models and licenses<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="mk-footer-col">
+              <h3 class="mk-footer-heading">Built with</h3>
+              <ul class="mk-footer-list">
+                <li>
+                  <a
+                    href="https://github.com/kyr0/defuss-lexicalsearch"
+                    target="_blank"
+                    rel="noopener"
+                    >defuss-lexicalsearch<svg
+                      class="hs-icon hs-ext"
+                      aria-hidden="true"
+                    >
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/kyr0/defuss-vectorsearch"
+                    target="_blank"
+                    rel="noopener"
+                    >defuss-vectorsearch<svg
+                      class="hs-icon hs-ext"
+                      aria-hidden="true"
+                    >
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+                <li>
+                  <a href="https://github.com/kyr0/defuss-shadcn" target="_blank" rel="noopener"
+                    >defuss-shadcn<svg class="hs-icon hs-ext" aria-hidden="true">
+                      <use href="#i-external" /></svg
+                    ><span class="sr-only"> (opens in a new tab)</span></a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="mk-footer-col">
+              <h3 class="mk-footer-heading">Professional consulting services</h3>
+              <aside class="corner-leaf hs-ad" aria-label="Consulting by Aron Homberg">
+                <div class="hs-ad-head">
+                  <div
+                    class="aura aura-glow aura-gold hs-ad-portrait"
+                    style="--shape-round: 1.5rem"
+                  >
+                    <img
+                      class="shape-squircle"
+                      src="assets/aron-homberg.jpg"
+                      width="400"
+                      height="400"
+                      alt="Portrait of Aron Homberg"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div>
+                    <p class="hs-ad-name">Aron Homberg</p>
+                    <p class="hs-ad-role">Freelance expert · independent AI researcher</p>
+                  </div>
+                </div>
+                <a
+                  class="btn"
+                  data-size="sm"
+                  href="https://www.linkedin.com/in/aronhomberg/"
+                  target="_blank"
+                  rel="noopener"
+                  ><svg class="hs-icon hs-icon-fill" aria-hidden="true">
+                    <use href="#i-linkedin" /></svg
+                  >Connect on LinkedIn<svg class="hs-icon hs-ext" aria-hidden="true">
+                    <use href="#i-external" /></svg
+                  ><span class="sr-only"> (opens in a new tab)</span></a
+                >
+              </aside>
+            </div>
+          </nav>
+          <hr class="separator mk-footer-rule" />
+          <div class="mk-footer-bottom">
+            <a href="#top" class="mk-footer-brand" aria-label="Back to the top"
+              ><svg class="hs-icon" aria-hidden="true"><use href="#i-logo" /></svg
+              ><span class="mk-footer-brand-name">defuss-search</span></a
+            >
+            <div class="mk-footer-meta">
+              <p class="mk-footer-copy">
+                © 2026
+                <a href="https://www.linkedin.com/in/aronhomberg/" target="_blank" rel="noopener"
+                  >Aron Homberg (kyr0)<svg class="hs-icon hs-ext" aria-hidden="true">
+                    <use href="#i-external" /></svg
+                  ><span class="sr-only"> (opens in a new tab)</span></a
+                >
+                · MIT. Benchmark data: tiny-embedding-bench-v1.
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <div class="fab" data-scroll-top>
+      <a class="btn fab-trigger" href="#top" aria-label="Back to top"
+        ><span class="fab-icon" aria-hidden="true"
+          ><svg class="hs-icon"><use href="#i-arrow-up" /></svg></span
+      ></a>
+    </div>
+
+    <dialog
+      id="cmd"
+      class="command"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Benchmark questions"
+    >
+      <div class="command-content">
+        <div class="command-input-wrapper">
+          <svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg>
+          <input
+            class="command-input"
+            type="text"
+            placeholder="Filter 1,000 benchmark questions..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="command-list" id="cmd-list">
+          <div class="command-group" id="cmd-placeholder">
+            <p class="command-group-heading">Benchmark questions</p>
+            <button class="command-item" aria-disabled="true">Loading the corpus...</button>
+          </div>
+        </div>
+        <div class="command-empty" hidden>No question matches.</div>
+      </div>
+    </dialog>
+
+    <script type="module" src="assets/vendor/all.min.js"></script>
+    <script type="module" src="assets/app.js"></script>
+  </body>
+</html>
