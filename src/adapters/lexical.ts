@@ -28,6 +28,9 @@ export function surfaceAnalyzer(analyzer: Analyzer): Analyzer {
       ...(analyzer.stopWords ? { stopWords: [...analyzer.stopWords] } : {}),
       ...(analyzer.kind ? { kind: analyzer.kind } : {}),
       ...(analyzer.segmented ? { segmented: true } : {}),
+      // The field's language, so a query's `language` boosts the companion along with its field.
+      // VERIFIED: test/query-language.test.mjs measures three times the score with companions.
+      ...(analyzer.language ? { language: analyzer.language } : {}),
     });
     surfaces.set(analyzer, surface);
   }
@@ -125,8 +128,17 @@ export function createLexicalRetriever<M extends JsonValue>(
           transpositions: false,
         } as const)
       : {};
+    // The query's language overrides a fixed `search.language`: it belongs to this query.
+    const language = query.language ?? base.language;
     return index
-      .search(query.text, { ...base, ...literalOptions, ids, limit: context.limit, offset: 0 })
+      .search(query.text, {
+        ...base,
+        ...literalOptions,
+        ...(language !== undefined ? { language } : {}),
+        ids,
+        limit: context.limit,
+        offset: 0,
+      })
       .map((hit) => ({
         id: hit.id,
         score: hit.score,

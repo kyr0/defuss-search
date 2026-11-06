@@ -2,6 +2,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { languageCases, targetLanguages } from '../fixtures/languages.mjs';
 import { searchPreset } from 'defuss-search';
+import { LANGUAGE_GUESS } from './recall-docs.mjs';
 
 const rule = searchPreset('efficient').weakLexical;
 const report = JSON.parse(await readFile('output/bench/pareto.json', 'utf8'));
@@ -101,11 +102,16 @@ UNKNOWN: quality on an external corpus, relevance judgments beyond one same-lang
 - Updated upstream guard: https://github.com/kyr0/defuss-vectorsearch/commit/2548805349efba8070d06739cb38e625c4619784
 `,
 );
+// scripts/recall-docs.mjs fills the guessed-language block from the recall report, which recall-report.mjs writes
+// after this script; a rerun here keeps the block it finds.
+const guessBlock =
+  (await readFile('docs/languages.md', 'utf8').catch(() => '')).match(LANGUAGE_GUESS)?.[0] ??
+  '<!-- language-guess:start -->\n<!-- language-guess:end -->';
 await writeFile(
   'docs/languages.md',
   `# Multilingual retrieval
 
-VERIFIED: v${report.version} integrates all 20 lexicalsearch 0.3.0 analyzers with vectorsearch 0.2.1. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
+VERIFIED: v${report.version} integrates all 20 lexicalsearch ${report.peers.lexical} analyzers with vectorsearch ${report.peers.vector}. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
 
 The efficient preset uses lexical-weighted RRF (3:1, k=1), selected on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
 
@@ -115,7 +121,13 @@ ${languages.map((x) => `| ${x.name} | \`${x.entry}\` | ${x.target ? 'yes' : 'no'
 
 VERIFIED: \`test/languages.test.mjs\` exercises all analyzer imports, the three original strategies, exact symbols and eligibility on Bun and Node. Browser tests exercise all 20 language selections using recorded real Winzling vectors. The frontier benchmark replays real ColBERT scores for all 1,000 query prefixes, using explicit truncation. The [end-to-end recall report](data/recall.json) runs both presets through \`HybridSearch\` on Bun, Node.js and Chromium and reproduces this table's efficient and reranked figures.
 
-VERIFIED: Winzling's nine target languages remain distinct from the additional eleven. Neither new hybrid preset performs language detection or silently routes an unsupported language to a different model. Clients choose analyzers and compatible query/document embeddings.
+## When the question's language is unknown
+
+An application often cannot know which language a user types. BM25 can then search all 20 language fields, but words that several languages share match across them. A language identifier's guess, passed as the query's \`language\`, makes lexicalsearch weigh the guessed language's fields three times more while every other field stays searchable, so a misread short query still finds its words. VERIFIED: \`bun run bench:language-guess\` measures both presets on all 1,000 questions with defuss-lid's \`major_20\` guesses, which cover the fixture's 20 languages:
+
+${guessBlock}
+
+VERIFIED: Winzling's nine target languages remain distinct from the additional eleven. Neither preset detects a language or silently routes an unsupported language to a different model: the caller passes \`language\`, chooses analyzers and supplies compatible query/document embeddings.
 
 See [release provenance](upstreams.json), [API evaluation](evaluation.md), [verification](verification.md), and [Pareto methodology](pareto.md).
 `,

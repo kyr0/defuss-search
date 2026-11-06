@@ -5,7 +5,8 @@
     "": {
       "name": "defuss-search",
       "devDependencies": {
-        "defuss-lexicalsearch": "0.3.0",
+        "defuss-lexicalsearch": "0.4.0",
+        "defuss-lid": "0.5.0",
         "defuss-vectorsearch": "0.2.1",
         "marked": "16.4.2",
         "onnxruntime-node": "1.21.0",
@@ -16,7 +17,7 @@
         "typescript": "5.9.3",
       },
       "peerDependencies": {
-        "defuss-lexicalsearch": "^0.3.0",
+        "defuss-lexicalsearch": "^0.4.0",
         "defuss-vectorsearch": "^0.2.1",
       },
       "optionalPeers": [
@@ -338,7 +339,9 @@
 
     "defuss-env": ["defuss-env@1.0.3", "", { "bin": { "defuss-env": "dist/cli.mjs" } }, "sha512-4Q7rfBLD18i3DDbwSekg5YV9My9wA8rEIvqe6ZY/BTFNET6FMQIgbX5TzIYuV0yA4hTH0oyp/j+a9Nsev5fyjA=="],
 
-    "defuss-lexicalsearch": ["defuss-lexicalsearch@0.3.0", "", {}, "sha512-O0QcX1WZT2ksStk0oNhQIpDKaUJ0FdOlY52Ha6pvpxI+BOmL3Q4UBVnGY3nSIHALhSac5oMDLge1NeeRSnLl2A=="],
+    "defuss-lexicalsearch": ["defuss-lexicalsearch@0.4.0", "", {}, "sha512-ODWEKdUo9kryOOMQJfB7dThF8ZySCJNIWsQpBgkaSbxtKj6tLmUQspoVe3LQE6xwH91vYgSns5ITNgnfMqzkmg=="],
+
+    "defuss-lid": ["defuss-lid@0.5.0", "", { "peerDependencies": { "cld3-asm": "4.0.0" }, "optionalPeers": ["cld3-asm"] }, "sha512-Oo7Id28uvBESioIZBDWJMC8JfryFyvh3D2/mZh0SKTPfg5MrCE0XLbxfWsJe8eOnJeXm4n8rSsZbxV4WF6eCzA=="],
 
     "defuss-multicore": ["defuss-multicore@0.1.0", "", {}, "sha512-bIlt3E8EYPqhpnFxzFKZ2RnLhuiU3dokF1jtDQQcq0imoi2L1i3zta4oOynTti36aswarDIMki1XA62V7ZTYdg=="],
 

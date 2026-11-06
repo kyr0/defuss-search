@@ -260,6 +260,29 @@ try {
     (data) => data.text === 'Which animals sleep most of the day?',
   );
   assert.ok(done(typed));
+  assert.equal(typed.detected, 'eng_Latn');
+  // VERIFIED (2026-11-06): a typed question searches the field of the language defuss-lid detects; the menu follows.
+  const germanQuestion = 'Welche Tiere schlafen den größten Teil des Tages?';
+  const detected = await ask(
+    'lexical-only',
+    async () => {
+      await page.fill('#query', germanQuestion);
+      await page.click('#search');
+    },
+    (data) => data.text === 'Welche Tiere schlafen den größten Teil des Tages?',
+  );
+  assert.ok(done(detected));
+  assert.equal(detected.detected, 'deu_Latn');
+  assert.equal(await page.inputValue('#language'), 'deu_Latn');
+  assert.match(await page.textContent('#summary-time'), /German detected/);
+  // A language picked from the menu overrides the detection.
+  const picked = await ask(
+    'lexical-only',
+    () => page.selectOption('#language', 'eng_Latn'),
+    (data) => data.text === 'Welche Tiere schlafen den größten Teil des Tages?' && !data.detected,
+  );
+  assert.ok(done(picked));
+  assert.equal(await page.inputValue('#language'), 'eng_Latn');
   assert.equal(modelRequests.winzling + modelRequests.colbert, 0, 'Lexical-only loads no model');
   // The in-browser measurement reproduces the published lexical-only figures.
   const lexicalMeasure = await measure();

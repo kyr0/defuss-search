@@ -44,5 +44,8 @@ export function createBenchSearch({ documents, vectors, reranker }) {
       new HybridSearch({ lexical: retriever, vector, reranker }),
     ]),
   );
-  return { index, vector, lexical, hybrid };
+  // For a question whose language is unknown or only guessed: BM25 over every language field.
+  // VERIFIED: bench/language-guess.mjs measures both presets with it (docs/languages.md).
+  const all = new HybridSearch({ lexical: createLexicalRetriever(index), vector, reranker });
+  return { index, vector, lexical, hybrid, all };
 }

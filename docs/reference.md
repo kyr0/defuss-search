@@ -1,6 +1,6 @@
 # API reference
 
-Hybrid lexical/vector retrieval with explicit candidate budgets, explainable ranking, and optional ColBERT reranking. Built against **defuss-lexicalsearch 0.3.0** and **defuss-vectorsearch 0.2.1**. Version **0.3.0**, MIT.
+Hybrid lexical/vector retrieval with explicit candidate budgets, explainable ranking, and optional ColBERT reranking. Built against **defuss-lexicalsearch 0.4.0** and **defuss-vectorsearch 0.2.1**. Version **0.4.0**, MIT.
 
 | Strategy | Candidate generation | Final ordering before optional neural reranking |
 |---|---|---|
@@ -122,7 +122,10 @@ const search = new HybridSearch({
 await search.search('query', { strategy: 'vector-first', vectorCandidates: 25 });
 await search.search('query', { strategy: 'lexical-first', lexicalCandidates: 25 });
 await search.search({ text: 'query', vector: precomputedQueryVector });
+await search.search({ text: 'Wann öffnet der Zoo?', language: 'de' }); // e.g. a language identifier's guess
 ```
+
+A query's `language` is a BCP 47 tag. The lexical adapter passes it to defuss-lexicalsearch's `language` option, which multiplies the weights of the fields whose analyzer has that primary language by `languageBoost` (default 3) and keeps every other field searchable; it overrides a fixed `search.language`. Vector sources and rerankers ignore it, and an invalid tag rejects the search with lexicalsearch's `RangeError`.
 
 Lexical rescoring uses the **existing full index**, with candidate IDs passed to its search method. It does not rebuild an index from 25 documents and thereby change BM25 corpus statistics. Its options forward existing phrase, Boolean, prefix, suffix, substring, fuzzy, field and exclusion behavior. Literal modes compare original strings. Ranking order is authoritative even when lexical exact-first tiers make raw scores nonmonotonic.
 

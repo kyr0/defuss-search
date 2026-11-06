@@ -183,6 +183,30 @@ console.log(hits[0].id); // books
 
 VERIFIED: the Russian stemmer matches `книга` with `книги`. `test/languages.test.mjs` runs all 20 analyzers through the three strategies, exact symbols and eligibility on Bun and Node.js. This establishes adapter compatibility; retrieval quality per language is measured in [Retrieval quality by language](#retrieval-quality-by-language), and the embedding model's quality differs by language.
 
+When the application cannot know the query language, pass a language identifier's guess as the query's `language`. The lexical adapter forwards it to defuss-lexicalsearch, which weighs the fields of that language three times more and keeps every other field searchable, so a misread short query still finds its words; vector sources and rerankers ignore it. The `major_20` pack of [defuss-lid](https://github.com/kyr0/defuss-lid) covers the 20 language entries:
+
+```js
+import { LexicalSearch } from 'defuss-lexicalsearch';
+import de from 'defuss-lexicalsearch/de';
+import en from 'defuss-lexicalsearch/en';
+import { load } from 'defuss-lid/packs/major_20';
+import { createLexicalOnlySearch } from 'defuss-search/strategies';
+
+const index = new LexicalSearch({ fields: { de: { analyzer: de }, en: { analyzer: en } } });
+index.addAll([
+  { id: 'de-1', fields: { de: 'Pinguine im Zoo' } },
+  { id: 'en-1', fields: { en: 'penguins at the zoo' } },
+]);
+const search = await createLexicalOnlySearch(index);
+const lid = await load();
+const text = 'Wann öffnet der Zoo?';
+const hits = await search.search({ text, language: lid.predict(text)[0]?.language });
+lid.dispose();
+console.log(hits.map((hit) => hit.id).join(',')); // de-1,en-1
+```
+
+VERIFIED: on the 1,000 benchmark questions, with defuss-lid 0.5.0 guessing 987 languages right, the efficient preset over all 20 fields reached 90.1% R@1 with the guess and 81.6% without it, against 91.3% with the known language ([details](docs/languages.md#when-the-questions-language-is-unknown)).
+
 ### Match words as written
 
 A stemmer maps different words onto one stem, such as "tabs" and "tab", so a document that repeats "tab" can outrank the one that says "Tabs". `createHybridIndex()` therefore gives every field whose analyzer stems an unstemmed companion: a derived field that analyzes the same text without the stemmer, with the field's weight and `b`. A word written as in the document then scores in both fields. Fields without a stemmer get no companion, because it would index the same terms and act as a higher weight on the field, so `apiSearchPreset` and the seven languages without a Snowball stemmer (segmenters, bigrams, trigrams and Vietnamese tone folding) stay as they are. `surface: false` turns the companions off, and `surface: { weight }` scales their weight (default 1). For a `LexicalSearch` you build yourself, such as the index the strategies wrap, pass its options through `withSurfaceFields()` from `defuss-search/lexical`; `createLexicalRetriever()` searches a companion together with its field, also when `search.fields` names only the field.
@@ -285,7 +309,7 @@ Exact vector mode scores every eligible row. TurboQuant also scans every row; wi
 
 ### Not included
 
-The package has no language detection, document persistence, server or authentication, model download, embedding training or approximate nearest-neighbor index. Query and document vectors must come from compatible model and preprocessing settings; equal dimensions do not establish that.
+The package has no language detection (the caller passes the query's `language`), document persistence, server or authentication, model download, embedding training or approximate nearest-neighbor index. Query and document vectors must come from compatible model and preprocessing settings; equal dimensions do not establish that.
 
 ## Configuration
 

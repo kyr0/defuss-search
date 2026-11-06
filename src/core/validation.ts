@@ -21,12 +21,17 @@ export function queryCopy(input: string | SearchQuery): SearchQuery {
   const value = typeof input === 'string' ? { text: input } : input;
   if (!value || typeof value.text !== 'string' || value.text.length > 16384)
     throw new TypeError('Query text must be a string of at most 16384 UTF-16 units');
-  if (value.vector === undefined) return Object.freeze({ text: value.text });
+  // VERIFIED: LexicalSearch rejects an invalid tag with a RangeError (test/query-language.test.mjs), so a copy only
+  // needs to keep a nonempty string.
+  if (value.language !== undefined && (typeof value.language !== 'string' || !value.language))
+    throw new TypeError('Query language must be a nonempty BCP 47 tag');
+  const language = value.language === undefined ? {} : { language: value.language };
+  if (value.vector === undefined) return Object.freeze({ text: value.text, ...language });
   integer(value.vector.length, 'vector dimensions', 1, 65536);
   const vector = Array.from(value.vector);
   if (!vector.every(Number.isFinite))
     throw new TypeError('Query vector must contain finite numbers');
-  return Object.freeze({ text: value.text, vector: Object.freeze(vector) });
+  return Object.freeze({ text: value.text, vector: Object.freeze(vector), ...language });
 }
 export function idsCopy(values?: ReadonlySet<string>): Set<string> | undefined {
   if (values === undefined) return undefined;

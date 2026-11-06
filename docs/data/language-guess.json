@@ -1,0 +1,726 @@
+{
+  "version": "0.4.0",
+  "lexicalsearch": "0.4.0",
+  "identifier": {
+    "package": "defuss-lid",
+    "version": "0.5.0",
+    "pack": "major_20"
+  },
+  "questions": 1000,
+  "right": {
+    "eng_Latn": 48,
+    "deu_Latn": 49,
+    "fra_Latn": 48,
+    "spa_Latn": 50,
+    "por_Latn": 50,
+    "ita_Latn": 49,
+    "nld_Latn": 49,
+    "pol_Latn": 50,
+    "rus_Cyrl": 50,
+    "tur_Latn": 48,
+    "arb_Arab": 50,
+    "hin_Deva": 50,
+    "ben_Beng": 49,
+    "urd_Arab": 50,
+    "ind_Latn": 49,
+    "vie_Latn": 50,
+    "tha_Thai": 50,
+    "zho_Hans": 49,
+    "jpn_Jpan": 50,
+    "kor_Hang": 49
+  },
+  "routes": {
+    "all": [
+      {
+        "id": "efficient",
+        "mean": {
+          "r1": 0.8160000000000001,
+          "r5": 0.9330000000000002,
+          "r10": 0.9729999999999999,
+          "r25": 0.9890000000000001
+        },
+        "neuralQueries": 0,
+        "languages": {
+          "eng_Latn": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 0.94,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "deu_Latn": {
+            "questions": 50,
+            "r1": 0.7,
+            "r5": 0.9,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "fra_Latn": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.9,
+            "r10": 0.96,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "spa_Latn": {
+            "questions": 50,
+            "r1": 0.74,
+            "r5": 0.9,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "por_Latn": {
+            "questions": 50,
+            "r1": 0.72,
+            "r5": 0.92,
+            "r10": 0.96,
+            "r25": 0.98,
+            "neuralQueries": 0
+          },
+          "ita_Latn": {
+            "questions": 50,
+            "r1": 0.74,
+            "r5": 0.94,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "nld_Latn": {
+            "questions": 50,
+            "r1": 0.76,
+            "r5": 0.92,
+            "r10": 0.96,
+            "r25": 0.98,
+            "neuralQueries": 0
+          },
+          "pol_Latn": {
+            "questions": 50,
+            "r1": 0.82,
+            "r5": 0.94,
+            "r10": 0.96,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "rus_Cyrl": {
+            "questions": 50,
+            "r1": 0.98,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "tur_Latn": {
+            "questions": 50,
+            "r1": 0.76,
+            "r5": 0.88,
+            "r10": 0.94,
+            "r25": 0.96,
+            "neuralQueries": 0
+          },
+          "arb_Arab": {
+            "questions": 50,
+            "r1": 0.6,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.96,
+            "neuralQueries": 0
+          },
+          "hin_Deva": {
+            "questions": 50,
+            "r1": 0.68,
+            "r5": 0.82,
+            "r10": 0.88,
+            "r25": 0.92,
+            "neuralQueries": 0
+          },
+          "ben_Beng": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.98,
+            "neuralQueries": 0
+          },
+          "urd_Arab": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "ind_Latn": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "vie_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.94,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "tha_Thai": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "zho_Hans": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "jpn_Jpan": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "kor_Hang": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.96,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          }
+        }
+      },
+      {
+        "id": "reranked",
+        "mean": {
+          "r1": 0.8160000000000001,
+          "r5": 0.9410000000000002,
+          "r10": 0.9780000000000001,
+          "r25": 0.9890000000000001
+        },
+        "neuralQueries": 887,
+        "languages": {
+          "eng_Latn": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 1,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 41
+          },
+          "deu_Latn": {
+            "questions": 50,
+            "r1": 0.7,
+            "r5": 0.94,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 40
+          },
+          "fra_Latn": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.9,
+            "r10": 0.96,
+            "r25": 1,
+            "neuralQueries": 40
+          },
+          "spa_Latn": {
+            "questions": 50,
+            "r1": 0.74,
+            "r5": 0.9,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 43
+          },
+          "por_Latn": {
+            "questions": 50,
+            "r1": 0.72,
+            "r5": 0.94,
+            "r10": 0.96,
+            "r25": 0.98,
+            "neuralQueries": 44
+          },
+          "ita_Latn": {
+            "questions": 50,
+            "r1": 0.74,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 43
+          },
+          "nld_Latn": {
+            "questions": 50,
+            "r1": 0.76,
+            "r5": 0.92,
+            "r10": 0.98,
+            "r25": 0.98,
+            "neuralQueries": 40
+          },
+          "pol_Latn": {
+            "questions": 50,
+            "r1": 0.82,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 41
+          },
+          "rus_Cyrl": {
+            "questions": 50,
+            "r1": 0.98,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 34
+          },
+          "tur_Latn": {
+            "questions": 50,
+            "r1": 0.76,
+            "r5": 0.88,
+            "r10": 0.94,
+            "r25": 0.96,
+            "neuralQueries": 39
+          },
+          "arb_Arab": {
+            "questions": 50,
+            "r1": 0.6,
+            "r5": 0.92,
+            "r10": 0.96,
+            "r25": 0.96,
+            "neuralQueries": 50
+          },
+          "hin_Deva": {
+            "questions": 50,
+            "r1": 0.68,
+            "r5": 0.84,
+            "r10": 0.88,
+            "r25": 0.92,
+            "neuralQueries": 49
+          },
+          "ben_Beng": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.98,
+            "neuralQueries": 50
+          },
+          "urd_Arab": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "ind_Latn": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 42
+          },
+          "vie_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.94,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 45
+          },
+          "tha_Thai": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.96,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "zho_Hans": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "jpn_Jpan": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 48
+          },
+          "kor_Hang": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 48
+          }
+        }
+      }
+    ],
+    "guessed": [
+      {
+        "id": "efficient",
+        "mean": {
+          "r1": 0.901,
+          "r5": 0.9640000000000001,
+          "r10": 0.9800000000000001,
+          "r25": 0.9900000000000002
+        },
+        "neuralQueries": 0,
+        "languages": {
+          "eng_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "deu_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "fra_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.96,
+            "r10": 0.96,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "spa_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "por_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 0.98,
+            "neuralQueries": 0
+          },
+          "ita_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "nld_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "pol_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "rus_Cyrl": {
+            "questions": 50,
+            "r1": 1,
+            "r5": 1,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "tur_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.96,
+            "neuralQueries": 0
+          },
+          "arb_Arab": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.96,
+            "r10": 0.96,
+            "r25": 0.96,
+            "neuralQueries": 0
+          },
+          "hin_Deva": {
+            "questions": 50,
+            "r1": 0.7,
+            "r5": 0.84,
+            "r10": 0.88,
+            "r25": 0.92,
+            "neuralQueries": 0
+          },
+          "ben_Beng": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.98,
+            "neuralQueries": 0
+          },
+          "urd_Arab": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "ind_Latn": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "vie_Latn": {
+            "questions": 50,
+            "r1": 0.96,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "tha_Thai": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "zho_Hans": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "jpn_Jpan": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 0
+          },
+          "kor_Hang": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 0.96,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 0
+          }
+        }
+      },
+      {
+        "id": "reranked",
+        "mean": {
+          "r1": 0.901,
+          "r5": 0.966,
+          "r10": 0.9810000000000001,
+          "r25": 0.9900000000000002
+        },
+        "neuralQueries": 885,
+        "languages": {
+          "eng_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 1,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 41
+          },
+          "deu_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 1,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 40
+          },
+          "fra_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.96,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 39
+          },
+          "spa_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 43
+          },
+          "por_Latn": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 0.98,
+            "neuralQueries": 43
+          },
+          "ita_Latn": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 43
+          },
+          "nld_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.96,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 40
+          },
+          "pol_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 41
+          },
+          "rus_Cyrl": {
+            "questions": 50,
+            "r1": 1,
+            "r5": 1,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 34
+          },
+          "tur_Latn": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.96,
+            "neuralQueries": 39
+          },
+          "arb_Arab": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.96,
+            "r10": 0.96,
+            "r25": 0.96,
+            "neuralQueries": 50
+          },
+          "hin_Deva": {
+            "questions": 50,
+            "r1": 0.7,
+            "r5": 0.84,
+            "r10": 0.88,
+            "r25": 0.92,
+            "neuralQueries": 49
+          },
+          "ben_Beng": {
+            "questions": 50,
+            "r1": 0.88,
+            "r5": 0.92,
+            "r10": 0.94,
+            "r25": 0.98,
+            "neuralQueries": 50
+          },
+          "urd_Arab": {
+            "questions": 50,
+            "r1": 0.84,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "ind_Latn": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 42
+          },
+          "vie_Latn": {
+            "questions": 50,
+            "r1": 0.96,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 45
+          },
+          "tha_Thai": {
+            "questions": 50,
+            "r1": 0.94,
+            "r5": 0.98,
+            "r10": 0.98,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "zho_Hans": {
+            "questions": 50,
+            "r1": 0.92,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 50
+          },
+          "jpn_Jpan": {
+            "questions": 50,
+            "r1": 0.9,
+            "r5": 0.98,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 48
+          },
+          "kor_Hang": {
+            "questions": 50,
+            "r1": 0.86,
+            "r5": 0.96,
+            "r10": 1,
+            "r25": 1,
+            "neuralQueries": 48
+          }
+        }
+      }
+    ]
+  }
+}

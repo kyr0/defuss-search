@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `language` to `SearchQuery`: the lexical adapter forwards it to defuss-lexicalsearch's `language` option, which weighs the fields of that language three times more and keeps every other field searchable. `withSurfaceFields()` companions keep their analyzer's language. Requires defuss-lexicalsearch 0.4.0.
+- `make bench` runs `bun run bench:language-guess`: both presets over all 20 language fields, without a language and with defuss-lid 0.5.0's `major_20` guess. The efficient preset reaches 90.1% R@1 with the guess and 81.6% without it, against 91.3% with the known language; `docs/languages.md` reports every language.
+- The website demo detects a typed question's language with defuss-lid's `major_20` pack and selects it in the language menu.
 - Add `buildColbertTokenIndex()` to `defuss-search/colbert`, and an `index` option to `createColbertRetriever()` that takes its result instead of `matrices`: a token index built once, for example at build time, ranks as one built from the same matrices without encoding or quantizing the documents again.
 - The website demo preselects lexical-semantic tiny and downloads the passages' prebuilt token index (8.87 MB gzipped) instead of encoding the 2,000 passages in the browser, which took 13 to 15 s; MoEdernColBERT encodes only the questions and notes.
 - The website survives a deploy while browsers still cache the previous one: the demo worker is one file without lazy chunks, and pages load their scripts and stylesheet with a build version (`?v=`) that the worker URL repeats. A cached worker had requested a chunk the new deploy no longer served ("Failed to fetch dynamically imported module").

@@ -15,6 +15,7 @@
  * example question ranks exactly as in the published figures, before any model download. VERIFIED: the e2e test
  * measures the efficient preset over all 1,000 questions here and compares each language with docs/data/recall.json.
  */
+import { loadCld3Pack } from 'defuss-lid/cld3-pack';
 import { searchPreset } from 'defuss-search';
 import { createColbertRetriever } from 'defuss-search/colbert';
 import {
@@ -524,6 +525,24 @@ const columnOf = (response, toHit) => ({
   weakLexical: response.weakLexical,
 });
 
+// ---- the language of a typed question: defuss-lid's major_20 pack, loaded with the first one ------------------------
+const codeOfEntry = Object.fromEntries(languageCases.map((x) => [x.entry, x.code]));
+let identifier;
+/**
+ * The fixture code of the language major_20 reads in `text`; undefined when it reads none. The pack covers the
+ * fixture's 20 languages, so every answer names a field. scripts/docs.mjs copies the pack and the CLD3 core next to
+ * this worker. VERIFIED: defuss-lid 0.5.0's README states that it checks the core's SHA-256 before instantiating it.
+ */
+async function detectLanguage(text) {
+  identifier ??= loadCld3Pack(new URL('./lid/major_20.cld3q', import.meta.url), {
+    coreURL: new URL('./lid/cld3-core.bin.gz', import.meta.url),
+  }).catch((error) => {
+    identifier = undefined; // the next typed question tries again
+    throw error;
+  });
+  return codeOfEntry[(await identifier).predict(text)[0]?.language];
+}
+
 let pending;
 let searching = false;
 /** Runs only the newest query: typing costs one embedding or scan per pause, however many keystrokes arrive. */
@@ -550,6 +569,13 @@ async function runSearch(job) {
     const notesIndex = job.index === 'notes';
     if (!notesIndex && !bench) throw new Error('The corpus is still loading');
     if (notesIndex && notesSearch?.key !== `${factory}:${rerank}`) await rebuildNotes();
+    // A typed question searches the field of its detected language, as a benchmark question searches its own; the
+    // page then selects that language. Notes keep searching every field (ARCH.md, "Website demo").
+    const detected = !notesIndex && job.detect ? await detectLanguage(job.text) : undefined;
+    if (detected) {
+      job = { ...job, language: detected };
+      base.detected = detected;
+    }
     if (!notesIndex && !CODES.includes(job.language))
       throw new Error(`No analyzer for ${job.language}`);
     const toHit = notesIndex

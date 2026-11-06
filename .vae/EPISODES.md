@@ -21,18 +21,9 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:onmessage clear-cache learn=none: Requires a failing Cache API in Chromium; reasoning from Promise semantics, no reproducible trigger in the e2e.
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:embedPendingNotes learn=none: Timing race between two worker queues; deterministic reproduction would need a hook into the embedding call.
 2026-11-01T03:20:21Z s=79e705da FINDING website/search-worker.mjs:loadModel winzling learn=none: Same fault-injection limit as the load path.
-2026-11-01T03:20:21Z s=79e705da FINDING website/render.mjs:METHODS reranked badge learn=verifier: scripts/check-project.mjs fails when reranked mean R@5 drops below efficient (recall.json) or lexical (pareto.json all).
 2026-11-01T03:20:21Z s=79e705da FINDING scripts/pareto-docs.mjs:67 learn=none: Wording follows a human decision, not a mechanical invariant.
 2026-11-01T03:20:21Z s=79e705da FINDING THIRD_PARTY.md:last paragraph learn=none: License adequacy is a review judgment.
-2026-11-01T03:20:21Z s=79e705da FINDING scripts/e2e.mjs:demo.png learn=memory: .vae/CLI_GIST.md demo line records the reveal pitfall.
-2026-11-01T03:20:21Z s=79e705da FINDING docs/data/manifest.json learn=verifier: scripts/check-project.mjs checks sizes, unpacked sizes, model fingerprint, dataset SHA, shape and every model file pin.
 2026-11-01T03:20:21Z s=79e705da FINDING fixtures/language-embeddings.json; scripts/language-fixture.mjs learn=none: Dead files; nothing recurs.
-2026-11-01T03:20:21Z s=79e705da FINDING website/index.html:694 learn=verifier: vae.py prose covers website/index.html.
-2026-11-01T03:20:21Z s=79e705da FINDING website/render.mjs:1; website/notes.mjs:1; scripts/check-project.mjs:1 learn=verifier: The gate's docs step rejects updated files without an epistemic prefix.
-2026-11-01T13:13:14Z s=79e705da DONE fp=c5a7b226c60e cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+112)
-2026-11-01T13:13:14Z s=79e705da FINDING website/site.css:.hs-search learn=test: scripts/e2e.mjs asserts the notes form is no taller than its controls.
-2026-11-01T13:42:02Z s=79e705da DONE fp=5c87cca629f3 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+112)
-2026-11-01T13:42:02Z s=79e705da FINDING website/search-worker.mjs:rebuildNotes learn=test: scripts/e2e.mjs adds a German soup note and asserts 'Mehr Kontakt mit Tieren' does not hit it lexically while 'Kartoffelsuppe' does.
 2026-11-01T14:09:28Z s=79e705da FAIL lint
 2026-11-01T14:16:51Z s=79e705da DONE fp=696e41df74aa cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+113)
 2026-11-01T14:16:51Z s=79e705da FINDING bench/semantic-first.mjs:108 learn=verifier: make lint runs oxlint --deny-warnings on bench/.
@@ -106,3 +97,12 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-02T03:45:37Z s=7ec9146b DONE fp=4bff522ba2c3 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+30)
 2026-11-02T04:01:59Z s=7ec9146b DONE fp=4f541b726764 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+38)
 2026-11-02T04:01:59Z s=7ec9146b FINDING scripts/docs.mjs:Bun.build (splitting for search-worker.js); website/demo.mjs:new Worker learn=verifier: scripts/check-project.mjs fails when docs/assets/search-worker.js references chunks/ or a page's ?v differs from assetVersion(); scripts/e2e.mjs asserts the wor
+2026-11-02T04:04:24Z s=7ec9146b DONE fp=da3fba31185a cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+35)
+2026-11-06T13:16:24Z s=a22aa615 FAIL tests.e2e.1
+2026-11-06T13:25:00Z s=a22aa615 DONE fp=9e17a6b9f677 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+28)
+2026-11-06T13:25:00Z s=a22aa615 FINDING src/adapters/lexical.ts:surfaceAnalyzer learn=test: test/query-language.test.mjs asserts surfaceAnalyzer(de).language and the 3x score with companions.
+2026-11-06T13:25:00Z s=a22aa615 FINDING bench/language-guess.mjs:81 learn=none: A one-off resolution choice in a Bun-only bench; no rule can tell which package exports package.json.
+2026-11-06T13:25:00Z s=a22aa615 FINDING scripts/package-test.mjs:40 learn=test: make e2e (test:package) fails when the website imports a package the consumer does not install.
+2026-11-06T13:25:00Z s=a22aa615 FINDING scripts/recall-docs.mjs:writeRecall; scripts/check-project.mjs learn=verifier: scripts/check-project.mjs (make verify) fails on a stale block or a snapshot from another release.
+2026-11-06T13:25:00Z s=a22aa615 FINDING ARCH.md:98 (P09) learn=none: Editorial; a string rule would pin wording.
+2026-11-06T13:25:00Z s=a22aa615 FINDING website/search-worker.mjs:runSearch; website/demo.mjs:results learn=test: scripts/e2e.mjs asserts typed English and German detection, the menu value, the summary text and the menu override in Chromium.

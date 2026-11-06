@@ -7,7 +7,7 @@ import { join } from 'node:path';
 test('README runnable examples execute with their stated outputs', async () => {
   const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8');
   const examples = [...readme.matchAll(/```js\n([\s\S]*?)```/g)].map((match) => match[1]);
-  assert.equal(examples.length, 3);
+  assert.equal(examples.length, 4);
   // Temporary files live inside the package so Node and Bun resolve its self-reference.
   await mkdir(new URL('../tmp/', import.meta.url), { recursive: true });
   const directory = await mkdtemp(new URL('../tmp/readme-', import.meta.url).pathname);

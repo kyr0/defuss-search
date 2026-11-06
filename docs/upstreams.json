@@ -1,13 +1,13 @@
 {
-  "inspectedAt": "2026-10-31",
+  "inspectedAt": "2026-11-06",
   "repositories": [
     {
       "url": "https://github.com/kyr0/defuss-lexicalsearch",
-      "commit": "904701a0fc1add25bd71e4cd44c622e6ac0af2e2",
+      "commit": "6b6853cddf1ac9984a2e393aa9bc088fccb11ffb",
       "package": "defuss-lexicalsearch",
-      "version": "0.3.0",
-      "npmIntegrity": "sha512-O0QcX1WZT2ksStk0oNhQIpDKaUJ0FdOlY52Ha6pvpxI+BOmL3Q4UBVnGY3nSIHALhSac5oMDLge1NeeRSnLl2A==",
-      "publishedAt": "2026-10-31T15:05:45.933Z"
+      "version": "0.4.0",
+      "npmIntegrity": "sha512-ODWEKdUo9kryOOMQJfB7dThF8ZySCJNIWsQpBgkaSbxtKj6tLmUQspoVe3LQE6xwH91vYgSns5ITNgnfMqzkmg==",
+      "publishedAt": "2026-11-06T13:19:49.628Z"
     },
     {
       "url": "https://github.com/kyr0/defuss-vectorsearch",

@@ -3,6 +3,12 @@ export type Source = 'lexical' | 'vector';
 export interface SearchQuery {
   readonly text: string;
   readonly vector?: ArrayLike<number>;
+  /**
+   * The query's language as a BCP 47 tag, such as a language identifier's guess. The lexical adapter passes it to
+   * LexicalSearch's `language` option, which weighs the fields of that language higher and keeps every other field
+   * searchable; vector sources and rerankers ignore it. VERIFIED: bench/language-guess.mjs.
+   */
+  readonly language?: string;
 }
 export interface RankedHit {
   readonly id: string;

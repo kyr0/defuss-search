@@ -23,6 +23,21 @@ await writeFile(
 await writeFile('docs/.nojekyll', '');
 // ORT 1.30 selects a loader according to browser capabilities (JSPI, Asyncify or JSEP).
 // Ship every matching loader/wasm pair so deployments do not depend on one test browser.
+// The demo's language identifier: defuss-lid's major_20 pack and the CLD3 core it fills, next to the worker.
+// VERIFIED: make e2e loads both from assets/lid in Chromium and detects German (2026-11-06).
+await mkdir('docs/assets/lid', { recursive: true });
+await copyFile(
+  'node_modules/defuss-lid/models/cld3-pq-dno/major_20.cld3q',
+  'docs/assets/lid/major_20.cld3q',
+);
+await copyFile(
+  'node_modules/defuss-lid/runtime/cld3-core.bin.gz',
+  'docs/assets/lid/cld3-core.bin.gz',
+);
+// Their notices: CLD3's weights (Apache-2.0) as refitted by defuss-lid, and the cld3-asm WebAssembly (MIT).
+await copyFile('node_modules/defuss-lid/models/cld3-pq-dno/NOTICE.md', 'docs/assets/lid/NOTICE.md');
+for (const name of ['CLD3-Apache-2.0.txt', 'cld3-asm-MIT.txt'])
+  await copyFile(`node_modules/defuss-lid/licenses/${name}`, `docs/assets/lid/${name}`);
 await mkdir('docs/assets/ort', { recursive: true });
 for (const name of await readdir('node_modules/onnxruntime-web/dist')) {
   if (/^ort-wasm.*\.(?:mjs|wasm)$/.test(name))

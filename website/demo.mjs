@@ -240,10 +240,12 @@ export function initDemo() {
   // ---- benchmark search ------------------------------------------------------------------------------------------
   let searchId = 0;
   let debounce = 0;
-  const askBench = ({ text, example = -1, language = el.language.value }) => {
+  // detect: the worker reads the question's language and searches that field; a benchmark question or a language the
+  // reader picked is searched as asked.
+  const askBench = ({ text, example = -1, language = el.language.value, detect = false }) => {
     clearTimeout(debounce);
     if (!state.choice || !state.queries.length || !text.trim()) return;
-    state.bench = { id: ++searchId, text, example, language };
+    state.bench = { id: ++searchId, text, example, language, detect };
     el.compare.setAttribute('aria-busy', 'true');
     worker.postMessage({
       type: 'search',
@@ -252,6 +254,7 @@ export function initDemo() {
       text,
       language,
       example,
+      detect,
       ...state.choice,
     });
   };
@@ -286,6 +289,8 @@ export function initDemo() {
     const timing =
       column.state === 'done' || column.ms ? `search ${formatMs(column.ms)}` : 'waiting';
     $('summary-time').textContent = `${METHODS[data.method].title} · ${
+      data.detected ? `${languageName(data.detected)} detected · ` : ''
+    }${
       data.recorded
         ? 'recorded question vector · '
         : data.embedMs
@@ -324,7 +329,7 @@ export function initDemo() {
       return;
     }
     const example = state.queries.findIndex((query) => query.text === text);
-    askBench({ text, example });
+    askBench({ text, example, detect: example < 0 });
     needFor(example >= 0);
   });
   // Typing searches as you go; only Search starts a model download.
@@ -337,15 +342,15 @@ export function initDemo() {
       el.compare.innerHTML = '';
       return;
     }
-    debounce = setTimeout(
-      () => askBench({ text, example: state.queries.findIndex((q) => q.text === text) }),
-      120,
-    );
+    debounce = setTimeout(() => {
+      const example = state.queries.findIndex((q) => q.text === text);
+      askBench({ text, example, detect: example < 0 });
+    }, 120);
   });
   // Only a different language runs the question again; a repeated run would report the cached ColBERT scan's time.
   el.language.addEventListener('change', () => {
     if (state.bench && state.bench.language !== el.language.value)
-      askBench({ ...state.bench, language: el.language.value });
+      askBench({ ...state.bench, language: el.language.value, detect: false });
   });
   $('examples').addEventListener('click', (event) => {
     const button = event.target.closest('[data-query]');
@@ -551,6 +556,9 @@ export function initDemo() {
         return;
       }
       if (data.id !== state.bench?.id) return; // a newer question is on its way
+      // The worker searched the detected language's field; the menu shows it, and a pick from the menu overrides it.
+      // VERIFIED: scripts/e2e.mjs checks both in Chromium.
+      if (data.detected) el.language.value = state.bench.language = data.detected;
       showBench(data);
       if (data.final) window.lastSearch = { ...data, gold: goldOf() };
     },

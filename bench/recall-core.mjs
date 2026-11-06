@@ -22,10 +22,12 @@ export const PRESETS = {
 };
 
 /**
- * One index holds all passages, one analyzer field per language. A question searches its
- * own language's field (the language is known); vector retrieval scans every passage, so a
- * question also competes with the translations of its gold passage. Returns, per preset,
- * each question's target rank (0: outside the top 25) and whether neural inference ran.
+ * One index holds all passages, one analyzer field per language. By default a question searches
+ * its own language's field (the language is known); vector retrieval scans every passage, so a
+ * question also competes with the translations of its gold passage. `route: 'all'` searches every
+ * language field, and `route: 'guessed'` does too, with `guesses[i]` as question i's `language`.
+ * Returns, per preset, each question's target rank (0: outside the top 25) and whether neural
+ * inference ran. VERIFIED: bench/language-guess.mjs runs the all and guessed routes (2026-11-06).
  */
 export async function measureRecall({
   documents,
@@ -34,9 +36,14 @@ export async function measureRecall({
   queryVectors,
   reranker,
   presets = Object.keys(PRESETS),
+  route = 'known',
+  guesses = [],
   onProgress = () => {},
 }) {
-  const { hybrid: searchers } = createBenchSearch({ documents, vectors, reranker });
+  if (!['known', 'all', 'guessed'].includes(route)) throw new Error(`Unknown route ${route}`);
+  if (route === 'guessed' && guesses.length !== queries.length)
+    throw new Error('One guess per question is required');
+  const { hybrid: searchers, all } = createBenchSearch({ documents, vectors, reranker });
   const runs = {};
   for (const preset of presets) {
     const options = { ...searchPreset(preset), limit: Math.max(...K) };
@@ -44,10 +51,11 @@ export async function measureRecall({
       neural = [];
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];
-      const searcher = searchers.get(query.language);
+      const searcher = route === 'known' ? searchers.get(query.language) : all;
       if (!searcher) throw new Error(`No analyzer for ${query.language}`);
+      const language = route === 'guessed' && guesses[i] ? { language: guesses[i] } : {};
       const result = await searcher.searchWithStats(
-        { text: query.text, vector: queryVectors[i] },
+        { text: query.text, vector: queryVectors[i], ...language },
         options,
       );
       ranks.push(result.hits.findIndex((hit) => hit.id === query.target) + 1);

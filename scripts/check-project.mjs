@@ -11,7 +11,14 @@ import { gunzipSync } from 'node:zlib';
 import { WINZLING_PROFILE } from 'defuss-vectorsearch/onnx.js';
 import { releases } from './models.mjs';
 import { languageCases } from '../fixtures/languages.mjs';
-import { K, renderRecall, renderRecallTable, renderLanguageGlance } from './recall-docs.mjs';
+import {
+  K,
+  LANGUAGE_GUESS,
+  renderLanguageGlance,
+  renderLanguageGuess,
+  renderRecall,
+  renderRecallTable,
+} from './recall-docs.mjs';
 import { FACTORIES } from '../website/factories.mjs';
 import { factoryFiguresPage } from '../website/render.mjs';
 import { assetVersion, versionPage } from './website-build.mjs';
@@ -29,6 +36,15 @@ for (const peer of provenance.repositories) {
 }
 const recall = await json('docs/data/recall.json');
 assert.equal(recall.version, pkg.version);
+// VERIFIED: docs/data/language-guess.json records the lexicalsearch and defuss-lid versions it measured, so its
+// figures must come from this release and the installed ones.
+const guessReport = await json('docs/data/language-guess.json');
+assert.equal(guessReport.version, pkg.version, 'Rerun bun run bench:language-guess');
+assert.equal(
+  guessReport.lexicalsearch,
+  (await json('node_modules/defuss-lexicalsearch/package.json')).version,
+);
+assert.equal(guessReport.identifier.version, pkg.devDependencies['defuss-lid']);
 assert.deepEqual(
   Object.values(recall.languages).map((x) => x.entry),
   languageCases.map((x) => x.entry),
@@ -51,6 +67,7 @@ for (const [file, pattern, render] of [
   ['website/index.html', /<!-- recall:start -->[\s\S]*<!-- recall:end -->/, renderRecall],
   ['README.md', /<!-- recall-table:start -->[\s\S]*<!-- recall-table:end -->/, renderRecallTable],
   ['README.md', /<!-- languages:start -->[\s\S]*<!-- languages:end -->/, renderLanguageGlance],
+  ['docs/languages.md', LANGUAGE_GUESS, (report) => renderLanguageGuess(report, guessReport)],
 ])
   assert.equal(
     (await readFile(file, 'utf8')).match(pattern)?.[0],

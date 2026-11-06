@@ -30,6 +30,7 @@ metrics: ## show the measured R@1 to R@25 per language for both presets
 	bun scripts/metrics.mjs
 bench: build ## measure R@k per language on Bun, Node.js and Chromium, then the quality/work frontier
 	bun run bench:recall
+	bun run bench:language-guess
 	bun run bench:pareto
 test: build ## test behavior on Bun and Node and check ESM/CJS declarations
 	bun run test:bun

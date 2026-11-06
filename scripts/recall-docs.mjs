@@ -204,13 +204,64 @@ export function renderLanguageGlance(recall) {
   ].join('\n');
 }
 
-/** Replace the generated parts of website/index.html and README.md; return the changed files. */
+export const LANGUAGE_GUESS = /<!-- language-guess:start -->[\s\S]*<!-- language-guess:end -->/;
+/**
+ * docs/languages.md's figures for a question language the application has to guess: R@5 per language with the
+ * guess, then mean R@1 and R@5 with the language unknown, guessed and known. `guess` is docs/data/language-guess.json
+ * (bench/language-guess.mjs); the known-language figures come from the recall report of the same release.
+ * VERIFIED: scripts/check-project.mjs compares docs/languages.md's block with this output.
+ */
+export function renderLanguageGuess(recall, guess) {
+  if (guess.version !== recall.version)
+    throw new Error('Rerun bun run bench:language-guess for this release');
+  const pick = (presets) => ['efficient', 'reranked'].map((id) => presets.find((p) => p.id === id));
+  const known = pick(recall.presets),
+    guessed = pick(guess.routes.guessed),
+    unknown = pick(guess.routes.all);
+  const codes = Object.keys(recall.languages);
+  const total = codes.reduce((sum, code) => sum + guess.right[code], 0);
+  const asked = (code) => recall.presets[0].languages[code].questions;
+  const row = (cells) => `| ${cells.join(' | ')} |`;
+  const means = (presets) => presets.flatMap((p) => [percent(p.mean.r1, 1), percent(p.mean.r5, 1)]);
+  const { version, pack } = guess.identifier;
+  return [
+    '<!-- language-guess:start -->',
+    row(['Language', 'Guessed right', 'Efficient R@5', 'Reranked R@5']),
+    row(['---', '---:', '---:', '---:']),
+    ...codes.map((code) =>
+      row([
+        recall.languages[code].name,
+        `${guess.right[code]} of ${asked(code)}`,
+        ...guessed.map((p) => percent(p.languages[code].r5, 1)),
+      ]),
+    ),
+    row([
+      '**Mean**',
+      `**${total.toLocaleString('en')} of ${guess.questions.toLocaleString('en')}**`,
+      ...guessed.map((p) => `**${percent(p.mean.r5, 1)}**`),
+    ]),
+    '',
+    row(['Question language', 'Efficient R@1', 'Efficient R@5', 'Reranked R@1', 'Reranked R@5']),
+    row(['---', '---:', '---:', '---:', '---:']),
+    row(['Unknown: BM25 over all 20 fields', ...means(unknown)]),
+    row([
+      `Guessed by defuss-lid ${version} \`${pack}\`, passed as \`language\``,
+      ...means(guessed),
+    ]),
+    row(["Known: BM25 over the question's field", ...means(known)]),
+    '<!-- language-guess:end -->',
+  ].join('\n');
+}
+
+/** Replace the generated parts of website/index.html, README.md and docs/languages.md; return the changed files. */
 export async function writeRecall(recall) {
+  const guess = JSON.parse(await readFile('docs/data/language-guess.json', 'utf8'));
   const changed = [];
   for (const [file, pattern, render] of [
     ['website/index.html', /<!-- recall:start -->[\s\S]*<!-- recall:end -->/, renderRecall],
     ['README.md', /<!-- recall-table:start -->[\s\S]*<!-- recall-table:end -->/, renderRecallTable],
     ['README.md', /<!-- languages:start -->[\s\S]*<!-- languages:end -->/, renderLanguageGlance],
+    ['docs/languages.md', LANGUAGE_GUESS, (report) => renderLanguageGuess(report, guess)],
   ]) {
     const text = await readFile(file, 'utf8');
     if (!pattern.test(text)) throw new Error(`${file} lacks the generated recall markers`);
