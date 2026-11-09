@@ -1,7 +1,7 @@
 /**
- * Can a per-query lexical confidence decide how much BM25 counts? Rank fusion gives BM25's first hit 3/(1+1) = 1.5
- * points whether it matched one common word or the whole query, and the vector source's first hit at most 0.5, so
- * a weak lexical match always wins. This experiment weighs BM25 by evidence the query itself carries:
+ * Can a per-query lexical confidence decide how much BM25 counts? Rank fusion with the presets' weights (k=0, 2:1)
+ * gives BM25's first hit 2/(0+1) = 2 points whether it matched one common word or the whole query, and the vector
+ * source's first hit at most 1, so a weak lexical match always wins. (The 2026-11-01 run used k=1 and 3:1.) This experiment weighs BM25 by evidence the query itself carries:
  * - c, the lexical confidence: the share of the query's information that BM25's first hit matches, each analyzed
  *   query term weighted by its IDF in a background corpus of the same language (the Belebele passages of that
  *   language; for a Belebele question, the passages of the other half of the passage groups). A word that is
@@ -24,6 +24,9 @@
  * corpus, so the library ships that form (Retriever.matchShare, src/pipeline/weak-lexical.ts). Its 3 x 3 grid runs
  * through HybridSearch; the presets' setting (share < 0.2, gap > 0.15) reached 97.8% and 86.4% R@1 on the notes'
  * translation and paraphrase queries and 91.3% on Belebele, against 61.5%, 63.6% and 91.0% without the rule.
+ * VERIFIED: rerun on 2026-11-09 with the defuss-vectorsearch 0.3.1 models and the refit fusion (k=0, 2:1), that
+ * setting is still the grid's highest mean R@1 within the one-point limit: notes 97.8% and 81.8% against 61.5% and
+ * 59.1%, Belebele 91.2% against 91.0%; passages cut to 16 words lose exactly one point (65.8% against 66.8%).
  * HYPOTHESIS: the gate's thresholds hold on queries that did not pick them; falsifier: on fresh queries it loses more
  * than a point of Belebele R@1 or most of the notes gain. All 17 variants were scored on the same queries.
  */

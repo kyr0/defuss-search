@@ -94,7 +94,7 @@ test('createHybridIndex adds the companions by default; surface: false keeps the
       lexical: english,
       ...(surface === undefined ? {} : { surface }),
     });
-    // Equal vectors leave the order to BM25 under the efficient preset's 3:1 lexical weight.
+    // Equal vectors leave the order to BM25 under the efficient preset's 2:1 lexical weight.
     return (await search.search({ text: 'tabs', vector: [1, 0] }, searchPreset('efficient')))[0].id;
   };
   assert.equal(await top(), 'tabs');

@@ -24,25 +24,13 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-01T03:20:21Z s=79e705da FINDING scripts/pareto-docs.mjs:67 learn=none: Wording follows a human decision, not a mechanical invariant.
 2026-11-01T03:20:21Z s=79e705da FINDING THIRD_PARTY.md:last paragraph learn=none: License adequacy is a review judgment.
 2026-11-01T03:20:21Z s=79e705da FINDING fixtures/language-embeddings.json; scripts/language-fixture.mjs learn=none: Dead files; nothing recurs.
-2026-11-01T14:09:28Z s=79e705da FAIL lint
-2026-11-01T14:16:51Z s=79e705da DONE fp=696e41df74aa cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+113)
-2026-11-01T14:16:51Z s=79e705da FINDING bench/semantic-first.mjs:108 learn=verifier: make lint runs oxlint --deny-warnings on bench/.
-2026-11-01T14:16:51Z s=79e705da FINDING website/render.mjs:renderWhy; website/notes.mjs:reveal learn=test: scripts/e2e.mjs opens the panel, checks the matched word and asserts the jump focuses note-6.
-2026-11-01T14:37:40Z s=79e705da DONE fp=00c9966086ec cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+116)
 2026-11-01T14:37:40Z s=79e705da FINDING bench/coverage.mjs:7 learn=none: Claim scope is a review judgment.
 2026-11-01T14:37:40Z s=79e705da FINDING bench/semantic-first.mjs; bench/coverage.mjs learn=none: Refactor; nothing recurs.
-2026-11-01T14:42:36Z s=79e705da DONE fp=680f8b1fab20 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+116)
 2026-11-01T14:42:36Z s=79e705da FINDING docs/verification.md:When BM25 helps learn=none: Count taken from one run's log; a rule would pin a value that worked once.
-2026-11-01T15:49:30Z s=79e705da DONE fp=2097accd6835 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+119)
-2026-11-01T15:49:30Z s=79e705da FINDING src/core/route.ts:routeFor learn=test: test/route.test.mjs 'applies to fusion only and embeds text-only queries'.
-2026-11-01T15:49:30Z s=79e705da FINDING src/adapters/lexical.ts:averageLength learn=test: test/route.test.mjs covers keyword+text, single and disjoint fields.
 2026-11-01T15:49:30Z s=79e705da FINDING website/render.mjs:renderFigure learn=none: The e2e notes run exercises it once the presets set vectorOnlyBelow; asserted then.
-2026-11-01T15:55:42Z s=79e705da DONE fp=66de3dcfb6f1 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+119)
 2026-11-01T15:55:42Z s=79e705da FINDING src/core/route.ts:1; src/types.ts:vectorOnlyBelow learn=none: Claim scope follows the benchmark; presets stay unchanged, so no behavior recurs.
-2026-11-01T15:59:56Z s=79e705da DONE fp=fbbbbe0aad05 cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+119)
 2026-11-01T15:59:56Z s=79e705da FINDING CHANGELOG.md:15 B02 learn=none: Claim scope is a review judgment.
 2026-11-01T15:59:56Z s=79e705da FINDING bench/colbert-retrieval.mjs:bytesOf learn=none: One-off report field; the re-run output shows the fix.
-2026-11-01T19:07:41Z s=79e705da DONE fp=7a85ae21575f cov=99.7% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+123)
 2026-11-01T19:07:41Z s=79e705da FINDING bench/confidence-fusion.mjs:measure parity learn=none: Bench-only report metric; no library behavior to pin, and a check would only restate the computation.
 2026-11-01T19:07:41Z s=79e705da FINDING bench/api-docs.mjs:drawSections learn=none: Input-dependent guard in a bench script; the pinned snapshot has 410 pages, so no failing input exists to test against.
 2026-11-01T19:07:41Z s=79e705da FINDING docs/verification.md:9 B01 learn=none: Hand-maintained count; no generator produces this table row.
@@ -106,3 +94,15 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-06T13:25:00Z s=a22aa615 FINDING scripts/recall-docs.mjs:writeRecall; scripts/check-project.mjs learn=verifier: scripts/check-project.mjs (make verify) fails on a stale block or a snapshot from another release.
 2026-11-06T13:25:00Z s=a22aa615 FINDING ARCH.md:98 (P09) learn=none: Editorial; a string rule would pin wording.
 2026-11-06T13:25:00Z s=a22aa615 FINDING website/search-worker.mjs:runSearch; website/demo.mjs:results learn=test: scripts/e2e.mjs asserts typed English and German detection, the menu value, the summary text and the menu override in Chromium.
+2026-11-08T23:25:18Z s=a22aa615 FAIL project.contracts
+2026-11-09T00:15:21Z s=a22aa615 FAIL tests.e2e.1
+2026-11-09T04:23:34Z s=a22aa615 FAIL project.contracts
+2026-11-09T04:24:56Z s=a22aa615 DONE fp=843816e89d94 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+44)
+2026-11-09T04:24:56Z s=a22aa615 FINDING src/presets.ts:27 learn=verifier: bench/pareto.mjs already fails when the preset differs from the development selection; scripts/check-project.mjs compares neural settings.
+2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/check-project.mjs:205 learn=verifier: scripts/check-project.mjs fails in both directions.
+2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/pareto-docs.mjs learn=none: Rendering from the report removes the stale-text class for these sentences; prose elsewhere is a review judgment.
+2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/e2e.mjs:88,484 learn=none: A regression test is not warranted: the defect was pinning data values; the fix derives them.
+2026-11-09T04:24:56Z s=a22aa615 FINDING bench/recall-core.mjs:PRESETS learn=none: Derived from code; no rule needed.
+2026-11-09T04:24:56Z s=a22aa615 FINDING README.md, ARCH.md, src comments (B09) learn=none: Dating claims is an editorial judgment per sentence.
+2026-11-09T04:24:56Z s=a22aa615 FINDING website/index.html:1458 learn=none: Editorial.
+2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/package-test.mjs:92 learn=test: package-test asserts assetVersion(docs) is unchanged by the tarball build; a mutated worker made it fail with the new message, the clean run passed.

@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, writeFile, readFile, cp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { assetVersion } from './website-build.mjs';
 const root = process.cwd();
 const node = 'node';
 const manifest = JSON.parse(await readFile('package.json', 'utf8'));
@@ -88,9 +89,20 @@ try {
         await readFile(join(temporary, 'node_modules/defuss-search', path));
   // Build the website in the isolated consumer with the configuration of `make docs`: its package imports must
   // resolve from the tarball. The build replaces the source tree's chunks and restamps the pages.
+  // VERIFIED (2026-11-09): a fresh install resolved fake-indexeddb 6.2.8 against the lock's 6.2.7, and the worker
+  // differed from the `make docs` build that Pages deploys. Reinstalling with the repo's lock keeps the checks above
+  // on fresh resolution and makes this build byte-identical to `make docs`.
+  await cp(join(root, 'bun.lock'), join(temporary, 'bun.lock'));
+  run('bun', ['install']);
   await cp(join(root, 'website'), join(temporary, 'website'), { recursive: true });
   await cp(join(root, 'fixtures'), join(temporary, 'fixtures'), { recursive: true });
+  const deployed = await assetVersion(join(root, 'docs'));
   run('bun', [join(root, 'scripts/website-build.mjs'), join(root, 'docs')]);
+  assert.equal(
+    await assetVersion(join(root, 'docs')),
+    deployed,
+    'The tarball build differs from the make docs build; run make docs first, and install the repo lock',
+  );
   await mkdir(join(root, 'output'), { recursive: true });
   await writeFile(
     join(root, 'output/package-check.json'),

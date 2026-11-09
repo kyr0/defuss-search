@@ -7,7 +7,7 @@
       "devDependencies": {
         "defuss-lexicalsearch": "0.4.0",
         "defuss-lid": "0.5.0",
-        "defuss-vectorsearch": "0.2.1",
+        "defuss-vectorsearch": "0.3.1",
         "marked": "16.4.2",
         "onnxruntime-node": "1.21.0",
         "oxlint": "1.90.0",
@@ -18,7 +18,7 @@
       },
       "peerDependencies": {
         "defuss-lexicalsearch": "^0.4.0",
-        "defuss-vectorsearch": "^0.2.1",
+        "defuss-vectorsearch": "^0.3.1",
       },
       "optionalPeers": [
         "defuss-lexicalsearch",
@@ -345,7 +345,7 @@
 
     "defuss-multicore": ["defuss-multicore@0.1.0", "", {}, "sha512-bIlt3E8EYPqhpnFxzFKZ2RnLhuiU3dokF1jtDQQcq0imoi2L1i3zta4oOynTti36aswarDIMki1XA62V7ZTYdg=="],
 
-    "defuss-vectorsearch": ["defuss-vectorsearch@0.2.1", "", { "dependencies": { "@huggingface/tokenizers": "0.2.0", "@huggingface/transformers": "^3.8.1", "defuss-db": "^2.0.0", "defuss-multicore": "0.1.0", "onnxruntime-web": "1.30.0" }, "peerDependencies": { "onnxruntime-node": "1.21.0" }, "optionalPeers": ["onnxruntime-node"] }, "sha512-YP6y9ks+W5q1llic3WdL0mkc8Fe1a2/eGw1CQsl7Z4W35voXea/ng1SK5m/xgMeWxOpSelhFdRLinxpig8bzmA=="],
+    "defuss-vectorsearch": ["defuss-vectorsearch@0.3.1", "", { "dependencies": { "@huggingface/tokenizers": "0.2.0", "@huggingface/transformers": "^3.8.1", "defuss-db": "^2.0.0", "defuss-multicore": "0.1.0", "onnxruntime-web": "1.30.0" }, "peerDependencies": { "onnxruntime-node": "1.21.0" }, "optionalPeers": ["onnxruntime-node"] }, "sha512-jqNpLo3e7TFFsjuh/yJpQ8c6JNGQz9Hcfh9uzZ6zYtJ9Jfb0As0SjufB1qv4JThTDQ5j0hmhk73qzmptDCNKyA=="],
 
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
 

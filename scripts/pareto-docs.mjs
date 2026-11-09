@@ -10,6 +10,30 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 if (report.version !== pkg.version)
   throw new Error('Rerun the frontier benchmark for this release');
 const percent = (n) => `${(100 * n).toFixed(1)}%`;
+const { fusion } = report.selected;
+const fusionText = `weighted RRF with k=${fusion.k} and lexical/vector weights ${fusion.lexicalWeight}:1`;
+// Which preset has the higher mean R@5 over all 1,000 questions, as measured, not as last time.
+const allRow = (name) => report.all.results.find((row) => row.name === name);
+const rerankedLeads = allRow('reranked').r5 > allRow('efficient').r5;
+const rerankedText = rerankedLeads
+  ? 'adds a gated ColBERT stage and has the highest mean R@5 over all 1,000 questions'
+  : `adds a gated ColBERT stage; over all 1,000 questions it reaches ${percent(allRow('reranked').r5)} R@5 against ${percent(allRow('efficient').r5)} for efficient, so the neural stage buys no R@5 on this fixture`;
+// The neural stage's held-out effect in questions, per k, as measured.
+const holdoutRow = (name) => report.holdout.results.find((row) => row.name === name);
+const neuralDeltas = [1, 5, 10, 25]
+  .map((k) => [
+    k,
+    Math.round(
+      (holdoutRow('reranked')[`r${k}`] - holdoutRow('efficient')[`r${k}`]) *
+        holdoutRow('efficient').queries,
+    ),
+  ])
+  .filter(([, delta]) => delta !== 0)
+  .map(
+    ([k, delta]) =>
+      `${delta > 0 ? '+' : ''}${delta} R@${k} ${Math.abs(delta) === 1 ? 'success' : 'successes'}`,
+  );
+const neuralText = `Against efficient, reranking changes ${neuralDeltas.length ? neuralDeltas.join(', ') : 'no held-out R@k success'} for ${holdoutRow('reranked').neuralQueries} neural calls`;
 const table = (rows) =>
   rows
     .map(
@@ -47,7 +71,7 @@ await writeFile(
   'docs/pareto.md',
   `# Quality and inference-work frontier
 
-VERIFIED: v${report.version}, lexicalsearch ${report.peers.lexical}, vectorsearch ${report.peers.vector}, ${report.runtime}. Two presets share the measured frontier with lexical-only search. \`searchPreset('efficient')\` is the fastest hybrid: 25 candidates per source, weighted RRF with k=1 and lexical/vector weights 3:1, no neural reranking. \`searchPreset('reranked')\` adds a gated ColBERT stage and has the highest mean R@5 over all 1,000 questions. Constructors without a preset keep their earlier defaults.
+VERIFIED: v${report.version}, lexicalsearch ${report.peers.lexical}, vectorsearch ${report.peers.vector}, ${report.runtime}. The held-out frontier holds ${report.holdout.frontier.map((x) => `\`${x}\``).join(', ')}. \`searchPreset('efficient')\` is the fastest hybrid: 25 candidates per source, ${fusionText}, no neural reranking. \`searchPreset('reranked')\` ${rerankedText}. Constructors without a preset keep their earlier defaults.
 
 VERIFIED: both presets also apply the weak-lexical rule: when BM25's first hit matches less than ${100 * rule.share}% of the query's IDF-weighted words and trails the vector source's first hit by more than ${rule.gap} cosine, the vector hit moves to the top. The replay below applies it after fusion and after the neural stage, as the engine does. Its thresholds were chosen by \`bench/confidence-fusion.mjs\` on all 1,000 questions and on other corpora, so the held-out figures are not independent of that choice; the fusion and neural settings were chosen on the development half alone.
 
@@ -70,7 +94,7 @@ VERIFIED: the selected configurations were evaluated unchanged on all 20 languag
 ${header}
 ${table(report.holdout.results)}
 
-VERIFIED: held-out frontier: ${report.holdout.frontier.map((x) => `\`${x}\``).join(', ')}. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Reranking adds one held-out R@5 success for ${report.holdout.results.find((row) => row.name === 'reranked').neuralQueries} neural calls: it buys quality with inference, and the website demo uses it by default.
+VERIFIED: held-out frontier: ${report.holdout.frontier.map((x) => `\`${x}\``).join(', ')}. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. ${neuralText}.
 
 ## Full fixture: 1,000 queries
 
@@ -89,7 +113,7 @@ The upstream dense guard lives in \`rerankHits\` after inference. This package d
 
 VERIFIED: raw ColBERT 1.5m q8 scores were measured on all 1,000 query prefixes with explicit truncation. Alternative fusion weights and gates replay those same measured scores. The gated call counts and summed saved inference times are counterfactual work estimates, not second end-to-end latency measurements. Real CPU/WASM integration tests separately prove that the gate can avoid every ColBERT file read and still allow forced inference.
 
-UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the small neural R@5 gain persists. No production superiority or universal optimum is claimed.
+UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the neural stage helps on other data. No production superiority or universal optimum is claimed.
 
 ## Reproduce
 
@@ -113,7 +137,7 @@ await writeFile(
 
 VERIFIED: v${report.version} integrates all 20 lexicalsearch ${report.peers.lexical} analyzers with vectorsearch ${report.peers.vector}. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
 
-The efficient preset uses lexical-weighted RRF (3:1, k=1), selected on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
+The efficient preset uses lexical-weighted RRF (${fusion.lexicalWeight}:1, k=${fusion.k}), selected on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
 
 | Language | Analyzer | Winzling target | Lexical R@5 | Vector R@5 | Efficient R@5 | Reranked R@5 |
 | --- | --- | --- | ---: | ---: | ---: | ---: |

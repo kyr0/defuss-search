@@ -4,7 +4,7 @@
  * load, notes searchable as you type) with the defuss-vectorsearch demo (models with byte progress, cached for the
  * next visit).
  * The reader picks one of the three factories of defuss-search/strategies before the demo shows, because the choice
- * decides what loads: nothing for lexical-only; MoEdernColBERT (3.97 MB) and the prebuilt token index for tiny; the
+ * decides what loads: nothing for lexical-only; MoEdernColBERT (3.83 MB) and the prebuilt token index for tiny; the
  * recorded vectors for lexical-semantic, Winzling (39.8 MB) for own text and MoEdernColBERT for its reranker. Models
  * download from their pinned Hugging Face revisions.
  * The corpus downloads while the reader chooses. `?models=off` keeps the page model-free (slow connections, the

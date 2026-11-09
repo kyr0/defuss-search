@@ -6,8 +6,8 @@
  * ColBERT scores are cached per query and passage text in input/language-guess-colbert.json; a rerun needs no model.
  * Output: output/bench/language-guess.json and the snapshot docs/data/language-guess.json, which
  * scripts/recall-docs.mjs renders into docs/languages.md and scripts/check-project.mjs checks.
- * VERIFIED: the run of 2026-11-06 (Bun 1.4.3, defuss-lid 0.5.0, lexicalsearch 0.4.0) guessed 987 of 1,000 languages
- * right; the efficient preset reached 81.6% R@1 without a language and 90.1% with the guess.
+ * VERIFIED: the run of 2026-11-09 (Bun 1.4.3, defuss-lid 0.5.0, lexicalsearch 0.4.0, vectorsearch 0.3.1) guessed 987
+ * of 1,000 languages right; the efficient preset reached 81.5% R@1 without a language and 89.9% with the guess.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { load as loadLanguageIdentifier } from 'defuss-lid/packs/major_20';

@@ -98,8 +98,9 @@ const quantize = (flat: Float32Array, d: number, seed?: number) =>
 /**
  * Encodes nothing: quantizes token matrices computed earlier into the TurboQuant index that `createColbertRetriever`
  * would build, so an application can build it once (for example at build time) and ship the codes instead of
- * encoding every document on each client. VERIFIED: the Belebele index (2,000 passages, 181,361 tokens) is 11.6 MB
- * of codes, 8.86 MB gzipped, and quantizing took 127 ms in Bun; encoding the passages took 13 to 15 s in Chromium.
+ * encoding every document on each client. VERIFIED: the Belebele index (2,000 passages, 180,626 tokens of the
+ * defuss-vectorsearch 0.3.1 ColBERT) is 11.6 MB of codes, 8.89 MB gzipped; with the previous ColBERT, quantizing took
+ * 127 ms in Bun and encoding the passages 13 to 15 s in Chromium.
  */
 export function buildColbertTokenIndex(
   matrices: readonly TokenMatrixLike[],
@@ -142,8 +143,8 @@ function indexOffsets(index: ColbertTokenIndex, documents: number): Int32Array {
  * ColBERT as a first-stage retriever: every document keeps its token vectors, and a query scores each document by
  * MaxSim (for each query token, the best cosine among the document's tokens, averaged over query tokens, so scores
  * stay in [-1, 1] like a single-vector cosine). The scan visits every stored token.
- * TurboQuant applies because ColBERT token vectors are unit-length. VERIFIED: on 181,361 Belebele passage tokens it
- * cut 92.9 MB of float32 to 11.6 MB of codes, scored a query token in 7.3 ms, and missed exact cosines by 0.009 on
+ * TurboQuant applies because ColBERT token vectors are unit-length. VERIFIED: on 181,361 Belebele passage tokens of the
+ * previous ColBERT it cut 92.9 MB of float32 to 11.6 MB of codes, scored a query token in 7.3 ms, and missed exact cosines by 0.009 on
  * average (probe 2026-11-01; bench/strategies.mjs measures recall). `index` takes the codes from
  * `buildColbertTokenIndex()` instead of the matrices.
  */

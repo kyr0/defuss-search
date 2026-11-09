@@ -202,11 +202,17 @@ for (const release of releases) {
 }
 const pareto = await json('docs/data/pareto.json');
 assert.equal(pareto.version, pkg.version);
-// The README calls reranked the preset with the highest mean R@5 over all 1,000 questions; the figures must agree.
+// VERIFIED (2026-11-09): reranked led mean R@5 with the vectorsearch 0.2.1 models and fell behind efficient with
+// 0.3.1, so the README preset table calls it "Highest mean R@5" exactly while the figures show it.
 const fullR5 = Object.fromEntries(pareto.all.results.map((row) => [row.name, row.r5]));
-assert.ok(
-  recall.presets[1].mean.r5 >= recall.presets[0].mean.r5 && fullR5.reranked >= fullR5.lexical,
-  'Reranked no longer has the highest mean R@5; update the README preset table',
+const rerankedLeads =
+  recall.presets[1].mean.r5 > recall.presets[0].mean.r5 && fullR5.reranked > fullR5.lexical;
+assert.equal(
+  /\| Highest mean R@5;/.test(await readFile('README.md', 'utf8')),
+  rerankedLeads,
+  rerankedLeads
+    ? 'Reranked has the highest mean R@5; say so in the README preset table'
+    : 'Reranked no longer has the highest mean R@5; update the README preset table',
 );
 assert.ok(pareto.holdout.frontier.includes('efficient'));
 const efficient = searchPreset('efficient'),

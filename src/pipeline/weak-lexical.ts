@@ -5,7 +5,7 @@ import type { HybridConfig, HybridHit, SearchQuery, WeakLexicalDecision } from '
 
 /**
  * Weak-lexical promotion for the fusion strategy. Rank fusion with the presets' weights gives BM25's first hit
- * 3/(1+1) = 1.5 points and the vector source's first hit at most 0.5, so BM25 decides the top even when its first
+ * 2/(0+1) = 2 points and the vector source's first hit at most 1, so BM25 decides the top even when its first
  * hit matched one common word. This step looks at the evidence behind that first hit: the share of the query's
  * words it matches, each word weighted by its inverse document frequency in the index, and how much less similar
  * it is to the query than the vector source's first hit. When both say the match is incidental, the vector

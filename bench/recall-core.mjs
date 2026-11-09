@@ -8,11 +8,11 @@ import { createBenchSearch } from '../website/bench-search.mjs';
 import { languageCases, targetLanguages } from '../fixtures/languages.mjs';
 
 export const K = [1, 5, 10, 25];
+const { fusion } = searchPreset('efficient');
 export const PRESETS = {
   efficient: {
     name: 'Efficient',
-    description:
-      "searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=1 and weights 3:1, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.",
+    description: `searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=${fusion.k} and weights ${fusion.weights.lexical}:${fusion.weights.vector}, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.`,
   },
   reranked: {
     name: 'Reranked',

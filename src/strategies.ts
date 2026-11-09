@@ -10,7 +10,7 @@ import type { Awaitable, HybridSearchOptions, Retriever } from './types';
 /**
  * Three ready-made searches with their defaults, from no model to the measured default:
  * - lexical-only: BM25 through HybridSearch, no model;
- * - lexical-semantic-tiny: BM25 fused with MoEdernColBERT 1.5M (3.97 MB) as the only vector model, over a
+ * - lexical-semantic-tiny: BM25 fused with MoEdernColBERT 1.5M (3.83 MB) as the only vector model, over a
  *   TurboQuant token index;
  * - lexical-semantic: BM25 fused with Winzling (39.8 MB) vectors, optionally reranked by ColBERT: the presets.
  * The model-backed factories import their adapters on demand, so the lexical-only search loads no
@@ -40,10 +40,11 @@ export interface DocumentEmbedder {
 const NO_VECTOR = { retrieve: () => [] };
 /**
  * The tiny strategy's defaults: the efficient preset's fusion with a smaller weak-lexical gap. VERIFIED: in
- * bench/strategies.mjs (2026-11-02), with text-only queries rescored exactly, gap 0.1 had the highest mean R@1 of the
- * gaps 0.05 to 0.2 among those that cost no corpus more than one point of R@1 against the rule switched off, the
- * presets' criterion: translated notes rose from 40.7% to 50.5% R@1 and Belebele moved from 90.5% to 90.3%. Gap 0.05
- * reached 56.0% on the notes but cost Belebele 1.1 points. The gap was chosen on those same queries.
+ * bench/strategies.mjs (2026-11-09, defuss-vectorsearch 0.3.1 models), with text-only queries rescored exactly, gap
+ * 0.1 had the highest mean R@1 of the gaps 0.05 to 0.2 among those that cost no corpus more than one point of R@1
+ * against the rule switched off, the presets' criterion: translated notes rose from 41.8% to 47.3% R@1 and Belebele
+ * moved from 90.5% to 90.6%. Gap 0.05 reached 61.5% on the notes but lost one of the API fixture's 10 paraphrase
+ * queries at rank 1; with the previous models it cost Belebele 1.1 points. The gap was chosen on those same queries.
  * HYPOTHESIS: averaged MaxSim compresses score differences, because every query token finds some similar document
  * token, so the presets' 0.15 is too wide for it; a corpus where 0.1 loses R@1 against 0.15 would falsify this.
  */

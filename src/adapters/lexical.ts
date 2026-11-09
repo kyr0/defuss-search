@@ -42,9 +42,10 @@ export function surfaceAnalyzer(analyzer: Analyzer): Analyzer {
  * the text), carries the field's weight times `weight` and its `b`, and is searched with its field by
  * createLexicalRetriever. Fields without a stemmer get none: their companion would index the same terms and act as a
  * higher weight on the field. Returns `options` itself when no field stems.
- * VERIFIED: bench/surface.mjs (2026-11-02) measured the efficient preset with and without companions: exact words in
- * the defuss-shadcn docs rose from 71% to 98% R@1, the docs' natural-language queries from 37% to 40%, the notes
- * stayed equal and Belebele moved from 91.3% to 91.2%. The companions doubled the docs' indexed tokens.
+ * VERIFIED: bench/surface.mjs (2026-11-09, defuss-vectorsearch 0.3.1 models) measured the efficient preset with and
+ * without companions: exact words in the defuss-shadcn docs rose from 71% to 98% R@1, the docs' natural-language
+ * queries from 37% to 40%, the notes stayed equal and Belebele moved from 91.2% to 91.4% R@1 and from 97.3% to
+ * 96.8% R@5. The companions doubled the docs' indexed tokens.
  */
 export function withSurfaceFields(
   options: LexicalSearchOptions = {},

@@ -23,14 +23,14 @@
     <link rel="stylesheet" href="assets/vendor/core.min.css" />
     <link rel="stylesheet" href="assets/vendor/shapes.min.css" />
     <link rel="stylesheet" href="assets/vendor/all.min.css" />
-    <link rel="stylesheet" href="assets/site.css?v=1845b6c4024b" />
+    <link rel="stylesheet" href="assets/site.css?v=1e179793e807" />
 </head>
 <body>
 <div class="hs-page">
 <header class="mk-header" data-variant="floating"><div class="mk-header-inner"><a href="index.html" class="mk-header-brand"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h7M3 12h5M3 19h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/></svg><span class="mk-header-name">defuss-search</span></a><nav class="mk-header-nav" aria-label="Main"><ul class="nav-menu-list"><li class="nav-menu-item"><a class="nav-menu-link" href="index.html#demo">Demo</a></li><li class="nav-menu-item"><a class="nav-menu-link" href="reference.html">API reference</a></li><li class="nav-menu-item"><a class="nav-menu-link" href="pareto.html" aria-current="page">Frontier</a></li></ul></nav><div class="mk-header-actions"><label class="swap" data-variant="rotate" data-size="sm"><input type="checkbox" id="theme-toggle" aria-label="Dark mode"><span class="swap-on"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span><span class="swap-off"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span></label><a class="btn" data-variant="ghost" data-size="icon" href="https://github.com/kyr0/defuss-search" aria-label="defuss-search on GitHub"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a></div></div></header>
 <main class="hs-section hs-prose"><a class="btn" data-variant="ghost" data-size="sm" href="index.html"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7 7-7-7 7-7"/></svg>Back to defuss-search</a>
 <h1>Quality and inference-work frontier</h1>
-<p>VERIFIED: v0.4.0, lexicalsearch 0.3.0, vectorsearch 0.2.1, Bun 1.4.3. Two presets share the measured frontier with lexical-only search. <code>searchPreset(&#39;efficient&#39;)</code> is the fastest hybrid: 25 candidates per source, weighted RRF with k=1 and lexical/vector weights 3:1, no neural reranking. <code>searchPreset(&#39;reranked&#39;)</code> adds a gated ColBERT stage and has the highest mean R@5 over all 1,000 questions. Constructors without a preset keep their earlier defaults.</p>
+<p>VERIFIED: v0.4.0, lexicalsearch 0.4.0, vectorsearch 0.3.1, Bun 1.4.3. The held-out frontier holds <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. <code>searchPreset(&#39;efficient&#39;)</code> is the fastest hybrid: 25 candidates per source, weighted RRF with k=0 and lexical/vector weights 2:1, no neural reranking. <code>searchPreset(&#39;reranked&#39;)</code> adds a gated ColBERT stage; over all 1,000 questions it reaches 97.2% R@5 against 97.3% for efficient, so the neural stage buys no R@5 on this fixture. Constructors without a preset keep their earlier defaults.</p>
 <p>VERIFIED: both presets also apply the weak-lexical rule: when BM25&#39;s first hit matches less than 20% of the query&#39;s IDF-weighted words and trails the vector source&#39;s first hit by more than 0.15 cosine, the vector hit moves to the top. The replay below applies it after fusion and after the neural stage, as the engine does. Its thresholds were chosen by <code>bench/confidence-fusion.mjs</code> on all 1,000 questions and on other corpora, so the held-out figures are not independent of that choice; the fusion and neural settings were chosen on the development half alone.</p>
 <h2>What Pareto-optimal means here</h2>
 <p>VERIFIED: the objectives maximize R@1, R@5, R@10, R@25 and candidate recall while minimizing vector queries, neural queries and neural documents. One evaluated configuration dominates another only when it is no worse on every objective and strictly better on at least one. This is a finite empirical frontier, not a proof over all possible algorithms or production corpora. Lexical traversal work, vector distance evaluations, memory, energy, browser latency and index construction are not frontier objectives. Vector-query counts describe retrieval calls; supplied query vectors can avoid embedding inference.</p>
@@ -64,45 +64,45 @@
 <tr>
 <td>vector</td>
 <td align="right">40.2%</td>
-<td align="right">59.4%</td>
+<td align="right">57.0%</td>
 <td align="right">64.0%</td>
-<td align="right">74.0%</td>
+<td align="right">73.2%</td>
 <td align="right">500</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>vector-first</td>
-<td align="right">70.4%</td>
-<td align="right">73.4%</td>
-<td align="right">73.6%</td>
-<td align="right">74.0%</td>
+<td align="right">70.2%</td>
+<td align="right">72.8%</td>
+<td align="right">73.0%</td>
+<td align="right">73.2%</td>
 <td align="right">500</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>lexical-first</td>
-<td align="right">61.6%</td>
-<td align="right">72.0%</td>
-<td align="right">79.2%</td>
+<td align="right">61.0%</td>
+<td align="right">71.8%</td>
+<td align="right">80.2%</td>
 <td align="right">98.6%</td>
 <td align="right">500</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>legacy-fusion</td>
-<td align="right">66.4%</td>
+<td align="right">67.2%</td>
 <td align="right">79.6%</td>
 <td align="right">95.6%</td>
-<td align="right">99.8%</td>
+<td align="right">99.6%</td>
 <td align="right">500</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>efficient</td>
 <td align="right">92.4%</td>
-<td align="right">96.6%</td>
+<td align="right">96.8%</td>
 <td align="right">98.4%</td>
-<td align="right">99.8%</td>
+<td align="right">99.6%</td>
 <td align="right">500</td>
 <td align="right">0</td>
 </tr>
@@ -110,8 +110,8 @@
 <td>reranked-always</td>
 <td align="right">92.0%</td>
 <td align="right">96.8%</td>
-<td align="right">98.4%</td>
-<td align="right">99.8%</td>
+<td align="right">98.6%</td>
+<td align="right">99.6%</td>
 <td align="right">500</td>
 <td align="right">500</td>
 </tr>
@@ -119,13 +119,13 @@
 <td>reranked</td>
 <td align="right">92.4%</td>
 <td align="right">96.8%</td>
-<td align="right">98.4%</td>
-<td align="right">99.8%</td>
+<td align="right">98.6%</td>
+<td align="right">99.6%</td>
 <td align="right">500</td>
-<td align="right">444</td>
+<td align="right">445</td>
 </tr>
 </tbody></table>
-<p>VERIFIED: held-out frontier: <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Reranking adds one held-out R@5 success for 444 neural calls: it buys quality with inference, and the website demo uses it by default.</p>
+<p>VERIFIED: held-out frontier: <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Against efficient, reranking changes +1 R@10 success for 445 neural calls.</p>
 <h2>Full fixture: 1,000 queries</h2>
 <table>
 <thead>
@@ -150,27 +150,27 @@
 </tr>
 <tr>
 <td>vector</td>
-<td align="right">41.7%</td>
-<td align="right">60.5%</td>
-<td align="right">66.4%</td>
-<td align="right">75.8%</td>
+<td align="right">42.8%</td>
+<td align="right">59.5%</td>
+<td align="right">66.0%</td>
+<td align="right">74.0%</td>
 <td align="right">1000</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>vector-first</td>
-<td align="right">72.5%</td>
-<td align="right">75.3%</td>
-<td align="right">75.5%</td>
-<td align="right">75.8%</td>
+<td align="right">71.5%</td>
+<td align="right">73.6%</td>
+<td align="right">73.8%</td>
+<td align="right">74.0%</td>
 <td align="right">1000</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>lexical-first</td>
-<td align="right">61.6%</td>
-<td align="right">73.0%</td>
-<td align="right">80.9%</td>
+<td align="right">61.8%</td>
+<td align="right">72.4%</td>
+<td align="right">80.2%</td>
 <td align="right">98.4%</td>
 <td align="right">996</td>
 <td align="right">0</td>
@@ -178,38 +178,38 @@
 <tr>
 <td>legacy-fusion</td>
 <td align="right">67.5%</td>
-<td align="right">80.8%</td>
-<td align="right">96.7%</td>
-<td align="right">99.4%</td>
+<td align="right">79.5%</td>
+<td align="right">96.1%</td>
+<td align="right">99.3%</td>
 <td align="right">1000</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>efficient</td>
-<td align="right">91.3%</td>
+<td align="right">91.2%</td>
 <td align="right">97.3%</td>
 <td align="right">98.5%</td>
-<td align="right">99.4%</td>
+<td align="right">99.3%</td>
 <td align="right">1000</td>
 <td align="right">0</td>
 </tr>
 <tr>
 <td>reranked-always</td>
 <td align="right">91.0%</td>
-<td align="right">97.4%</td>
+<td align="right">97.2%</td>
 <td align="right">98.5%</td>
-<td align="right">99.4%</td>
+<td align="right">99.3%</td>
 <td align="right">1000</td>
 <td align="right">1000</td>
 </tr>
 <tr>
 <td>reranked</td>
-<td align="right">91.3%</td>
-<td align="right">97.4%</td>
+<td align="right">91.2%</td>
+<td align="right">97.2%</td>
 <td align="right">98.5%</td>
-<td align="right">99.4%</td>
+<td align="right">99.3%</td>
 <td align="right">1000</td>
-<td align="right">885</td>
+<td align="right">893</td>
 </tr>
 </tbody></table>
 <p>The full-fixture table includes development data and is descriptive, not an independent generalization estimate. Each question has one gold passage; R@k is its inclusion rate. The fusion candidate pool is the deduplicated union, so its candidate recall can exceed either source&#39;s recall without guaranteeing better early ranks.</p>
@@ -218,7 +218,7 @@
 <p>VERIFIED: the gate skips inference only when (1) the raw vector list is monotonic with at least two hits, (2) its first score leads the second by at least the configured threshold, (3) its winner is already first after hybrid ranking/policies, and (4) lexical retrieval agrees or is empty. A skip preserves the whole current ordering. <code>rerankDecision</code> reports the evidence; skipped hits contain no invented neural scores. Infinity disables the gate. A 0.1 cosine gap is a heuristic from vectorsearch 0.2.1, not a calibrated correctness probability, and is not portable to arbitrary score scales.</p>
 <p>The upstream dense guard lives in <code>rerankHits</code> after inference. This package deliberately consumes raw <code>rerank</code> output to avoid double fusion, and evaluates its own hybrid-aware guard before calling that method. A wider dense lead never overrides lexical disagreement, literal promotion or global eligibility.</p>
 <p>VERIFIED: raw ColBERT 1.5m q8 scores were measured on all 1,000 query prefixes with explicit truncation. Alternative fusion weights and gates replay those same measured scores. The gated call counts and summed saved inference times are counterfactual work estimates, not second end-to-end latency measurements. Real CPU/WASM integration tests separately prove that the gate can avoid every ColBERT file read and still allow forced inference.</p>
-<p>UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the small neural R@5 gain persists. No production superiority or universal optimum is claimed.</p>
+<p>UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the neural stage helps on other data. No production superiority or universal optimum is claimed.</p>
 <h2>Reproduce</h2>
 <p><code>make bench</code> runs the end-to-end recall benchmark on Bun, Node.js and Chromium, this frontier analysis, and report generation. The first run downloads pinned models and the SHA-verified dataset. Cached embeddings are keyed by dataset/model; cached neural scores also bind candidate IDs, query texts, adapter source, peers, runtime and model files. Delete <code>input/pareto-neural.json</code> to measure neural inference again.</p>
 <ul>
@@ -232,6 +232,6 @@
 <footer class="mk-footer" style="width:100%"><div class="mk-footer-inner"><div class="mk-footer-bottom"><a href="index.html" class="mk-footer-brand"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h7M3 12h5M3 19h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/></svg><span class="mk-footer-brand-name">defuss-search</span></a><div class="mk-footer-meta"><p class="mk-footer-copy">© 2026 Aron Homberg (kyr0) · MIT</p></div></div></div></footer>
 </div>
 <script type="module" src="assets/vendor/all.min.js"></script>
-<script type="module" src="assets/page.js?v=1845b6c4024b"></script>
+<script type="module" src="assets/page.js?v=1e179793e807"></script>
 </body>
 </html>

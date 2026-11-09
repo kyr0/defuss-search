@@ -2,7 +2,7 @@
   "schema": "defuss-search-demo-manifest.v1",
   "models": {
     "winzling": {
-      "base": "https://huggingface.co/kyr0/Winzling-Embed-a8m-64k/resolve/bfa8af8a8fbf3beb12a93a14d6f5b51875a36214/",
+      "base": "https://huggingface.co/kyr0/Winzling-Embed-a8m-64k/resolve/8f37defd53558efb7f2cc7febf5a9c19a8033bea/",
       "files": {
         "tokenizer.json": {
           "bytes": 9292544,
@@ -16,18 +16,18 @@
         },
         "onnx/model_uint4.onnx": {
           "bytes": 30464606,
-          "sha256": "68ebb344e88e3d88763d0d5ced34de818128bc704b60b3fc6ef1bbd7c3897115",
-          "gzip": 27831037
+          "sha256": "b07e0e6f5ba1b65a8f7c988c967572d55d166b32ab8d9c1508b5b550511b8218",
+          "gzip": 28221497
         }
       }
     },
     "colbert": {
-      "base": "https://huggingface.co/kyr0/SauerkrautLM-MoEdernColBERT-1.5M-ONNX/resolve/f386a021490a5cd9202a049024561420655065ae/",
+      "base": "https://huggingface.co/kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming/resolve/9d3b299bd0d4a327bfa18d8b5db695f3fec2b8e4/",
       "files": {
         "tokenizer.json": {
-          "bytes": 1955903,
-          "sha256": "8f71b9c566af030a896c8c4e21fd49dd734915707a3f1d4cffdf6c2adaa9fd06",
-          "gzip": 400066
+          "bytes": 1568412,
+          "sha256": "d7b2ba6bf68fd03cdb4f728196da966ba169572c4c8c1f06deda4ff5ee058598",
+          "gzip": 533312
         },
         "tokenizer_config.json": {
           "bytes": 730,
@@ -40,21 +40,21 @@
           "gzip": 489
         },
         "model_q8.onnx": {
-          "bytes": 2016962,
-          "sha256": "7d709c97fd59c8eaea361faeb20f55c7a61a9c718587f2f4d3023dcce77e8d11",
-          "gzip": 1691818
+          "bytes": 2256923,
+          "sha256": "162a2b7cf814940cc79cfc154ae33309063fc9d0dde8d5f067373a6ba35be09b",
+          "gzip": 1919683
         }
       }
     }
   },
   "corpus": {
     "file": "corpus.json.gz",
-    "bytes": 429584,
+    "bytes": 429580,
     "rawBytes": 955227
   },
   "vectors": {
     "file": "vectors.bin.gz",
-    "bytes": 4288876,
+    "bytes": 4285705,
     "rawBytes": 4608000,
     "dims": 384,
     "passages": 2000,
@@ -62,11 +62,11 @@
   },
   "tokens": {
     "file": "tokens.bin.gz",
-    "bytes": 8865624,
-    "rawBytes": 11615104,
-    "model": "kyr0/SauerkrautLM-MoEdernColBERT-1.5M-ONNX@f386a021490a5cd9202a049024561420655065ae:7d709c97fd59c8eaea361faeb20f55c7a61a9c718587f2f4d3023dcce77e8d11",
+    "bytes": 8887550,
+    "rawBytes": 11568064,
+    "model": "kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming@9d3b299bd0d4a327bfa18d8b5db695f3fec2b8e4:162a2b7cf814940cc79cfc154ae33309063fc9d0dde8d5f067373a6ba35be09b",
     "documents": 2000,
-    "size": 181361,
+    "size": 180626,
     "dims": 128,
     "rotatedDims": 128,
     "codeBytes": 64,

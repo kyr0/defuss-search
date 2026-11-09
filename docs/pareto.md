@@ -1,6 +1,6 @@
 # Quality and inference-work frontier
 
-VERIFIED: v0.4.0, lexicalsearch 0.3.0, vectorsearch 0.2.1, Bun 1.4.3. Two presets share the measured frontier with lexical-only search. `searchPreset('efficient')` is the fastest hybrid: 25 candidates per source, weighted RRF with k=1 and lexical/vector weights 3:1, no neural reranking. `searchPreset('reranked')` adds a gated ColBERT stage and has the highest mean R@5 over all 1,000 questions. Constructors without a preset keep their earlier defaults.
+VERIFIED: v0.4.0, lexicalsearch 0.4.0, vectorsearch 0.3.1, Bun 1.4.3. The held-out frontier holds `lexical`, `efficient`, `reranked`. `searchPreset('efficient')` is the fastest hybrid: 25 candidates per source, weighted RRF with k=0 and lexical/vector weights 2:1, no neural reranking. `searchPreset('reranked')` adds a gated ColBERT stage; over all 1,000 questions it reaches 97.2% R@5 against 97.3% for efficient, so the neural stage buys no R@5 on this fixture. Constructors without a preset keep their earlier defaults.
 
 VERIFIED: both presets also apply the weak-lexical rule: when BM25's first hit matches less than 20% of the query's IDF-weighted words and trails the vector source's first hit by more than 0.15 cosine, the vector hit moves to the top. The replay below applies it after fusion and after the neural stage, as the engine does. Its thresholds were chosen by `bench/confidence-fusion.mjs` on all 1,000 questions and on other corpora, so the held-out figures are not independent of that choice; the fusion and neural settings were chosen on the development half alone.
 
@@ -23,28 +23,28 @@ VERIFIED: the selected configurations were evaluated unchanged on all 20 languag
 | Configuration | R@1 | R@5 | R@10 | Candidate recall | Vector queries | Neural queries |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | lexical | 91.4% | 97.0% | 98.0% | 98.6% | 0 | 0 |
-| vector | 40.2% | 59.4% | 64.0% | 74.0% | 500 | 0 |
-| vector-first | 70.4% | 73.4% | 73.6% | 74.0% | 500 | 0 |
-| lexical-first | 61.6% | 72.0% | 79.2% | 98.6% | 500 | 0 |
-| legacy-fusion | 66.4% | 79.6% | 95.6% | 99.8% | 500 | 0 |
-| efficient | 92.4% | 96.6% | 98.4% | 99.8% | 500 | 0 |
-| reranked-always | 92.0% | 96.8% | 98.4% | 99.8% | 500 | 500 |
-| reranked | 92.4% | 96.8% | 98.4% | 99.8% | 500 | 444 |
+| vector | 40.2% | 57.0% | 64.0% | 73.2% | 500 | 0 |
+| vector-first | 70.2% | 72.8% | 73.0% | 73.2% | 500 | 0 |
+| lexical-first | 61.0% | 71.8% | 80.2% | 98.6% | 500 | 0 |
+| legacy-fusion | 67.2% | 79.6% | 95.6% | 99.6% | 500 | 0 |
+| efficient | 92.4% | 96.8% | 98.4% | 99.6% | 500 | 0 |
+| reranked-always | 92.0% | 96.8% | 98.6% | 99.6% | 500 | 500 |
+| reranked | 92.4% | 96.8% | 98.6% | 99.6% | 500 | 445 |
 
-VERIFIED: held-out frontier: `lexical`, `efficient`, `reranked`. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Reranking adds one held-out R@5 success for 444 neural calls: it buys quality with inference, and the website demo uses it by default.
+VERIFIED: held-out frontier: `lexical`, `efficient`, `reranked`. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Against efficient, reranking changes +1 R@10 success for 445 neural calls.
 
 ## Full fixture: 1,000 queries
 
 | Configuration | R@1 | R@5 | R@10 | Candidate recall | Vector queries | Neural queries |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | lexical | 90.3% | 97.3% | 98.0% | 98.4% | 0 | 0 |
-| vector | 41.7% | 60.5% | 66.4% | 75.8% | 1000 | 0 |
-| vector-first | 72.5% | 75.3% | 75.5% | 75.8% | 1000 | 0 |
-| lexical-first | 61.6% | 73.0% | 80.9% | 98.4% | 996 | 0 |
-| legacy-fusion | 67.5% | 80.8% | 96.7% | 99.4% | 1000 | 0 |
-| efficient | 91.3% | 97.3% | 98.5% | 99.4% | 1000 | 0 |
-| reranked-always | 91.0% | 97.4% | 98.5% | 99.4% | 1000 | 1000 |
-| reranked | 91.3% | 97.4% | 98.5% | 99.4% | 1000 | 885 |
+| vector | 42.8% | 59.5% | 66.0% | 74.0% | 1000 | 0 |
+| vector-first | 71.5% | 73.6% | 73.8% | 74.0% | 1000 | 0 |
+| lexical-first | 61.8% | 72.4% | 80.2% | 98.4% | 996 | 0 |
+| legacy-fusion | 67.5% | 79.5% | 96.1% | 99.3% | 1000 | 0 |
+| efficient | 91.2% | 97.3% | 98.5% | 99.3% | 1000 | 0 |
+| reranked-always | 91.0% | 97.2% | 98.5% | 99.3% | 1000 | 1000 |
+| reranked | 91.2% | 97.2% | 98.5% | 99.3% | 1000 | 893 |
 
 The full-fixture table includes development data and is descriptive, not an independent generalization estimate. Each question has one gold passage; R@k is its inclusion rate. The fusion candidate pool is the deduplicated union, so its candidate recall can exceed either source's recall without guaranteeing better early ranks.
 
@@ -58,7 +58,7 @@ The upstream dense guard lives in `rerankHits` after inference. This package del
 
 VERIFIED: raw ColBERT 1.5m q8 scores were measured on all 1,000 query prefixes with explicit truncation. Alternative fusion weights and gates replay those same measured scores. The gated call counts and summed saved inference times are counterfactual work estimates, not second end-to-end latency measurements. Real CPU/WASM integration tests separately prove that the gate can avoid every ColBERT file read and still allow forced inference.
 
-UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the small neural R@5 gain persists. No production superiority or universal optimum is claimed.
+UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the neural stage helps on other data. No production superiority or universal optimum is claimed.
 
 ## Reproduce
 

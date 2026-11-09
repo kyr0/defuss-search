@@ -84,6 +84,10 @@ const live = process.env.DEFUSS_LIVE_BROWSER === '1';
 let browser;
 const errors = [];
 const modelRequests = { colbert: 0, winzling: 0 };
+// The token index's size comes from the manifest that scripts/demo-data.mjs wrote for the pinned ColBERT.
+const tokenCount = JSON.parse(
+  await readFile('docs/data/manifest.json', 'utf8'),
+).tokens.size.toLocaleString('en');
 try {
   run('status');
   run('log');
@@ -428,7 +432,7 @@ try {
     const tiny = await ask('tiny', () => page.click('#search'), done);
     assert.equal(tiny.method, 'tiny');
     await checkColumn(tiny);
-    assert.match(await page.textContent('#p-tokens-hint'), /181,\d{3} tokens/);
+    assert.ok((await page.textContent('#p-tokens-hint')).includes(`${tokenCount} tokens`));
     tinyMeasure = await measure();
     assert.deepEqual(Object.keys(tinyMeasure.ranks), ['tiny']);
     // The prebuilt index with WASM ColBERT query encoding in Chromium reproduces the native Bun benchmark's figures.
@@ -450,7 +454,7 @@ try {
     await startFactory('tiny', { ready: false });
     // The prebuilt token index is data, not a model: it loads at the pick also with models off.
     await page.waitForFunction(() => window.tokensReady, {}, { timeout: 120000 });
-    assert.match(await page.textContent('#p-tokens-hint'), /181,\d{3} tokens/);
+    assert.ok((await page.textContent('#p-tokens-hint')).includes(`${tokenCount} tokens`));
     const waiting = await ask('tiny', () => page.click('#search'));
     assert.equal(waiting.column.state, 'needs-colbert');
     assert.ok(await page.locator('#compare [data-load="colbert"]').first().isVisible());
@@ -477,7 +481,12 @@ try {
     await page.evaluate(() => navigator.clipboard.readText()),
     /^Integrate defuss-search/,
   );
-  assert.equal(await page.textContent('[data-pareto="reranked-neural"]'), '444 of 500');
+  const holdout = JSON.parse(await readFile('docs/data/pareto.json', 'utf8')).holdout.results;
+  const rerankedHoldout = holdout.find((row) => row.name === 'reranked');
+  assert.equal(
+    await page.textContent('[data-pareto="reranked-neural"]'),
+    `${rerankedHoldout.neuralQueries} of ${rerankedHoldout.queries}`,
+  );
   await mkdir('output/e2e', { recursive: true });
   // Sections fade in when scrolled into view, so a full-page capture would show them blank; capture the demo itself.
   await page.locator('#demo').scrollIntoViewIfNeeded();

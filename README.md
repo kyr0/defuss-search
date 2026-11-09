@@ -22,13 +22,13 @@ Pass a language's analyzer from `defuss-lexicalsearch/<entry>` to its field. R@5
 <!-- languages:start -->
 | Analysis | Entries | R@5, efficient |
 | --- | --- | ---: |
-| Snowball stemming | `en` `de` `fr` `es` `pt` `it` `nl` `pl` `ru` `tr` `ar` `hi` `id` | 84–100% |
-| Word segmentation | `th` `zh` `ja` | 98% |
+| Snowball stemming | `en` `de` `fr` `es` `pt` `it` `nl` `pl` `ru` `tr` `ar` `hi` `id` | 82–100% |
+| Word segmentation | `th` `zh` `ja` | 98–100% |
 | Syllable bigrams | `ko` | 96% |
-| Words plus trigrams | `bn` `ur` | 94–98% |
+| Words plus trigrams | `bn` `ur` | 94–96% |
 | Tone mark folding | `vi` | 98% |
 
-Mean over all 20 languages, efficient preset: **91.3%** R@1 and **97.3%** R@5. The reranked preset reaches 97.4% R@5 and runs ColBERT for 885 of 1,000 questions.
+Mean over all 20 languages, efficient preset: **91.2%** R@1 and **97.3%** R@5. The reranked preset reaches 97.2% R@5 and runs ColBERT for 893 of 1,000 questions.
 <!-- languages:end -->
 
 ## Quick start
@@ -104,46 +104,47 @@ const semantic = await createLexicalSemanticSearch(index, {
 | Factory | Model files (gzipped) | Vector index per document | Search |
 | --- | --- | --- | --- |
 | `createLexicalOnlySearch` | None | None | BM25 |
-| `createLexicalSemanticTinySearch` | MoEdernColBERT 1.5M, 3.97 MB (2.09 MB) | 64 bytes per ColBERT token in TurboQuant codes: 5.8 KB per Belebele passage, 16.5 KB per API-docs section | BM25 fused with a MaxSim scan over every stored token |
-| `createLexicalSemanticSearch` | Winzling, 39.8 MB (29.1 MB); with the reranker also MoEdernColBERT | 1,536 bytes: one float32 vector of 384 dimensions | The efficient or reranked preset |
+| `createLexicalSemanticTinySearch` | MoEdernColBERT 1.5M, 3.83 MB (2.45 MB) | 64 bytes per ColBERT token in TurboQuant codes: 5.8 KB per Belebele passage, 16.5 KB per API-docs section | BM25 fused with a MaxSim scan over every stored token |
+| `createLexicalSemanticSearch` | Winzling, 39.8 MB (29.5 MB); with the reranker also MoEdernColBERT | 1,536 bytes: one float32 vector of 384 dimensions | The efficient or reranked preset |
 
-VERIFIED: gzipped, the files take 2.09 MB and 29.08 MB, but most static hosts compress only text types: GitHub Pages compresses the JSON tokenizers and sends the `.onnx` weights as they are, which would transfer 2.42 MB and 31.76 MB. Only a host that also sends the weights compressed, for example precompressed with `Content-Encoding: gzip`, reaches the gzipped size. Hugging Face sent 2.43 MB for MoEdernColBERT, compressing only its tokenizer, and the full 39.76 MB for Winzling (2026-11-02); [ARCH.md](ARCH.md#website-demo) explains why the website loads the models from there.
+VERIFIED: gzipped, the files take 2.45 MB and 29.47 MB, but most static hosts compress only text types: GitHub Pages compresses the JSON tokenizers and sends the `.onnx` weights as they are, which would transfer 2.79 MB and 31.71 MB. Only a host that also sends the weights compressed, for example precompressed with `Content-Encoding: gzip`, reaches the gzipped size. For the previous model files, Hugging Face sent 2.43 MB for MoEdernColBERT, compressing only its tokenizer, and the full 39.76 MB for Winzling (2026-11-02); [ARCH.md](ARCH.md#website-demo) explains why the website loads the models from there.
 
-VERIFIED: `bun run bench:strategies` measured the three factories on Bun 1.4.3 with one CPU thread (R@1 / R@5):
+VERIFIED: `bun run bench:strategies` measured the three factories on Bun 1.4.3 with one CPU thread and the defuss-vectorsearch 0.3.1 models (R@1 / R@5, 2026-11-09):
 
 | Corpus | Lexical-only | Tiny | Lexical-semantic, efficient |
 | --- | ---: | ---: | ---: |
-| Belebele, 1,000 questions in 20 languages | 90.3% / 97.3% | 90.3% / 97.0% | 91.3% / 97.3% |
-| Demo notes found by their translations (91) | 22.0% / 24.2% | 50.5% / 67.0% | 97.8% / 100% |
-| Paraphrase queries over the notes (22) | 27.3% / 27.3% | 50.0% / 77.3% | 86.4% / 100% |
+| Belebele, 1,000 questions in 20 languages | 90.3% / 97.3% | 90.6% / 96.7% | 91.2% / 97.3% |
+| Demo notes found by their translations (91) | 22.0% / 24.2% | 47.3% / 72.5% | 97.8% / 100% |
+| Paraphrase queries over the notes (22) | 27.3% / 27.3% | 45.5% / 81.8% | 81.8% / 100% |
 | defuss-shadcn docs, exact words (100) | 98.0% / 98.0% | 98.0% / 98.0% | 98.0% / 98.0% |
 | defuss-shadcn docs, natural-language queries (100) | 40.0% / 70.0% | 40.0% / 72.0% | 40.0% / 76.0% |
 
 The docs index has [unstemmed companions](#match-words-as-written); without them the three factories reached 71% R@1 on the exact words.
 
-Over four runs on one machine, a tiny query took 3 to 8 ms over the 100 notes, 117 to 240 ms over Belebele's 2,000 passages (181,361 tokens) and 1.3 to 2.5 s over the 8,043 documentation sections (2,070,075 tokens), query encoding included. The tiny search avoids the Winzling download and helps where words differ between query and document, but it stays far behind Winzling on translations and paraphrases, and its scan grows with the token count. The tiny strategy uses a weak-lexical gap of 0.1. Searches that differ only in their lexical options, such as one per language, can share one token index or vector set through the `vector` option; the [reference](docs/reference.md#ready-made-strategies) lists each factory's options.
+In the 2026-11-09 run, a tiny query took 4 ms over the 100 notes, 133 ms over Belebele's 2,000 passages (180,626 tokens) and 1.3 s over the 8,043 documentation sections (2,070,073 tokens), query encoding included; four earlier runs with the previous ColBERT ranged from 117 to 240 ms and 1.3 to 2.5 s. The tiny search avoids the Winzling download and helps where words differ between query and document, but it stays far behind Winzling on translations and paraphrases, and its scan grows with the token count. The tiny strategy uses a weak-lexical gap of 0.1. Searches that differ only in their lexical options, such as one per language, can share one token index or vector set through the `vector` option; the [reference](docs/reference.md#ready-made-strategies) lists each factory's options.
 
 ### Choose a preset
 
 | Preset | Fusion | Neural stage | Tradeoff |
 | --- | --- | --- | --- |
-| `searchPreset('efficient')` | RRF k=1; lexical and vector weights 3:1; 25 candidates each; weak-lexical rule (share 0.2, gap 0.15) | Off | Fastest hybrid; no reranker inference |
-| `searchPreset('reranked')` | Same retrieval and rule | Top 25; RRF k=1, neural weight 0.25; agreement and margin gate 0.1 | Highest mean R@5; ColBERT inference on most queries |
+| `searchPreset('efficient')` | RRF k=0; lexical and vector weights 2:1; 25 candidates each; weak-lexical rule (share 0.2, gap 0.15) | Off | Fastest hybrid; no reranker inference |
+| `searchPreset('reranked')` | Same retrieval and rule | Top 25; RRF k=1, neural weight 0.25; agreement and margin gate 0.1 | No recall gain on the benchmark with the vectorsearch 0.3.1 models; ColBERT inference on most queries |
 
-VERIFIED: the fusion and neural settings of both presets were selected on 500 development questions and evaluated on 500 held-out questions. On the holdout, efficient reaches **92.4% R@1**, **96.6% R@5** and **99.8% candidate recall**, against **66.4%**, **79.6%** and **99.8%** for equal-weight fusion with k=60. Lexical-only search reaches 97.0% R@5 without vector retrieval and stays on the measured frontier. The reranked preset gains one R@5 success, reaching 96.8%, and needs ColBERT for 444 of the 500 questions. Over all 1,000 questions it has the highest mean R@5 of the three frontier configurations, 97.4% against 97.3% for both efficient and lexical-only search, with the same R@1 as efficient; the website demo offers it as the lexical-semantic factory with its reranker. The [frontier analysis](docs/pareto.md) has the method, costs and limits.
+VERIFIED: the fusion and neural settings of both presets were selected on 500 development questions and evaluated on 500 held-out questions; the 2026-11-09 refit for the defuss-vectorsearch 0.3.1 models moved the fusion from k=1 and 3:1 to k=0 and 2:1, which ties the old setting on development R@1 to R@10 and wins R@25 by one question. On the holdout, efficient reaches **92.4% R@1**, **96.8% R@5** and **99.6% candidate recall**, against **67.2%**, **79.6%** and **99.6%** for equal-weight fusion with k=60. Lexical-only search reaches 97.0% R@5 without vector retrieval and stays on the measured frontier. The reranked preset matches efficient's held-out R@1 and R@5, gains one R@10 success and needs ColBERT for 445 of the 500 questions. Over all 1,000 questions it reaches 97.2% R@5 against 97.3% for efficient and lexical-only search, with the same R@1 as efficient; the website demo offers it as the lexical-semantic factory with its reranker. The [frontier analysis](docs/pareto.md) has the method, costs and limits.
 
-VERIFIED: the weak-lexical rule moves the vector source's first hit to the top when BM25's first hit matches less than 20% of the query's words, weighted by their inverse document frequency in the index, and trails it by more than 0.15 cosine. `bun run bench:confidence-fusion` measured the efficient preset with and without it:
+VERIFIED: the weak-lexical rule moves the vector source's first hit to the top when BM25's first hit matches less than 20% of the query's words, weighted by their inverse document frequency in the index, and trails it by more than 0.15 cosine. `bun run bench:confidence-fusion` measured the efficient preset with and without it (2026-11-09, defuss-vectorsearch 0.3.1):
 
 | Corpus | R@1 without | R@1 with | R@5 without | R@5 with |
 | --- | ---: | ---: | ---: | ---: |
-| Belebele, 1,000 questions | 91.0% | 91.3% | 97.3% | 97.3% |
-| Belebele passages cut to 6 words | 48.3% | 47.8% | 63.8% | 63.4% |
-| Demo notes found by their translations (91) | 61.5% | 97.8% | 98.9% | 100% |
-| Paraphrase queries over the notes (22) | 63.6% | 86.4% | 100% | 100% |
-| defuss-shadcn docs, natural-language queries (100) | 36.0% | 37.0% | 76.0% | 76.0% |
-| defuss-shadcn docs, exact words (100) | 71.0% | 71.0% | 84.0% | 84.0% |
+| Belebele, 1,000 questions | 91.0% | 91.2% | 97.3% | 97.3% |
+| Belebele passages cut to 6 words | 48.4% | 47.6% | 62.8% | 62.8% |
+| Belebele passages cut to 16 words | 66.8% | 65.8% | 80.7% | 80.7% |
+| Demo notes found by their translations (91) | 61.5% | 97.8% | 100% | 100% |
+| Paraphrase queries over the notes (22) | 59.1% | 81.8% | 100% | 100% |
+| defuss-shadcn docs, natural-language queries (100) | 36.0% | 37.0% | 73.0% | 73.0% |
+| defuss-shadcn docs, exact words (100) | 71.0% | 71.0% | 82.0% | 82.0% |
 
-The thresholds are the grid setting with the highest mean R@1 among those that cost no corpus more than one point of R@1, chosen on these same queries; the held-out figures above include the rule and are not independent of that choice.
+The thresholds are the grid setting with the highest mean R@1 among those that cost no corpus more than one point of R@1, chosen on these same queries; with the vectorsearch 0.3.1 models, passages cut to 16 words sit exactly at that limit, 10 of 1,000 questions. the held-out figures above include the rule and are not independent of that choice.
 
 Pass a preset as the constructor's or index's `defaults`, or spread it into per-query options. Each call returns an independent options object, and constructors without a preset keep their defaults. The reranked preset requires an attached reranker, and exact promotion still requires configured original-string fields.
 
@@ -205,22 +206,22 @@ lid.dispose();
 console.log(hits.map((hit) => hit.id).join(',')); // de-1,en-1
 ```
 
-VERIFIED: on the 1,000 benchmark questions, with defuss-lid 0.5.0 guessing 987 languages right, the efficient preset over all 20 fields reached 90.1% R@1 with the guess and 81.6% without it, against 91.3% with the known language ([details](docs/languages.md#when-the-questions-language-is-unknown)).
+VERIFIED: on the 1,000 benchmark questions, with defuss-lid 0.5.0 guessing 987 languages right, the efficient preset over all 20 fields reached 89.9% R@1 with the guess and 81.5% without it, against 91.2% with the known language ([details](docs/languages.md#when-the-questions-language-is-unknown)).
 
 ### Match words as written
 
 A stemmer maps different words onto one stem, such as "tabs" and "tab", so a document that repeats "tab" can outrank the one that says "Tabs". `createHybridIndex()` therefore gives every field whose analyzer stems an unstemmed companion: a derived field that analyzes the same text without the stemmer, with the field's weight and `b`. A word written as in the document then scores in both fields. Fields without a stemmer get no companion, because it would index the same terms and act as a higher weight on the field, so `apiSearchPreset` and the seven languages without a Snowball stemmer (segmenters, bigrams, trigrams and Vietnamese tone folding) stay as they are. `surface: false` turns the companions off, and `surface: { weight }` scales their weight (default 1). For a `LexicalSearch` you build yourself, such as the index the strategies wrap, pass its options through `withSurfaceFields()` from `defuss-search/lexical`; `createLexicalRetriever()` searches a companion together with its field, also when `search.fields` names only the field.
 
-VERIFIED: `bun run bench:surface` measured the efficient preset with stemmed fields alone and with companions of weight 1 (R@1 / R@5):
+VERIFIED: `bun run bench:surface` measured the efficient preset with stemmed fields alone and with companions of weight 1 (R@1 / R@5, defuss-vectorsearch 0.3.1 models, 2026-11-09):
 
 | Corpus | Stemmed fields | With companions |
 | --- | ---: | ---: |
-| defuss-shadcn docs, exact words (100) | 71.0% / 84.0% | 98.0% / 98.0% |
-| defuss-shadcn docs, natural-language queries (100) | 37.0% / 76.0% | 40.0% / 76.0% |
-| Belebele, 1,000 questions in 20 languages | 91.3% / 97.3% | 91.2% / 97.1% |
-| Demo notes: translations, keywords, paraphrases (135) | 97.8%, 100%, 86.4% R@1 | equal |
+| defuss-shadcn docs, exact words (100) | 71.0% / 82.0% | 98.0% / 98.0% |
+| defuss-shadcn docs, natural-language queries (100) | 37.0% / 73.0% | 40.0% / 76.0% |
+| Belebele, 1,000 questions in 20 languages | 91.2% / 97.3% | 91.4% / 96.8% |
+| Demo notes: translations, keywords, paraphrases (135) | 97.8%, 100%, 81.8% R@1 | equal |
 
-Weight 0.5 reached 94.0% on the exact words. The companions doubled the indexed tokens of the docs (1.10 to 2.19 million) and nearly doubled their build time (0.54 s to 0.94 s in one run, 0.55 s to 1.02 s in another). On Belebele's natural-language questions the companions moved one question of 1,000 and single languages by up to three of 50 questions in either direction. The website demo and the recall benchmark index Belebele without companions; the strategies benchmark indexes the docs with them.
+Weight 0.5 reached 95.0% on the exact words. The companions doubled the indexed tokens of the docs (1.10 to 2.19 million) and nearly doubled their build time (0.54 s to 0.94 s in one run, 0.55 s to 1.02 s in another). On Belebele's natural-language questions the companions gained two questions of 1,000 at rank 1 and lost five from the top 5; single languages moved by up to three of 50 questions in either direction. The website demo and the recall benchmark index Belebele without companions; the strategies benchmark indexes the docs with them.
 
 ### Attach a neural reranker
 
@@ -267,21 +268,21 @@ An `AbortSignal` stops waiting for asynchronous work; it cannot interrupt an ONN
 | Italian | `it` | Snowball | 92% | 100% | 100% | 100% | 92% | 100% | 100% | 100% |
 | Russian | `ru` | Snowball | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 100% |
 | Indonesian | `id` | Snowball | 94% | 100% | 100% | 100% | 94% | 100% | 100% | 100% |
+| Thai | `th` | segmenter | 94% | 100% | 100% | 100% | 94% | 100% | 100% | 100% |
 | Spanish | `es` | Snowball | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
-| Portuguese | `pt` | Snowball | 94% | 98% | 98% | 98% | 94% | 98% | 98% | 98% |
-| Dutch | `nl` | Snowball | 92% | 98% | 98% | 100% | 92% | 98% | 98% | 100% |
-| Urdu | `ur` | trigrams | 84% | 98% | 100% | 100% | 84% | 98% | 100% | 100% |
+| Portuguese | `pt` | Snowball | 92% | 98% | 98% | 98% | 92% | 98% | 98% | 98% |
+| Dutch | `nl` | Snowball | 92% | 98% | 98% | 100% | 92% | 96% | 98% | 100% |
+| Polish | `pl` | Snowball | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
 | Vietnamese | `vi` | tone folding | 96% | 98% | 100% | 100% | 96% | 98% | 100% | 100% |
-| Thai | `th` | segmenter | 94% | 98% | 100% | 100% | 94% | 98% | 98% | 100% |
-| Chinese | `zh` | segmenter | 94% | 98% | 100% | 100% | 94% | 98% | 100% | 100% |
+| Chinese | `zh` | segmenter | 94% | 98% | 100% | 100% | 94% | 98% | 98% | 100% |
 | Japanese | `ja` | segmenter | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
-| Polish | `pl` | Snowball | 88% | 96% | 100% | 100% | 88% | 98% | 100% | 100% |
-| Turkish | `tr` | Snowball | 92% | 96% | 96% | 96% | 92% | 96% | 96% | 96% |
-| Arabic | `ar` | Snowball | 90% | 96% | 96% | 96% | 90% | 96% | 96% | 96% |
+| Turkish | `tr` | Snowball | 90% | 96% | 96% | 96% | 90% | 96% | 96% | 96% |
+| Arabic | `ar` | Snowball | 90% | 96% | 96% | 98% | 90% | 96% | 96% | 98% |
+| Urdu | `ur` | trigrams | 84% | 96% | 100% | 100% | 84% | 96% | 100% | 100% |
 | Korean | `ko` | bigrams | 88% | 96% | 98% | 100% | 88% | 96% | 100% | 100% |
 | Bangla | `bn` | trigrams | 90% | 94% | 96% | 98% | 90% | 94% | 96% | 98% |
-| Hindi | `hi` | Snowball | 70% | 84% | 88% | 92% | 70% | 84% | 88% | 92% |
-| **Mean** |  |  | **91.3%** | **97.3%** | **98.5%** | **99.0%** | **91.3%** | **97.4%** | **98.5%** | **99.0%** |
+| Hindi | `hi` | Snowball | 70% | 82% | 88% | 92% | 70% | 82% | 88% | 92% |
+| **Mean** |  |  | **91.2%** | **97.3%** | **98.5%** | **99.1%** | **91.2%** | **97.2%** | **98.5%** | **99.1%** |
 
 Runtime comparison: Bun 1.4.3, Node.js 26.11.1 and Chromium 156.0.8078.4 returned the same rank for each of the 1,000 questions under both presets.
 <!-- recall-table:end -->
@@ -329,7 +330,7 @@ A query copies its vector, options and eligible IDs, then retrieves from both so
 
 ## Website
 
-The website in `docs/` is the project page and a live demo. Before the demo shows, the reader picks one of the three factories of `defuss-search/strategies`, because each one downloads something different. Lexical-only needs only the passage text (0.43 MB gzipped). Lexical-semantic tiny, which the picker preselects, loads MoEdernColBERT (3.97 MB, 2.09 MB gzipped) and the passages' prebuilt TurboQuant token index: 181,361 tokens, 11.6 MB of codes, 8.87 MB gzipped. `scripts/demo-data.mjs` builds that index with `buildColbertTokenIndex()` from the token matrices of the strategies benchmark, so the browser encodes only the questions and notes; encoding the 2,000 passages in headless Chromium on Apple silicon had taken 13 to 15 s. Lexical-semantic loads the recorded Winzling vectors (4.29 MB gzipped), Winzling (39.8 MB, 29.1 MB gzipped) only for typed text, and MoEdernColBERT for its optional reranker. The corpus, 2,000 Belebele passages and 1,000 questions in 20 languages, downloads while the reader chooses and is indexed the way the recall benchmark does. Each question shows the factory's top 10 and the rank of the gold passage; a reranked list marks each hit's move against the efficient order. The picker shows each model's file size and gzipped size, and each factory's R@1 and R@5 on Belebele, the translated notes and the defuss-shadcn docs from `docs/data/strategies.json`. The worker downloads each model from its pinned Hugging Face revision with byte progress, checks each file's SHA-256 against the pin and keeps it in the Cache API for the next visit. A button measures R@1, R@5, R@10 and R@25 over all 1,000 questions for the chosen factory and compares them with the published figures; each measured factory adds a row. "Change factory" returns to the picker and keeps what is loaded. The "My data" tab searches the user's notes with the same factory: lexically at once, and by meaning once the factory's model has encoded them. Each note carries a language, and the lexical index analyzes it with that language's analyzer and stopwords, so a shared function word such as German "mit" is no match. Each note hit opens a "Why" panel with the matched words, each source's rank and raw score and the fusion terms, and its text scrolls the board to the note.
+The website in `docs/` is the project page and a live demo. Before the demo shows, the reader picks one of the three factories of `defuss-search/strategies`, because each one downloads something different. Lexical-only needs only the passage text (0.43 MB gzipped). Lexical-semantic tiny, which the picker preselects, loads MoEdernColBERT (3.83 MB, 2.45 MB gzipped) and the passages' prebuilt TurboQuant token index: 180,626 tokens, 11.6 MB of codes, 8.89 MB gzipped. `scripts/demo-data.mjs` builds that index with `buildColbertTokenIndex()` from the token matrices of the strategies benchmark, so the browser encodes only the questions and notes; encoding the 2,000 passages in headless Chromium on Apple silicon had taken 13 to 15 s. Lexical-semantic loads the recorded Winzling vectors (4.29 MB gzipped), Winzling (39.8 MB, 29.5 MB gzipped) only for typed text, and MoEdernColBERT for its optional reranker. The corpus, 2,000 Belebele passages and 1,000 questions in 20 languages, downloads while the reader chooses and is indexed the way the recall benchmark does. Each question shows the factory's top 10 and the rank of the gold passage; a reranked list marks each hit's move against the efficient order. The picker shows each model's file size and gzipped size, and each factory's R@1 and R@5 on Belebele, the translated notes and the defuss-shadcn docs from `docs/data/strategies.json`. The worker downloads each model from its pinned Hugging Face revision with byte progress, checks each file's SHA-256 against the pin and keeps it in the Cache API for the next visit. A button measures R@1, R@5, R@10 and R@25 over all 1,000 questions for the chosen factory and compares them with the published figures; each measured factory adds a row. "Change factory" returns to the picker and keeps what is loaded. The "My data" tab searches the user's notes with the same factory: lexically at once, and by meaning once the factory's model has encoded them. Each note carries a language, and the lexical index analyzes it with that language's analyzer and stopwords, so a shared function word such as German "mit" is no match. Each note hit opens a "Why" panel with the matched words, each source's rank and raw score and the fusion terms, and its text scrolls the board to the note.
 
 The page follows the layout of the defuss-lexicalsearch and defuss-vectorsearch sites: an introduction, a step-by-step pipeline diagram, the held-out frontier, recall per language for each preset and each k, and the package and coding-agent instructions. The API and frontier references are rendered from `docs/` with highlighted code. Its relative URLs work at a domain root and under `/defuss-search/`, and it loads the defuss-shadcn 0.9.11 stylesheets and runtime from `docs/assets/vendor`.
 
