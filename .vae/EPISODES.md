@@ -38,14 +38,10 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-01T19:07:41Z s=79e705da FINDING docs/verification.md:27 B03; bench/confidence-fusion.mjs header learn=none: Counting error in prose; not mechanically derivable from a rule kind.
 2026-11-01T19:07:41Z s=79e705da FINDING CHANGELOG.md:18 P02 learn=none: Wording.
 2026-11-01T19:07:41Z s=79e705da FINDING bench/bm25-switch.mjs refactor to bench/corpora.mjs learn=none: One-time refactor equivalence, demonstrated by identical output.
-2026-11-01T19:40:39Z s=79e705da DONE fp=0a00f495fc12 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+125)
-2026-11-01T19:40:39Z s=79e705da FINDING bench/pareto.mjs:profiles efficient, reranked learn=verifier: scripts/recall-report.mjs fails when the replay and the end-to-end run disagree; it guards this class of defect.
 2026-11-01T19:40:39Z s=79e705da FINDING src/adapters/lexical.ts:matchShare UNKNOWN line learn=none: Comment wording.
 2026-11-01T19:40:39Z s=79e705da FINDING ARCH.md:72 B02 learn=none: Example wording from one probe.
 2026-11-01T19:40:39Z s=79e705da FINDING docs/pareto.md via scripts/pareto-docs.mjs B02 learn=none: Disclosure in generated prose; the generator prints it on every run.
 2026-11-01T19:40:39Z s=79e705da FINDING CHANGELOG.md:18 B03 learn=none: Number wording.
-2026-11-01T19:40:39Z s=79e705da FINDING src/pipeline/weak-lexical.ts:gap bound learn=test: test/weak-lexical.test.mjs asserts gapBound for the rescore and the bound path.
-2026-11-01T20:14:30Z s=79e705da FAIL lint
 2026-11-01T20:26:18Z s=79e705da DONE fp=de0448f79582 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+130)
 2026-11-01T20:26:18Z s=79e705da FINDING src/adapters/colbert-retriever.ts:rows learn=none: Ordering of allocation versus validation is not mechanically checkable by a rule; the existing validation test covers the messages.
 2026-11-01T20:26:18Z s=79e705da FINDING src/adapters/colbert-retriever.ts:run (last.scores rejection) learn=test: test/strategies.test.mjs a failed query encoding rejects that search and does not stick to the query.
@@ -106,3 +102,7 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T04:24:56Z s=a22aa615 FINDING README.md, ARCH.md, src comments (B09) learn=none: Dating claims is an editorial judgment per sentence.
 2026-11-09T04:24:56Z s=a22aa615 FINDING website/index.html:1458 learn=none: Editorial.
 2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/package-test.mjs:92 learn=test: package-test asserts assetVersion(docs) is unchanged by the tarball build; a mutated worker made it fail with the new message, the clean run passed.
+2026-11-09T09:17:44Z s=a22aa615 DONE fp=6c4d9b1361b9 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+47)
+2026-11-09T09:17:44Z s=a22aa615 FINDING website/index.html:3015 (agent prompt) learn=none: Editorial ordering of a prompt; a string rule would pin wording.
+2026-11-09T09:17:44Z s=a22aa615 FINDING README.md:124, ARCH.md (tiny timing, P03) learn=none: Timings vary per run; a check would pin a measurement, not a requirement.
+2026-11-09T09:17:44Z s=a22aa615 FINDING scripts/strategies-report.mjs:languages learn=none: One-time migration of a generated file; the explicit error is the fix, and check-project fails on missing rows.

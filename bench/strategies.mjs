@@ -12,7 +12,8 @@
  * Times: a tiny search's first variant includes ColBERT query encoding and the token scan, and later variants reuse
  * the retriever's cached scores; lexical-semantic times use recorded Winzling query vectors and cached ColBERT pair
  * scores, so they exclude model inference.
- * Output: output/bench/strategies.json.
+ * Output: output/bench/strategies.json, with Belebele also per question language (`languages`) for the website's
+ * recall by language.
  * VERIFIED: in the run of 2026-11-02 (Bun 1.4.3, Apple silicon, one thread), R@1 / R@5 of lexical-only, tiny (TurboQuant, gap
  * 0.1) and lexical-semantic (efficient) were 90.3/97.3, 90.3/97.0 and 91.3/97.3 on Belebele; 22.0/24.2, 50.5/67.0
  * and 97.8/100 for notes found by their translations; 98/98 for all three on exact API-docs words and 40/70, 40/72
@@ -72,18 +73,24 @@ const recorded = (vectors) => ({
 });
 
 const results = {};
+/** Belebele per question language: variant → language code → counts, for the website's recall by language. */
+const languages = {};
 const tokens = {};
+const blank = () => ({ queries: 0, r1: 0, r5: 0, r10: 0, r25: 0, ms: 0 });
 /** Score one query in every variant of one search; variants are per-query options over the factory defaults. */
-async function measure(corpus, search, variants, query, relevant) {
+async function measure(corpus, search, variants, query, relevant, language) {
   for (const [name, options] of Object.entries(variants)) {
     const started = performance.now();
     const ids = (await search.search(query, { ...options, limit: N })).map((hit) => hit.id);
     const ms = performance.now() - started;
     const rank = ids.findIndex((id) => relevant.has(id)) + 1;
-    const row = ((results[corpus] ??= {})[name] ??= { queries: 0, r1: 0, r5: 0, r10: 0, r25: 0, ms: 0 });
-    row.queries++;
-    row.ms += ms;
-    for (const k of [1, 5, 10, 25]) if (rank >= 1 && rank <= k) row[`r${k}`]++;
+    const rows = [((results[corpus] ??= {})[name] ??= blank())];
+    if (language) rows.push(((languages[name] ??= {})[language] ??= blank()));
+    for (const row of rows) {
+      row.queries++;
+      row.ms += ms;
+      for (const k of [1, 5, 10, 25]) if (rank >= 1 && rank <= k) row[`r${k}`]++;
+    }
   }
 }
 const tinyVariants = (label) => ({
@@ -123,9 +130,9 @@ const tokenCount = (matrices) => matrices.reduce((sum, m) => sum + m.tokenCount,
     };
     for (const q of asked) {
       const relevant = new Set([q.target]);
-      await measure('belebele', searches.lexical, { 'lexical-only': {} }, q.text, relevant);
-      await measure('belebele', searches.tiny, tinyVariants('tiny, TurboQuant'), q.text, relevant);
-      await measure('belebele', searches.semantic, semanticVariants, q.text, relevant);
+      await measure('belebele', searches.lexical, { 'lexical-only': {} }, q.text, relevant, code);
+      await measure('belebele', searches.tiny, tinyVariants('tiny, TurboQuant'), q.text, relevant, code);
+      await measure('belebele', searches.semantic, semanticVariants, q.text, relevant, code);
     }
     log(`belebele ${code}: ${asked.length} questions`);
   }
@@ -258,21 +265,24 @@ await embedderModel?.dispose();
 
 // ---- summary ---------------------------------------------------------------------------------------------------------
 const manifest = JSON.parse(await readFile(new URL('../docs/data/manifest.json', import.meta.url), 'utf8'));
-const table = Object.fromEntries(
-  Object.entries(results).map(([corpus, rows]) => [
-    corpus,
-    Object.fromEntries(
-      Object.entries(rows).map(([name, row]) => [
-        name,
-        {
-          queries: row.queries,
-          ...Object.fromEntries([1, 5, 10, 25].map((k) => [`r${k}`, row[`r${k}`] / row.queries])),
-          ms: row.ms / row.queries,
-        },
-      ]),
-    ),
-  ]),
-);
+/** Counts to shares and mean milliseconds, one level of keys deep. */
+const shares = (groups) =>
+  Object.fromEntries(
+    Object.entries(groups).map(([group, rows]) => [
+      group,
+      Object.fromEntries(
+        Object.entries(rows).map(([name, row]) => [
+          name,
+          {
+            queries: row.queries,
+            ...Object.fromEntries([1, 5, 10, 25].map((k) => [`r${k}`, row[`r${k}`] / row.queries])),
+            ms: row.ms / row.queries,
+          },
+        ]),
+      ),
+    ]),
+  );
+const table = shares(results);
 const report = {
   generatedAt: new Date().toISOString(),
   runtime: process.versions.bun ? `Bun ${process.versions.bun}` : `Node.js ${process.versions.node}`,
@@ -290,6 +300,7 @@ const report = {
     ]),
   ),
   table,
+  languages: shares(languages),
 };
 await mkdir(new URL('../output/bench/', import.meta.url), { recursive: true });
 await writeFile(new URL('../output/bench/strategies.json', import.meta.url), JSON.stringify(report, null, 1));

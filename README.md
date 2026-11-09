@@ -8,7 +8,7 @@ Hybrid search for TypeScript and JavaScript apps in Bun, Node.js and the browser
 
 Lexical search finds exact words and symbols but misses paraphrases; vector search finds meaning but does not guarantee that a query equal to a symbol or ID returns that document first. defuss-search runs both with explicit candidate budgets and merges their rankings, and every result reports which source found it and why it ranks where it does.
 
-- **Two measured presets.** `searchPreset('efficient')` fuses the lexical and vector top 25 with weighted reciprocal rank fusion (RRF) and runs no reranker; `searchPreset('reranked')` adds a gated ColBERT stage. Both let the vector source's first hit lead when BM25's first hit matched only few or common words of the query.
+- **Two measured presets.** `searchPreset('reranked')`, the default, fuses the lexical and vector top 25 with weighted reciprocal rank fusion (RRF) and reorders them with a gated ColBERT stage; `searchPreset('efficient')` runs the same fusion without a reranker. Both let the vector source's first hit lead when BM25's first hit matched only few or common words of the query.
 - **Three retrieval strategies.** Vector first with lexical rescoring, lexical first with vector rescoring, or fusion of two independent rankings.
 - **Literal symbols stay literal.** `exact: 'promote'` ranks original-string matches of symbols and IDs, such as `?.` and `Array.prototype.push()`, first.
 - **Inspectable results.** Source ranks, raw scores, fusion contributions, policy reasons and the neural decision accompany every hit; the final rank is authoritative.
@@ -20,7 +20,7 @@ Lexical search finds exact words and symbols but misses paraphrases; vector sear
 Pass a language's analyzer from `defuss-lexicalsearch/<entry>` to its field. R@5 is the share of a language's 50 benchmark questions whose gold passage ranks in the top 5 of 2,000 passages; [Retrieval quality by language](#retrieval-quality-by-language) explains the benchmark.
 
 <!-- languages:start -->
-| Analysis | Entries | R@5, efficient |
+| Analysis | Entries | R@5, reranked |
 | --- | --- | ---: |
 | Snowball stemming | `en` `de` `fr` `es` `pt` `it` `nl` `pl` `ru` `tr` `ar` `hi` `id` | 82–100% |
 | Word segmentation | `th` `zh` `ja` | 98–100% |
@@ -28,7 +28,7 @@ Pass a language's analyzer from `defuss-lexicalsearch/<entry>` to its field. R@5
 | Words plus trigrams | `bn` `ur` | 94–96% |
 | Tone mark folding | `vi` | 98% |
 
-Mean over all 20 languages, efficient preset: **91.2%** R@1 and **97.3%** R@5. The reranked preset reaches 97.2% R@5 and runs ColBERT for 893 of 1,000 questions.
+Mean over all 20 languages, reranked preset (the default): **91.2%** R@1 and **97.2%** R@5, with ColBERT for 893 of 1,000 questions. The efficient preset runs no ColBERT and reaches 91.2% R@1 and 97.3% R@5.
 <!-- languages:end -->
 
 ## Quick start
@@ -52,7 +52,7 @@ const search = createHybridIndex({
     { id: 'pop', fields: { symbol: 'Array.prototype.pop()', description: 'Remove the last element of an array' } },
   ],
   vectors: [[1, 0], [0, 1]],
-  defaults: searchPreset('efficient'),
+  defaults: searchPreset('efficient'), // no reranker here; searchPreset() means 'reranked'
   lexical: apiSearchPreset,
   lexicalSearch: { exact: { fields: ['symbol'] } },
 });
@@ -121,14 +121,16 @@ VERIFIED: `bun run bench:strategies` measured the three factories on Bun 1.4.3 w
 
 The docs index has [unstemmed companions](#match-words-as-written); without them the three factories reached 71% R@1 on the exact words.
 
-In the 2026-11-09 run, a tiny query took 4 ms over the 100 notes, 133 ms over Belebele's 2,000 passages (180,626 tokens) and 1.3 s over the 8,043 documentation sections (2,070,073 tokens), query encoding included; four earlier runs with the previous ColBERT ranged from 117 to 240 ms and 1.3 to 2.5 s. The tiny search avoids the Winzling download and helps where words differ between query and document, but it stays far behind Winzling on translations and paraphrases, and its scan grows with the token count. The tiny strategy uses a weak-lexical gap of 0.1. Searches that differ only in their lexical options, such as one per language, can share one token index or vector set through the `vector` option; the [reference](docs/reference.md#ready-made-strategies) lists each factory's options.
+In the latest 2026-11-09 run, a tiny query took 3.5 ms over the 100 notes, 119 ms over Belebele's 2,000 passages (180,626 tokens) and 1.3 s over the 8,043 documentation sections (2,070,073 tokens), query encoding included; an earlier run that day took 133 ms over Belebele, and four runs with the previous ColBERT ranged from 117 to 240 ms and 1.3 to 2.5 s. The tiny search avoids the Winzling download and helps where words differ between query and document, but it stays far behind Winzling on translations and paraphrases, and its scan grows with the token count. The tiny strategy uses a weak-lexical gap of 0.1. Searches that differ only in their lexical options, such as one per language, can share one token index or vector set through the `vector` option; the [reference](docs/reference.md#ready-made-strategies) lists each factory's options.
 
 ### Choose a preset
 
 | Preset | Fusion | Neural stage | Tradeoff |
 | --- | --- | --- | --- |
-| `searchPreset('efficient')` | RRF k=0; lexical and vector weights 2:1; 25 candidates each; weak-lexical rule (share 0.2, gap 0.15) | Off | Fastest hybrid; no reranker inference |
-| `searchPreset('reranked')` | Same retrieval and rule | Top 25; RRF k=1, neural weight 0.25; agreement and margin gate 0.1 | No recall gain on the benchmark with the vectorsearch 0.3.1 models; ColBERT inference on most queries |
+| `searchPreset('reranked')`, the default | RRF k=0; lexical and vector weights 2:1; 25 candidates each; weak-lexical rule (share 0.2, gap 0.15) | Top 25; RRF k=1, neural weight 0.25; agreement and margin gate 0.1 | Needs a ColBERT reranker; inference on most queries; no recall gain on the benchmark with the vectorsearch 0.3.1 models |
+| `searchPreset('efficient')` | Same retrieval and rule | Off | Fastest hybrid; no reranker inference; the choice for a search without a reranker |
+
+`searchPreset()` without a name returns the reranked preset, and a `HybridSearch` without a reranker rejects it with "A reranker must be configured", so pass `searchPreset('efficient')` there.
 
 VERIFIED: the fusion and neural settings of both presets were selected on 500 development questions and evaluated on 500 held-out questions; the 2026-11-09 refit for the defuss-vectorsearch 0.3.1 models moved the fusion from k=1 and 3:1 to k=0 and 2:1, which ties the old setting on development R@1 to R@10 and wins R@25 by one question. On the holdout, efficient reaches **92.4% R@1**, **96.8% R@5** and **99.6% candidate recall**, against **67.2%**, **79.6%** and **99.6%** for equal-weight fusion with k=60. Lexical-only search reaches 97.0% R@5 without vector retrieval and stays on the measured frontier. The reranked preset matches efficient's held-out R@1 and R@5, gains one R@10 success and needs ColBERT for 445 of the 500 questions. Over all 1,000 questions it reaches 97.2% R@5 against 97.3% for efficient and lexical-only search, with the same R@1 as efficient; the website demo offers it as the lexical-semantic factory with its reranker. The [frontier analysis](docs/pareto.md) has the method, costs and limits.
 
@@ -256,11 +258,11 @@ An `AbortSignal` stops waiting for asynchronous work; it cannot interrupt an ONN
 
 `make bench` measures R@1, R@5, R@10 and R@25 on [tiny-embedding-bench-v1](https://github.com/kyr0/tiny-embedding-bench/tree/main/datasets/tiny-embedding-bench-v1), the SHA-256-pinned benchmark that both upstream packages report: 100 passages and 50 questions, each in 20 languages, with one gold passage per question. All 2,000 passages form one index. Lexical search knows the question's language and searches that language's field; vector search scans every passage, so a question also competes with the 19 translations of its gold passage. Each value is the share of a language's 50 questions, so a step of 2% is one question.
 
-- **Efficient:** `searchPreset('efficient')` through `HybridSearch`, with real Winzling vectors.
 - **Reranked:** `searchPreset('reranked')` with real MoEdernColBERT 1.5M inference on every query its gate does not skip.
+- **Efficient:** `searchPreset('efficient')` through `HybridSearch`, with real Winzling vectors.
 
 <!-- recall-table:start -->
-| Language | Entry | Analysis | Efficient R@1 | Efficient R@5 | Efficient R@10 | Efficient R@25 | Reranked R@1 | Reranked R@5 | Reranked R@10 | Reranked R@25 |
+| Language | Entry | Analysis | Reranked R@1 | Reranked R@5 | Reranked R@10 | Reranked R@25 | Efficient R@1 | Efficient R@5 | Efficient R@10 | Efficient R@25 |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | English | `en` | Snowball | 96% | 100% | 100% | 100% | 96% | 100% | 100% | 100% |
 | German | `de` | Snowball | 94% | 100% | 100% | 100% | 94% | 100% | 100% | 100% |
@@ -271,18 +273,18 @@ An `AbortSignal` stops waiting for asynchronous work; it cannot interrupt an ONN
 | Thai | `th` | segmenter | 94% | 100% | 100% | 100% | 94% | 100% | 100% | 100% |
 | Spanish | `es` | Snowball | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
 | Portuguese | `pt` | Snowball | 92% | 98% | 98% | 98% | 92% | 98% | 98% | 98% |
-| Dutch | `nl` | Snowball | 92% | 98% | 98% | 100% | 92% | 96% | 98% | 100% |
 | Polish | `pl` | Snowball | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
 | Vietnamese | `vi` | tone folding | 96% | 98% | 100% | 100% | 96% | 98% | 100% | 100% |
-| Chinese | `zh` | segmenter | 94% | 98% | 100% | 100% | 94% | 98% | 98% | 100% |
+| Chinese | `zh` | segmenter | 94% | 98% | 98% | 100% | 94% | 98% | 100% | 100% |
 | Japanese | `ja` | segmenter | 90% | 98% | 100% | 100% | 90% | 98% | 100% | 100% |
+| Dutch | `nl` | Snowball | 92% | 96% | 98% | 100% | 92% | 98% | 98% | 100% |
 | Turkish | `tr` | Snowball | 90% | 96% | 96% | 96% | 90% | 96% | 96% | 96% |
 | Arabic | `ar` | Snowball | 90% | 96% | 96% | 98% | 90% | 96% | 96% | 98% |
 | Urdu | `ur` | trigrams | 84% | 96% | 100% | 100% | 84% | 96% | 100% | 100% |
-| Korean | `ko` | bigrams | 88% | 96% | 98% | 100% | 88% | 96% | 100% | 100% |
+| Korean | `ko` | bigrams | 88% | 96% | 100% | 100% | 88% | 96% | 98% | 100% |
 | Bangla | `bn` | trigrams | 90% | 94% | 96% | 98% | 90% | 94% | 96% | 98% |
 | Hindi | `hi` | Snowball | 70% | 82% | 88% | 92% | 70% | 82% | 88% | 92% |
-| **Mean** |  |  | **91.2%** | **97.3%** | **98.5%** | **99.1%** | **91.2%** | **97.2%** | **98.5%** | **99.1%** |
+| **Mean** |  |  | **91.2%** | **97.2%** | **98.5%** | **99.1%** | **91.2%** | **97.3%** | **98.5%** | **99.1%** |
 
 Runtime comparison: Bun 1.4.3, Node.js 26.11.1 and Chromium 156.0.8078.4 returned the same rank for each of the 1,000 questions under both presets.
 <!-- recall-table:end -->

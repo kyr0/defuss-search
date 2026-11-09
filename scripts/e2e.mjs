@@ -7,67 +7,112 @@ import { K, sortedCodes, percent } from './recall-docs.mjs';
 import { releases } from './models.mjs';
 const recall = JSON.parse(await readFile('docs/data/recall.json', 'utf8'));
 const strategies = JSON.parse(await readFile('docs/data/strategies.json', 'utf8'));
-/** VERIFIED: every rendered recall figure equals docs/data/recall.json; nested tabs work by mouse and keys. */
+/**
+ * VERIFIED: every rendered recall figure equals docs/data/recall.json (lexical-semantic) or docs/data/strategies.json
+ * (lexical-only, tiny); the page opens on lexical-semantic with the reranked preset; nested tabs work by mouse and keys.
+ */
 async function checkRecall(page) {
   const visible = (selector) => page.locator(selector).isVisible();
-  for (const preset of recall.presets) {
-    await page.click(`#recall-tab-${preset.id}`);
-    assert.ok(await visible(`#recall-panel-${preset.id}`), preset.id);
+  for (const selector of [
+    '#recall-panel-semantic',
+    '#recall-panel-reranked',
+    '#recall-panel-reranked-5',
+  ])
+    assert.ok(await visible(selector), `${selector} is the default`);
+  for (const selector of [
+    '#recall-panel-lexical-only',
+    '#recall-panel-tiny',
+    '#recall-panel-efficient',
+  ])
+    assert.equal(await visible(selector), false, `${selector} starts hidden`);
+  const rows = [
+    ...['lexical-only', 'tiny'].map((id) => ({
+      strategy: id,
+      id,
+      languages: strategies.languages[id],
+      mean: strategies.corpora.belebele[id],
+    })),
+    ...recall.presets.map((preset) => ({ strategy: 'semantic', ...preset })),
+  ];
+  for (const row of rows) {
+    await page.click(`#recall-tab-${row.strategy}`);
+    assert.ok(await visible(`#recall-panel-${row.strategy}`), row.strategy);
+    for (const other of ['lexical-only', 'tiny', 'semantic'].filter((x) => x !== row.strategy))
+      assert.equal(await visible(`#recall-panel-${other}`), false);
+    if (row.strategy === 'semantic') {
+      await page.click(`#recall-tab-${row.id}`);
+      assert.ok(await visible(`#recall-panel-${row.id}`), row.id);
+    }
     for (const k of K) {
-      await page.click(`#recall-tab-${preset.id}-${k}`);
-      const panel = page.locator(`#recall-panel-${preset.id}-${k}`);
-      assert.ok(await panel.isVisible(), `${preset.id} R@${k}`);
+      await page.click(`#recall-tab-${row.id}-${k}`);
+      const panel = page.locator(`#recall-panel-${row.id}-${k}`);
+      assert.ok(await panel.isVisible(), `${row.id} R@${k}`);
       assert.equal(
-        await page.locator(`#recall-tab-${preset.id}-${k}`).getAttribute('aria-selected'),
+        await page.locator(`#recall-tab-${row.id}-${k}`).getAttribute('aria-selected'),
         'true',
       );
-      const rows = await panel
+      const bars = await panel
         .locator('.progress-field')
         .evaluateAll((fields) =>
           fields.map((field) => [field.dataset.recall, field.querySelector('output').textContent]),
         );
       assert.deepEqual(
-        rows,
-        sortedCodes(recall, preset, k).map((code) => [
-          code,
-          percent(preset.languages[code][`r${k}`]),
-        ]),
+        bars,
+        sortedCodes(recall, row, k).map((code) => [code, percent(row.languages[code][`r${k}`])]),
       );
       assert.equal(
-        await page.textContent(`[data-recall-mean="${preset.id}-${k}"]`),
-        percent(preset.mean[`r${k}`], 1),
+        await page.textContent(`[data-recall-mean="${row.id}-${k}"]`),
+        percent(row.mean[`r${k}`], 1),
       );
       for (const other of K.filter((x) => x !== k))
-        assert.equal(await visible(`#recall-panel-${preset.id}-${other}`), false);
+        assert.equal(await visible(`#recall-panel-${row.id}-${other}`), false);
     }
   }
   const [efficient, reranked] = recall.presets;
   const stat = (name) => page.textContent(`[data-recall-stat="${name}"] .mk-stat-value`);
-  assert.equal(await stat('r1'), percent(efficient.mean.r1, 1));
-  assert.equal(await stat('r5'), percent(efficient.mean.r5, 1));
+  assert.equal(await stat('r1'), percent(reranked.mean.r1, 1));
+  assert.equal(await stat('r5'), percent(reranked.mean.r5, 1));
   assert.equal(await stat('neural'), reranked.neuralQueries.toLocaleString('en'));
+  assert.ok(
+    (await page.textContent('[data-recall-stat="neural"]')).includes(percent(efficient.mean.r5, 1)),
+  );
   assert.equal(
     await page.textContent('[data-recall-neural]'),
     reranked.neuralQueries.toLocaleString('en'),
   );
   // Keyboard: arrows move and wrap, Home and End jump; each tablist stays independent.
-  await page.click('#recall-tab-efficient');
-  await page.click('#recall-tab-efficient-5');
-  const keys = [
-    ['ArrowRight', 10],
-    ['End', 25],
-    ['ArrowRight', 1],
-    ['ArrowLeft', 25],
-    ['Home', 1],
-  ];
-  for (const [key, k] of keys) {
-    await page.keyboard.press(key);
-    assert.equal(await page.evaluate(() => document.activeElement.id), `recall-tab-efficient-${k}`);
-    assert.ok(await visible(`#recall-panel-efficient-${k}`), `${key} -> R@${k}`);
-  }
-  assert.ok(await visible('#recall-panel-efficient'));
-  assert.equal(await visible('#recall-panel-reranked'), false);
-  await page.click('#recall-tab-efficient-5');
+  const press = async (keys, id) => {
+    for (const [key, target] of keys) {
+      await page.keyboard.press(key);
+      assert.equal(await page.evaluate(() => document.activeElement.id), `${id}${target}`);
+      assert.ok(await visible(`#recall-panel-${target}`), `${key} -> ${target}`);
+    }
+  };
+  await page.click('#recall-tab-semantic');
+  await press(
+    [
+      ['ArrowLeft', 'tiny'],
+      ['Home', 'lexical-only'],
+      ['ArrowLeft', 'semantic'],
+      ['End', 'semantic'],
+    ],
+    'recall-tab-',
+  );
+  await page.click('#recall-tab-reranked');
+  await page.click('#recall-tab-reranked-5');
+  await press(
+    [
+      ['ArrowRight', 'reranked-10'],
+      ['End', 'reranked-25'],
+      ['ArrowRight', 'reranked-1'],
+      ['ArrowLeft', 'reranked-25'],
+      ['Home', 'reranked-1'],
+    ],
+    'recall-tab-',
+  );
+  assert.ok(await visible('#recall-panel-reranked'));
+  assert.equal(await visible('#recall-panel-efficient'), false);
+  await page.click('#recall-tab-reranked-5');
 }
 const run = (verb) =>
   execFileSync('make', [verb], { encoding: 'utf8', env: { ...process.env, PORT: '0' } });
@@ -550,7 +595,8 @@ try {
           ? { browser: meanOf(tinyMeasure, 'tiny'), published: strategies.corpora.belebele.tiny }
           : 'needs MoEdernColBERT (models off)',
         notes: live ? 'lexical, Winzling vectors and ColBERT tokens' : 'lexical',
-        recallFigures: recall.presets.length * K.length * Object.keys(recall.languages).length,
+        recallFigures:
+          (recall.presets.length + 2) * K.length * Object.keys(recall.languages).length,
         recallKeyboardTabs: true,
         mobile: true,
         live,

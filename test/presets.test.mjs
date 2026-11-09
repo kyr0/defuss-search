@@ -47,6 +47,18 @@ test('presets are explicit, independent configurations; default core behavior st
   assert.notEqual(a.fusion.weights.lexical, b.fusion.weights.lexical);
   assert.equal(b.rerank, false);
   assert.equal(searchPreset('reranked').rerank.skipIfVectorMargin, 0.1);
+  // VERIFIED (maintainer, 2026-11-09): reranked is the default name, so a search without a reranker must ask for
+  // 'efficient' explicitly rather than silently skip the neural stage.
+  assert.deepEqual(searchPreset(), searchPreset('reranked'));
+  assert.throws(
+    () =>
+      new HybridSearch({
+        lexical: { retrieve: () => [] },
+        vector: { retrieve: () => [] },
+        defaults: searchPreset(),
+      }),
+    /A reranker must be configured/,
+  );
   assert.throws(() => searchPreset('optimal-everywhere'), /Unknown/);
   const { search, calls } = index();
   await search.search(query, b);
@@ -191,7 +203,7 @@ test('margin validation fails before retrieval; zero and Infinity retain their e
     'empty',
   );
   assert.equal(
-    (await search.searchWithStats(query, searchPreset())).rerankDecision.action,
+    (await search.searchWithStats(query, searchPreset('efficient'))).rerankDecision.action,
     'disabled',
   );
 });

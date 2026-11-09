@@ -43,7 +43,7 @@ The root entry has **no runtime dependencies**. Peer packages are optional for c
 
 ## Explicit presets and neural work
 
-VERIFIED: `searchPreset('efficient')` returns 25 candidates per source, RRF k=0, weights `{ lexical: 2, vector: 1 }`, `weakLexical: { share: 0.2, gap: 0.15 }` and `rerank: false`. `searchPreset('reranked')` keeps that retrieval and enables a 25-candidate raw ColBERT stage, RRF k=1, neural weight 0.25, and `skipIfVectorMargin: 0.1`. Import `searchPreset` from the root package; pass its result as `defaults` or spread it into query options. Without a preset, the defaults in [Ranking and policies](#ranking-and-policies) apply.
+VERIFIED: `searchPreset('efficient')` returns 25 candidates per source, RRF k=0, weights `{ lexical: 2, vector: 1 }`, `weakLexical: { share: 0.2, gap: 0.15 }` and `rerank: false`. `searchPreset('reranked')` keeps that retrieval and enables a 25-candidate raw ColBERT stage, RRF k=1, neural weight 0.25, and `skipIfVectorMargin: 0.1`. `searchPreset()` without a name returns the reranked preset, which a `HybridSearch` without a reranker rejects with "A reranker must be configured"; such a search takes `searchPreset('efficient')`. Import `searchPreset` from the root package; pass its result as `defaults` or spread it into query options. Without a preset, the defaults in [Ranking and policies](#ranking-and-policies) apply.
 
 The optional neural weight cannot displace the prior top result: its minimum score is 1/2, while any other hit's maximum is 11/24. It can change lower ranks. Presets are selected on the development partition described in [Pareto analysis](pareto.md); their quality is not guaranteed on arbitrary corpora or embedding models.
 

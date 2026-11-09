@@ -63,8 +63,13 @@ for (const preset of recall.presets)
     for (const k of K)
       assert.ok(Number.isFinite(row[`r${k}`]) && row[`r${k}`] >= 0 && row[`r${k}`] <= 1);
 // VERIFIED: (mutation probe) generated figures in the website source and README must match the report they claim to show.
+const strategiesReport = await json('docs/data/strategies.json');
 for (const [file, pattern, render] of [
-  ['website/index.html', /<!-- recall:start -->[\s\S]*<!-- recall:end -->/, renderRecall],
+  [
+    'website/index.html',
+    /<!-- recall:start -->[\s\S]*<!-- recall:end -->/,
+    (report) => renderRecall(report, strategiesReport),
+  ],
   ['README.md', /<!-- recall-table:start -->[\s\S]*<!-- recall-table:end -->/, renderRecallTable],
   ['README.md', /<!-- languages:start -->[\s\S]*<!-- languages:end -->/, renderLanguageGlance],
   ['docs/languages.md', LANGUAGE_GUESS, (report) => renderLanguageGuess(report, guessReport)],
@@ -91,11 +96,7 @@ assert.ok(
 );
 assert.equal(
   versionPage(await readFile('docs/index.html', 'utf8')),
-  factoryFiguresPage(
-    await readFile('website/index.html', 'utf8'),
-    FACTORIES,
-    await json('docs/data/strategies.json'),
-  ),
+  factoryFiguresPage(await readFile('website/index.html', 'utf8'), FACTORIES, strategiesReport),
   'docs/index.html is stale; run make docs',
 );
 for (const path of [
@@ -199,6 +200,20 @@ for (const release of releases) {
     assert.equal(entry?.sha256, sha256, `${release.name} ${file} pin; run make bench`);
     assert.ok(Number.isInteger(entry.gzip) && entry.gzip > 0, `${release.name} ${file} gzip size`);
   }
+}
+// The website's per-language bars and the factory picker's Belebele figures for lexical-only and tiny come from one
+// run: 50 questions per language, so the mean over languages equals the corpus share.
+for (const id of ['lexical-only', 'tiny']) {
+  const rows = Object.values(strategiesReport.languages[id]);
+  assert.equal(rows.length, Object.keys(recall.languages).length, `${id} languages`);
+  for (const k of K)
+    assert.ok(
+      Math.abs(
+        rows.reduce((sum, row) => sum + row[`r${k}`], 0) / rows.length -
+          strategiesReport.corpora.belebele[id][`r${k}`],
+      ) < 1e-6,
+      `${id} R@${k} per language disagrees with Belebele; run bun run bench:strategies`,
+    );
 }
 const pareto = await json('docs/data/pareto.json');
 assert.equal(pareto.version, pkg.version);
