@@ -64,8 +64,6 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T09:17:44Z s=a22aa615 FINDING scripts/strategies-report.mjs:languages learn=none: One-time migration of a generated file; the explicit error is the fix, and check-project fails on missing rows.
 2026-11-09T14:56:51Z s=a22aa615 FINDING website/charts.mjs:frontierOption learn=none: label overlap is visual; checked by screenshot in light 1280 and dark 390, no mechanical check reads rendered label boxes
 2026-11-09T14:56:51Z s=a22aa615 FINDING website/index.html:The numbers learn=none: visual requirement checked by screenshot; e2e still reads every table through the collapsible
-2026-11-09T15:22:29Z s=a22aa615 DONE fp=7b3f1a29106e cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
-2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-fusion-caption learn=test: scripts/e2e-readability.mjs measures text over the shader from pixels on every make e2e
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:hs-hero-shader learn=test: the same pixel audit runs on the phone viewport in both themes
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-hero > .shader learn=none: specificity against a vendored rule; checked by a computed-style probe and screenshots, no rule kind expresses it
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:data-background learn=none: visual; observed in SwiftShader screenshots after compile, before compile the poster
@@ -106,3 +104,5 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T02:23:06Z s=a22aa615 FINDING website/site.css:locale learn=test: e2e checks the menu's switch on a phone; the readability audit checks cut-offs.
 2026-11-10T03:12:06Z s=a22aa615 DONE fp=ea660fc4749e cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
 2026-11-10T03:12:06Z s=a22aa615 FINDING bench/pareto.mjs:selectGroup learn=verifier: pareto.mjs throws when the preset differs from the rule's selection; check-project compares both groups with the report.
+2026-11-10T03:37:11Z s=a22aa615 DONE fp=a0ad6a36bc40 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T03:37:11Z s=a22aa615 FINDING README.md:124 P (precision) learn=none: Timings vary per run; a check pinning them would pin values that held once.

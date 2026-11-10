@@ -1,6 +1,6 @@
 # Multilingual retrieval
 
-VERIFIED: v0.4.0 integrates all 20 lexicalsearch 0.4.0 analyzers with vectorsearch 0.4.0. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
+VERIFIED: v0.5.0 integrates all 20 lexicalsearch 0.4.0 analyzers with vectorsearch 0.4.0. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
 
 The efficient preset uses lexical-weighted RRF (2:1, k=0; 2:1, k=20 for Winzling-embed's target languages), selected per group on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
 

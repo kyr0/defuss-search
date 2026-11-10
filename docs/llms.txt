@@ -1,12 +1,12 @@
 # defuss-search
 
-> Hybrid search for JavaScript and TypeScript in the browser, Bun and Node.js. BM25 and vector retrieval run over the same documents and are fused into one ranking; a document whose symbol or ID equals the query ranks first, an optional ColBERT reranker refines the top 25, and every hit explains its rank. No search server; the root entry has no runtime dependencies. MIT license, version 0.4.0.
+> Hybrid search for JavaScript and TypeScript in the browser, Bun and Node.js. BM25 and vector retrieval run over the same documents and are fused into one ranking; a document whose symbol or ID equals the query ranks first, an optional ColBERT reranker refines the top 25, and every hit explains its rank. No search server; the root entry has no runtime dependencies. MIT license, version 0.5.0.
 
 Use it when one search box must find exact strings (symbols, IDs, error codes, part numbers) and meaning (paraphrases, translations) in one ranked list, inside your app. It is not a hosted search service: it has no server, persistence, authentication or approximate nearest-neighbor index (see Limits).
 
 ## Measured
 
-From this repository's benchmarks, version 0.4.0 (`make bench`, `bun run bench:strategies`, Bun 1.4.3, one thread). Recall@k (R@k) is the share of queries whose relevant document ranks in the top k.
+From this repository's benchmarks, version 0.5.0 (`make bench`, `bun run bench:strategies`, Bun 1.4.3, one thread). Recall@k (R@k) is the share of queries whose relevant document ranks in the top k.
 
 - 92.5% R@1 and 97.3% R@5 for 1,000 questions in 20 languages over 2,000 passages (tiny-embedding-bench-v1, a Belebele subset), default fusion without a reranker. Bun, Node.js and Chromium return the same rank for every question.
 - 98.0% R@1 for exact matches in 8,043 documentation sections (defuss-shadcn; each query uses a section's own words).

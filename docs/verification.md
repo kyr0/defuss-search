@@ -1,4 +1,4 @@
-# Verification of v0.4.0
+# Verification of v0.5.0
 
 VERIFIED: the checks below ran on macOS arm64 with Bun 1.4.3, Node.js 26.11.1, TypeScript 5.9.3, Playwright 1.64.1 with Chrome Headless Shell 156.0.8078.4, defuss-lexicalsearch 0.3.0 and defuss-vectorsearch 0.2.1. `mise.toml` pins Node.js 26.13.0; this machine ran 26.11.1 because mise was not installed, which the `engines` range (Node.js 26 or newer) allows.
 
