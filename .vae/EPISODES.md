@@ -75,8 +75,6 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T03:37:11Z s=a22aa615 FINDING README.md:124 P (precision) learn=none: Timings vary per run; a check pinning them would pin values that held once.
 2026-11-10T03:51:22Z s=a22aa615 FINDING scripts/e2e-site.mjs:checkLanguagesAndThemes (regions) learn=none: Only a Linux browser run reproduces it; the local gate runs on macOS, and CI on push is the check that exercises the Ctrl path.
 2026-11-10T04:54:44Z s=a22aa615 FINDING website/site.css:.hs-load-aura::before learn=none: A cascade-layer outcome on one vendor rule; a pixel or computed-style check for one glow would pin a visual taste.
-2026-11-10T04:54:44Z s=a22aa615 FINDING website/demo.mjs:paintControls keydown learn=test: scripts/e2e.mjs opens a page with hung model downloads and asserts the questions, examples, palette button, add-note and ⌘K stay locked until lexical-only opens
-2026-11-10T04:54:44Z s=a22aa615 FINDING scripts/e2e-site.mjs:card order learn=test: The same check runs on every build.
 2026-11-10T04:54:44Z s=a22aa615 FINDING website/index.html:hero size cards learn=none: An external fact recorded with its revision in scripts/figures.mjs MODEL_FACTS.
 2026-11-10T04:54:44Z s=a22aa615 FINDING website/index.html:hero quality card learn=none: Model-card facts at pinned revisions; no repository check can verify them.
 2026-11-10T04:54:44Z s=a22aa615 FINDING bench/strategies.mjs learn=none: Nothing remains to check.
@@ -106,3 +104,5 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T11:46:27Z s=a22aa615 FINDING bench/pareto.mjs:selectGroup learn=verifier: pareto.mjs throws when the preset differs from the rule's selection; check-project compares both groups with the report.
 2026-11-10T12:23:38Z s=a22aa615 DONE fp=07264247d828 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+100)
 2026-11-10T12:50:54Z s=a22aa615 DONE fp=92a997ea5a83 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+100)
+2026-11-10T13:24:16Z s=a22aa615 DONE fp=b9a61e3fc234 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+99)
+2026-11-10T13:24:16Z s=a22aa615 FINDING website/site.css:.hs-boot .radial-progress-value learn=test: scripts/e2e-readability.mjs measures the ring's text from pixels in every theme.
