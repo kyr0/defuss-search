@@ -6,6 +6,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { languageCases, targetLanguages } from '../fixtures/languages.mjs';
 import { K, writeRecall } from './recall-docs.mjs';
+import { PRESETS } from '../bench/recall-core.mjs';
 const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const pkg = await json('package.json');
 const reports = await Promise.all(
@@ -65,7 +66,8 @@ const recall = {
       { entry, name, analysis, target: targetLanguages.has(code) },
     ]),
   ),
-  presets: reference.presets,
+  // The names and descriptions are code (bench/recall-core.mjs), not measurements: a wording change needs no rerun.
+  presets: reference.presets.map((preset) => ({ ...preset, ...PRESETS[preset.id] })),
 };
 await mkdir('docs/data', { recursive: true });
 await writeFile('docs/data/recall.json', JSON.stringify(recall, null, 2) + '\n');

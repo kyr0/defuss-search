@@ -1,12 +1,13 @@
 /**
  * The notes board of the "My data (custom)" tab, after the defuss-vectorsearch demo: yellow notes the user writes.
  * Each note goes to the worker 500 ms after the last keystroke, or when it loses focus. The worker indexes it
- * lexically at once and adds what the chosen factory needs once its model is loaded (a Winzling vector or ColBERT
+ * lexically at once and adds what the chosen factory needs once its model is loaded (a Winzling-embed vector or ColBERT
  * tokens), so lexical search over notes works before any model download. The board numbers the requests, so an answer for an older text never marks a newer one as indexed.
  * VERIFIED: scripts/e2e.mjs adds five random notes, waits for the count and finds note-1 by its longest word.
  */
 import { languageCases } from '../fixtures/languages.mjs';
-import { formatMs, renderNote, renderNoteStatus } from './render.mjs';
+import { formatMs, locale, onLocale, t } from './i18n.mjs';
+import { renderNote, renderNoteStatus } from './render.mjs';
 import { SAMPLE_NOTES } from './sample-notes.mjs';
 
 const DEBOUNCE_MS = 500;
@@ -19,16 +20,37 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
   // A new note starts in the language last picked, at first the browser's, so typing needs no extra step.
   let lastLanguage = codeOf[globalThis.navigator?.language?.split('-')[0]] ?? 'eng_Latn';
   const element = (id) => document.getElementById(id);
+  const statuses = new Map(); // id -> [state, detail, kind], written again after a language switch
   const setStatus = (id, state, detail, kind) => {
-    element(id).querySelector('.hs-note-status').innerHTML = renderNoteStatus(state, detail, kind);
+    // detail may be a function, so a time it formats follows the next language
+    statuses.set(id, [state, detail, kind]);
+    const text = typeof detail === 'function' ? detail() : detail;
+    element(id).querySelector('.hs-note-status').innerHTML = renderNoteStatus(state, text, kind);
   };
   let kind = 'none';
+  let last = { count: 0, embeddedCount: 0 };
   const updateCount = (counts = { count: notes.size, embeddedCount: 0, kind }) => {
     kind = counts.kind ?? kind;
-    const verb = { vector: 'embedded', matrix: 'encoded' }[kind];
-    count.textContent = `${counts.count} ${counts.count === 1 ? 'note' : 'notes'}${verb ? ` · ${counts.embeddedCount} ${verb}` : ''}`;
+    last = counts;
+    const plural = new Intl.PluralRules(locale.locale).select(counts.count) === 'one' ? 'one' : 'other';
+    const total = t(`notes-${plural}`, { count: counts.count });
+    const verb = { vector: 'notes-embedded', matrix: 'notes-encoded' }[kind];
+    count.textContent = verb ? t(verb, { notes: total, count: counts.embeddedCount }) : total;
     empty.hidden = notes.size > 0;
   };
+  // A language switch writes the count, the note labels and their statuses again.
+  onLocale(() => {
+    updateCount(last);
+    for (const [id, args] of statuses) if (element(id)) setStatus(id, ...args);
+    for (const [id] of notes) {
+      const n = id.replace('note-', '');
+      const note = element(id);
+      if (!note) continue;
+      note.querySelector('.hs-note-label').textContent = t('note-label', { n });
+      note.querySelector('select').setAttribute('aria-label', t('note-language', { n }));
+      note.querySelector('textarea').placeholder = t('note-placeholder');
+    }
+  });
 
   /** Sends the note when its text or language changed since the last request; empty text removes the note. */
   const index = (id) => {
@@ -112,7 +134,7 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
     add,
     addRandom,
     reveal,
-    /** A factory change changes what "embedded" counts: Winzling vectors, ColBERT tokens or nothing. */
+    /** A factory change changes what "embedded" counts: Winzling-embed vectors, ColBERT tokens or nothing. */
     setCounts: (counts) => updateCount(counts),
     onNote: (data) => {
       const note = notes.get(data.id);
@@ -125,7 +147,7 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
           data.id,
           'hybrid',
           data.embedMs
-            ? `${data.kind === 'vector' ? '384-d' : 'tokens'} in ${formatMs(data.embedMs)}`
+            ? () => t('note-time', { kind: t(`note-kind-${data.kind}`), time: formatMs(data.embedMs) })
             : '',
           data.kind,
         );

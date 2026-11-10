@@ -215,3 +215,39 @@ test('defaults and per-call weights merge without leaking mutable settings acros
   assert.equal(hits.find((x) => x.contributions.vector).contributions.vector.weight, 4);
   await assert.rejects(search.search(q, { rerank: true }), /options object/);
 });
+test('byLanguage replaces k and weights for queries in its languages, by primary subtag', async () => {
+  const group = { languages: ['de', 'FR'], k: 10, weights: { lexical: 1 } };
+  const defaults = { fusion: { k: 0, weights: { lexical: 2, vector: 1 }, byLanguage: [group] }, rerank: false };
+  const { search } = fixture({ engine: { defaults } });
+  // RRF contributes weight / (k + rank), so weight and k are both recoverable from a contribution.
+  const fused = async (query, options = {}) => {
+    const hits = await search.search(query, { ...options, limit: 20 });
+    const of = (source) => hits.find((x) => x.contributions[source]).contributions[source];
+    const k = (c) => c.weight / c.contribution - c.rank;
+    return { lexical: of('lexical').weight, vector: of('vector').weight, k: Math.round(k(of('lexical'))) };
+  };
+  assert.deepEqual(await fused({ ...q, language: 'de-AT' }), { lexical: 1, vector: 1, k: 10 });
+  assert.deepEqual(await fused({ ...q, language: 'fr' }), { lexical: 1, vector: 1, k: 10 });
+  assert.deepEqual(await fused({ ...q, language: 'en' }), { lexical: 2, vector: 1, k: 0 });
+  assert.deepEqual(await fused(q), { lexical: 2, vector: 1, k: 0 });
+  // A query's own k or weights win over inherited groups unless it passes groups of its own.
+  const german = { ...q, language: 'de' };
+  assert.deepEqual(await fused(german, { fusion: { k: 5 } }), { lexical: 2, vector: 1, k: 5 });
+  assert.deepEqual(await fused(german, { fusion: { byLanguage: [] } }), { lexical: 2, vector: 1, k: 0 });
+  assert.deepEqual(
+    await fused(german, { fusion: { weights: { vector: 3 }, byLanguage: [group] } }),
+    { lexical: 1, vector: 3, k: 10 },
+  );
+  for (const byLanguage of [
+    'de',
+    [{ languages: [] }],
+    [{ languages: [''] }],
+    [{ languages: ['de'], k: -1 }],
+    [{ languages: ['de'], weights: { lexical: 0, vector: 0 } }],
+  ])
+    await assert.rejects(search.search(german, { fusion: { byLanguage } }));
+  defaults.fusion.byLanguage[0].k = 99;
+  assert.equal((await fused(german)).k, 10);
+  // Invalid default groups fail when the search is created, whatever language later queries carry.
+  assert.throws(() => fixture({ engine: { defaults: { fusion: { byLanguage: [{ languages: ['de'], k: 0.5 }] } } } }));
+});

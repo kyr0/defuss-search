@@ -1,5 +1,6 @@
-/* Page layout and the demo's own composition, following the defuss-lexicalsearch and defuss-vectorsearch sites:
-   the same defuss-shadcn 0.9.11 components and tokens, with an hs- prefix where those sites use ls- and vs-. */
+/* Page layout and the demo's own composition, on defuss-shadcn's components and tokens (vendored from its main
+   branch, docs/assets/vendor), with an hs- prefix where the defuss-lexicalsearch and defuss-vectorsearch sites use
+   ls- and vs-. */
 @layer components {
   *,
   *::before,
@@ -12,7 +13,38 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    font-size: 1rem;
+    text-rendering: optimizeLegibility;
+  }
+  /* The light theme on a canvas, not on white: a cool off-white with a pink and a blue glow at the top, and the
+     cards stay white with a soft shadow, so the surfaces separate without more borders. The dark theme keeps its
+     page colour. VERIFIED: the e2e contrast audit measures the text on it in both themes. */
+  :root:not(.dark) body {
+    background:
+      radial-gradient(56rem 34rem at 0% -6rem, color-mix(in oklch, var(--hs-lexical) 9%, transparent), transparent),
+      radial-gradient(48rem 30rem at 100% 0%, color-mix(in oklch, var(--hs-vector) 8%, transparent), transparent),
+      var(--hs-canvas);
+  }
+  /* the footer keeps the white surface: an edge where the canvas ends */
+  :root:not(.dark) .mk-footer {
+    border-block-start: 1px solid var(--border);
+  }
+  :root:not(.dark) .card {
+    box-shadow:
+      0 1px 2px oklch(30% 0.03 275 / 0.05),
+      0 12px 32px -16px oklch(35% 0.06 275 / 0.16);
+  }
+  /* Grayscale smoothing thins strokes: right for light text on dark and on dense screens, too light for dark text
+     on a 1x screen, where the system's own rendering stays. */
+  .dark body {
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  @media (min-resolution: 2dppx) {
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
   }
   /* component rules set display, which would otherwise beat the hidden attribute */
   [hidden] {
@@ -27,11 +59,79 @@
     gap: clamp(5rem, 11vw, 9rem);
     padding-block-end: clamp(5rem, 11vw, 9rem);
   }
-  .hs-section {
+  /* One setting scales the page: text, spacing and widths are in rem, so they follow the root at 1.25 times the
+     browser's default size; a reader's own default still applies, as a percentage of it. */
+  html {
+    font-size: 125%;
+  }
+  /* The design system shows the full navigation from a 40rem header; at the larger root size it needs about 54rem,
+     so below that the header keeps its menu button, and a label never wraps inside the bar. */
+  @container mk-header (width < 54rem) {
+    .mk-header-nav {
+      display: none;
+    }
+    .mk-header-menu {
+      display: inline-flex;
+    }
+    .mk-header-actions .mk-header-wide {
+      display: none;
+    }
+  }
+  .mk-header-nav a {
+    white-space: nowrap;
+  }
+  /* A phone's header has no room for the language switch next to the menu button, so it moves into the menu. */
+  .hs-locale-sheet {
+    display: none;
+  }
+  @container mk-header (width < 30rem) {
+    .mk-header-actions .hs-locale {
+      display: none;
+    }
+    .hs-locale-sheet {
+      display: inline-flex;
+    }
+  }
+  /* One frame for every block: the same width and the same side margin for the header, the hero, the sections and
+     the footer, so their left edges line up; the margin grows from 20px on a phone to 40px on a wide screen. */
+  :root {
+    --hs-max: 76rem;
+    --hs-gutter: clamp(1.25rem, 4vw, 2.5rem);
+    --hs-frame: calc(var(--hs-max) + 2 * var(--hs-gutter));
+  }
+  .hs-section,
+  .container.hs-section {
     width: 100%;
-    max-width: 76rem;
-    padding-inline: 1rem;
+    max-width: var(--hs-frame);
+    margin-inline: auto;
+    padding-inline: var(--hs-gutter);
     scroll-margin-top: 5rem;
+  }
+  .hs-section :is(.mk-section-header, .mk-stats) {
+    max-width: none;
+    padding-inline: 0;
+  }
+  /* the same distance between a section's heading and its content everywhere */
+  .hs-section > .mk-section-header + *,
+  .hs-use > .mk-section-header + * {
+    margin-block-start: 2.5rem;
+  }
+  .hs-section .mk-section-header-copy {
+    max-width: 44rem;
+  }
+  /* Every section's kind as a badge with its icon, above the title: tinted with the vector blue on both themes. */
+  .badge.hs-eyebrow {
+    align-self: flex-start;
+    gap: 0.375rem;
+    padding: 0.125rem 0.75rem 0.125rem 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.75rem;
+    color: var(--foreground);
+    background: color-mix(in oklch, var(--hs-vector) 9%, var(--background));
+    border-color: color-mix(in oklch, var(--hs-vector) 32%, var(--border));
+  }
+  .badge.hs-eyebrow .hs-icon {
+    color: var(--hs-vector);
   }
   .hs-icon {
     width: 1em;
@@ -64,20 +164,6 @@
     font-family: var(--font-mono);
     font-size: 0.9em;
   }
-  .hs-hero-pill a {
-    color: inherit;
-    text-decoration: none;
-  }
-  .hs-hero-pill > a:last-child {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .hs-hero-pill > a:last-child:hover {
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  .hs-npm-tag .badge,
   .mk-header-sheet-actions .badge {
     margin-inline-start: 0.125rem;
   }
@@ -91,22 +177,14 @@
     letter-spacing: -0.03em;
     line-height: 1.15;
   }
-  .hs-accent {
-    background: linear-gradient(90deg, var(--chart-1), var(--chart-3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
 
   /* the hero's intro: six muted items under the CTA, so the buttons stay above the fold */
   .hs-intro {
     display: grid;
     gap: 2rem 2.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
     width: 100%;
-    max-width: 64rem;
-    margin: clamp(5.5rem, 13vw, 10rem) auto 0;
-    padding-inline: 1.25rem;
+    margin-block-start: 2.5rem;
     text-align: start;
   }
   .hs-intro-item {
@@ -132,7 +210,7 @@
   }
   .hs-intro p {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.6;
     color: var(--muted-foreground);
     text-wrap: pretty;
@@ -155,7 +233,7 @@
     font-size: clamp(3rem, 10vw, 6rem);
     font-weight: 800;
     letter-spacing: -0.04em;
-    background: linear-gradient(90deg, #9db2ff, #e3a6ff);
+    background: linear-gradient(90deg, var(--hs-lexical), var(--hs-vector));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -173,12 +251,6 @@
     box-shadow:
       var(--shadow-2xl),
       0 30px 80px -30px color-mix(in oklch, var(--chart-2) 45%, transparent);
-  }
-  .hs-inline-link {
-    height: auto;
-    padding: 0;
-    font-size: inherit;
-    vertical-align: baseline;
   }
 
   /* the runtime card: ring, one bar per download or build step, the figures, the worker log */
@@ -277,7 +349,7 @@
   }
   .hs-tab-desc {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 400;
     line-height: 1.3;
     color: var(--muted-foreground);
@@ -326,7 +398,7 @@
   }
   .hs-tally {
     margin: 0.5rem 0 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
 
@@ -342,13 +414,53 @@
     padding: 0;
     border: 0;
   }
+  /* The chosen method in its retrieval colours: lexical-only in pink, the two hybrids in pink into blue, on the
+     card's edge, its tint and the radio. */
   .hs-factory {
+    --hs-pick: linear-gradient(135deg, var(--hs-lexical), var(--hs-vector));
+    --hs-pick-tint: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--hs-lexical) 7%, var(--card)),
+      color-mix(in oklch, var(--hs-vector) 7%, var(--card))
+    );
     gap: 0.5rem;
     min-width: 0;
   }
+  .hs-factory:has(.radio[value='lexical-only']) {
+    --hs-pick: linear-gradient(var(--hs-lexical), var(--hs-lexical));
+    --hs-pick-tint: linear-gradient(
+      color-mix(in oklch, var(--hs-lexical) 7%, var(--card)),
+      color-mix(in oklch, var(--hs-lexical) 7%, var(--card))
+    );
+  }
   .hs-factory:has(.radio:checked) {
-    border-color: color-mix(in oklch, var(--chart-2) 60%, var(--border));
-    background: color-mix(in oklch, var(--chart-2) 6%, transparent);
+    border-color: transparent;
+    background:
+      var(--hs-pick-tint) padding-box,
+      var(--hs-pick) border-box;
+    box-shadow: 0 10px 28px -16px color-mix(in oklch, var(--hs-vector) 55%, transparent);
+  }
+  .hs-factory:has(.radio[value='lexical-only']:checked) {
+    box-shadow: 0 10px 28px -16px color-mix(in oklch, var(--hs-lexical) 55%, transparent);
+  }
+  .hs-factory .radio:checked {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--background), var(--background)) padding-box,
+      var(--hs-pick) border-box;
+  }
+  .hs-factory .radio:checked::after {
+    background: var(--hs-pick);
+  }
+  /* Forced colours drop gradient backgrounds: the checked card and radio take the system highlight instead. */
+  @media (forced-colors: active) {
+    .hs-factory:has(.radio:checked),
+    .hs-factory .radio:checked {
+      border-color: Highlight;
+    }
+    .hs-factory .radio:checked::after {
+      background: Highlight;
+    }
   }
   .hs-factory-head {
     display: flex;
@@ -362,12 +474,12 @@
   .hs-factory-fn,
   .hs-method-fn {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--muted-foreground);
     overflow-wrap: anywhere;
   }
   .hs-factory-cost {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
   .hs-factory-cost .hs-icon {
     vertical-align: -0.125em;
@@ -376,7 +488,7 @@
   .hs-factory-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
   .hs-factory-table th,
   .hs-factory-table td {
@@ -398,19 +510,30 @@
   }
   .hs-factory-note {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--muted-foreground);
   }
-  .hs-picker-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-block-start: 1rem;
+  /* Lexical-semantic's reranker switch sits inside its card, but outside the card's label, so the switch keeps
+     its own name and the radio's name stays the card's text. */
+  .hs-factory-slot {
+    display: grid;
+    min-width: 0;
   }
-  .hs-picker-foot .switch-item {
-    margin-inline-end: auto;
+  .hs-factory-slot > .hs-factory {
+    grid-area: 1 / 1;
+    padding-block-end: 3.75rem;
+  }
+  .hs-factory-rerank {
+    grid-area: 1 / 1;
+    align-self: end;
+    position: relative;
+    margin: 0 1rem 1.125rem;
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid var(--border);
+  }
+  /* the boot ring's caption stays readable when the ring is small on a phone */
+  .hs-boot .radial-progress-caption {
+    font-size: max(0.75rem, 0.6875em);
   }
   .hs-boot-head {
     display: flex;
@@ -425,7 +548,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
   .hs-figure-wait .spinner {
@@ -463,7 +586,7 @@
     gap: 0.5rem;
   }
   .hs-method .card-description {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
   .hs-figure {
     display: flex;
@@ -490,13 +613,13 @@
     color: var(--chart-2);
   }
   .hs-figure-label {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
   .hs-figure-meta {
     flex-basis: 100%;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--muted-foreground);
   }
   .hs-figure .spinner {
@@ -525,7 +648,7 @@
   .hs-hit-rank {
     flex: none;
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
@@ -538,7 +661,7 @@
   }
   .hs-hit-text {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.45;
     overflow-wrap: anywhere;
     display: -webkit-box;
@@ -561,7 +684,7 @@
     background: none;
     color: inherit;
     font: inherit;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     text-align: start;
     cursor: pointer;
     border-radius: 2px;
@@ -576,7 +699,7 @@
   }
   /* the scoring explanation of a note hit */
   .hs-why {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--muted-foreground);
   }
   .hs-why summary {
@@ -608,7 +731,7 @@
     overflow-wrap: anywhere;
   }
   .hs-why-body code {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
   }
   .hs-why-list {
     display: grid;
@@ -638,7 +761,7 @@
   }
   .hs-source {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: var(--muted-foreground);
   }
   .hs-gold.aura {
@@ -646,7 +769,7 @@
   }
   .hs-method-empty {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
 
@@ -666,7 +789,7 @@
   }
   .hs-credit {
     margin-block-start: 1rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--muted-foreground);
   }
@@ -734,8 +857,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    padding: 0.75rem 0.875rem 0.625rem;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem 0.875rem;
     background: var(--hs-note-paper);
     color: var(--hs-note-ink);
     border-radius: 2px 2px 1.25rem 2px;
@@ -750,7 +873,7 @@
     outline-offset: 2px;
   }
   .hs-note-label {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     opacity: 0.7;
@@ -768,7 +891,7 @@
     max-width: 60%;
     padding: 0.0625rem 0.25rem;
     font: inherit;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: inherit;
     background: transparent;
     border: 1px solid color-mix(in oklch, var(--hs-note-ink) 25%, transparent);
@@ -781,7 +904,7 @@
   }
   .hs-note .textarea {
     min-height: 6.5rem;
-    padding: 0;
+    padding: 0.375rem 0.125rem;
     border: 0;
     background: transparent;
     color: inherit;
@@ -804,7 +927,7 @@
     gap: 0.25rem 0.5rem;
     min-height: 1.5rem;
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
   .hs-note-time {
     font-family: var(--font-mono);
@@ -817,17 +940,44 @@
   /* how it works: the strategies and the ranking contract under the diagram */
   .hs-strategies {
     display: grid;
-    gap: 1.5rem 2.5rem;
+    gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     margin-block-start: 2.5rem;
   }
   .hs-strategy {
-    display: flex;
-    flex-direction: column;
     gap: 0.5rem;
+  }
+  .hs-strategy[data-ink='vector'] {
+    --hs-edge: var(--hs-vector);
+  }
+  .hs-strategy[data-ink='lexical'] {
+    --hs-edge: var(--hs-lexical);
   }
   .hs-strategy .hs-way-title {
     font-size: 1rem;
+  }
+  /* The strategy as a small flow in its tile: the sources in their colours, side by side into one ranking (fusion)
+     or one after the other (a cascade). */
+  .hs-strategy-flow {
+    box-sizing: content-box;
+    width: 4rem;
+    height: 1.5rem;
+    margin-block-end: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklch, var(--muted) 70%, transparent);
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .hs-strategy-flow circle {
+    stroke: none;
+  }
+  .hs-strategy-flow .hs-strategy-out {
+    fill: var(--card);
+    stroke: var(--foreground);
+    stroke-width: 2;
   }
   .hs-tiers {
     display: flex;
@@ -845,19 +995,70 @@
   }
   .hs-tier-list li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.75rem;
     font-size: 0.875rem;
     color: var(--muted-foreground);
     counter-increment: tier;
   }
+  /* Each stage's number in a round badge coloured by when it applies (the key above): every search in both
+     retrieval colours, an option as a ring of them, the reranker's stages in the vector blue. */
+  .hs-tier-list li::before,
+  .hs-tier-key li::before {
+    display: grid;
+    place-items: center;
+    flex: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--hs-lexical), var(--hs-vector));
+  }
   .hs-tier-list li::before {
     content: counter(tier);
-    width: 1.25rem;
-    flex: none;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    text-align: end;
+    width: 1.5rem;
+    height: 1.5rem;
+    font: 600 0.75rem/1 var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+  }
+  .dark .hs-tier-list li::before {
+    color: oklch(16% 0.02 275);
+  }
+  :is(.hs-tier-list, .hs-tier-key) li[data-when='option']::before {
+    border: 2px solid transparent;
+    background:
+      linear-gradient(var(--background), var(--background)) padding-box,
+      linear-gradient(135deg, var(--hs-lexical), var(--hs-vector)) border-box;
+  }
+  .hs-tier-list li[data-when='option']::before {
+    color: var(--foreground);
+  }
+  :is(.hs-tier-list, .hs-tier-key) li[data-when='reranker']::before {
+    background: var(--hs-vector);
+  }
+  .hs-tier-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  .hs-tier-key li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-tier-key li::before {
+    content: '';
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  /* Forced colours drop the gradients: the badges keep a system-coloured ring. */
+  @media (forced-colors: active) {
+    :is(.hs-tier-list, .hs-tier-key, .hs-rank-list) li::before {
+      border: 1px solid CanvasText;
+    }
   }
   .hs-tier-list .badge {
     flex: none;
@@ -890,7 +1091,7 @@
   }
   .hs-bench-table td:first-child {
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
   .hs-num {
     text-align: end;
@@ -903,7 +1104,7 @@
   }
   /* a figure the page has not filled yet */
   .mk-stat-value:empty::before {
-    content: '\2013';
+    content: '-';
     color: var(--muted-foreground);
   }
   .mk-stats-desc a {
@@ -929,9 +1130,18 @@
     max-width: 100%;
     overflow-x: auto;
   }
+  /* the model download under the strategy tabs, as on the defuss-vectorsearch site */
+  .hs-recall-download {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-recall-download strong {
+    color: var(--foreground);
+  }
   .hs-recall-note {
     margin: 0 0 0.75rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
   .hs-recall-list {
@@ -946,7 +1156,7 @@
   }
   .hs-footnote {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--muted-foreground);
   }
   .hs-footnote-mark {
@@ -954,69 +1164,11 @@
     color: var(--muted-foreground);
   }
 
-  /* consulting CTA: a leaf-cornered mesh panel; portrait + heading, then the text, then the action */
-  .hs-consult {
-    --shape-round: 3rem;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background-color: var(--card);
-  }
-  .hs-consult .mk-cta,
-  .hs-consult .mk-cta[data-variant] {
-    background: transparent;
-  }
-  .hs-consult .mk-cta[data-variant] .mk-cta-inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
-    align-items: center;
-    gap: 1.25rem 2rem;
-    text-align: start;
-    padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.5rem, 3vw, 2.5rem);
-    background: transparent;
-    border-radius: 0;
-  }
-  .hs-consult .mk-cta[data-variant] .mk-cta-copy {
-    display: contents;
-  }
-  .hs-consult .hs-cta-head {
-    grid-column: 1;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-  }
-  .hs-consult .mk-cta[data-variant] .mk-cta-title {
-    margin: 0;
-    font-size: clamp(1.25rem, 2.2vw, 1.625rem);
-  }
-  .hs-consult .mk-cta[data-variant] .mk-cta-desc {
-    grid-column: 2;
-    margin: 0;
-    font-size: 0.875rem;
-  }
-  .hs-consult .mk-cta[data-variant] .mk-cta-actions {
-    grid-column: 3;
-    justify-content: flex-end;
-  }
-  .hs-cta-portrait {
-    width: 4rem;
-    flex: none;
-  }
-  .hs-cta-portrait img,
-  .hs-ad-portrait img {
+  .hs-ad-portrait img,
+  .hs-enterprise-portrait img {
     display: block;
     width: 100%;
     height: auto;
-  }
-  @media (max-width: 56rem) {
-    .hs-consult .mk-cta[data-variant] .mk-cta-inner {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .hs-consult .hs-cta-head,
-    .hs-consult .mk-cta[data-variant] .mk-cta-desc,
-    .hs-consult .mk-cta[data-variant] .mk-cta-actions {
-      grid-column: auto;
-      justify-content: flex-start;
-    }
   }
 
   /* "Use it": one leaf-cornered panel on a faint dot pattern, two ways in */
@@ -1130,7 +1282,7 @@
   }
   .hs-ad-role {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--muted-foreground);
   }
@@ -1201,16 +1353,1011 @@
     max-width: 100%;
   }
 
+  /* ---- the site's own colours: the logo's two rings, lexical pink and vector blue ----------------------------- */
+  :root {
+    --hs-canvas: oklch(98.3% 0.006 275);
+    --hs-lexical: oklch(55% 0.21 352);
+    --hs-vector: oklch(52% 0.2 266);
+    /* the hero's neuro-noise field, from its faint edge to its brightest strands: ink on a light page */
+    --hs-neural-1: oklch(60% 0.17 266);
+    --hs-neural-2: oklch(56% 0.2 300);
+    --hs-neural-3: oklch(42% 0.22 280);
+  }
+  .dark {
+    --hs-canvas: var(--background);
+    --hs-lexical: oklch(76% 0.15 352);
+    --hs-vector: oklch(74% 0.14 262);
+    /* light on a dark page: blue, then violet, then white where the strands cross */
+    --hs-neural-1: oklch(52% 0.22 266);
+    --hs-neural-2: oklch(72% 0.17 300);
+    --hs-neural-3: oklch(98% 0.02 280);
+  }
+  /* A German page waits for its regions (website/i18n.mjs removes the class), two seconds at most. */
+  .hs-pending body {
+    visibility: hidden;
+    animation: hs-show-page 0s 2s forwards;
+  }
+  @keyframes hs-show-page {
+    to {
+      visibility: visible;
+    }
+  }
+  /* Items with data-enter wait below the fold until website/chrome.mjs starts their entrance; without the script
+     they appear after four seconds. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hs-js:not(.hs-entrances) [data-enter] {
+      opacity: 0;
+      animation: hs-show 0s 4s forwards;
+    }
+    .hs-entrances [data-enter]:not([data-df-entrance]) {
+      opacity: 0;
+    }
+  }
+  @keyframes hs-show {
+    to {
+      opacity: 1;
+    }
+  }
+  /* a followed deep link lands below the floating header */
+  :is(section, h2, h3, h4)[id] {
+    scroll-margin-top: 5.5rem;
+  }
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+
+  /* ---- legibility floor: no text under 12px; defuss-shadcn's small badges, keys and diagram labels go to it ------ */
+  .badge,
+  .badge[data-size='xs'],
+  .badge[data-size='sm'],
+  .badge[data-size='md'] {
+    font-size: 0.75rem;
+  }
+  .badge[data-size='xs'] {
+    line-height: 1.25rem;
+  }
+  .kbd,
+  .kbd[data-size='sm'] {
+    font-size: 0.75rem;
+  }
+  .diagram-group-label,
+  .diagram-node-eyebrow,
+  .diagram-wire-label {
+    font-size: 0.75rem;
+  }
+  .diagram-node-meta,
+  .diagram-status,
+  .diagram-edges li {
+    font-size: 0.8125rem;
+  }
+  :is(p, li, figcaption, td, th) code {
+    font-size: max(0.9em, 0.75rem);
+  }
+
+  /* ---- header ---------------------------------------------------------------------------------------------- */
+  /* the floating header's glass: opaque enough that its muted labels keep 4.5:1 over the hero's colours */
+  .mk-header[data-variant='floating'] {
+    padding: 1rem var(--hs-gutter) 0;
+  }
+  .mk-header[data-variant='floating'] .mk-header-inner {
+    max-width: var(--hs-max);
+    padding-inline: 1.25rem 0.5rem;
+    background: color-mix(in oklch, var(--background) 90%, transparent);
+  }
+  .mk-footer .mk-footer-inner {
+    max-width: var(--hs-frame);
+    padding: clamp(3.5rem, 7vw, 5rem) var(--hs-gutter) calc(clamp(2.5rem, 5vw, 3.5rem) + env(safe-area-inset-bottom));
+  }
+  .hs-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-logo {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: none;
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .hs-logo-lexical {
+    stroke: var(--hs-lexical);
+  }
+  .hs-logo-vector,
+  .hs-logo-handle {
+    stroke: var(--hs-vector);
+  }
+  .hs-logo-vector {
+    mix-blend-mode: multiply;
+  }
+  .dark .hs-logo-vector {
+    mix-blend-mode: screen;
+  }
+  .hs-brand-search {
+    color: var(--muted-foreground);
+  }
+  .hs-logo-mono {
+    stroke-width: 3;
+  }
+  .hs-locale .toggle {
+    min-width: 2.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- hero: the custom shader behind, the copy and the fusion figure in front ------------------------------- */
+  .hs-hero {
+    position: relative;
+    isolation: isolate;
+    /* the figure's field reaches past the page's sides; clip it without a scroll container */
+    overflow-x: clip;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 7vw, 5rem);
+    padding: clamp(7rem, 14vh, 9rem) var(--hs-gutter) 0;
+  }
+  /* The field glows behind the figure and fades out behind the copy, so the text sits on the page colour; on a
+     phone, where the copy spans the width, it stays a faint band at the top. */
+  /* The neural field glows behind the fusion figure's lists, inside them, so it follows the figure on every width and never
+     lies under the copy, whose text keeps the page colour behind it. It draws on the page colour itself
+     (data-background), opaque: the runtime composites a translucent field as straight alpha, which turns its faint
+     edge grey on a light page. The selector outweighs the runtime's `inset: 0` for background shaders. */
+  .hs-fusion-stage > .shader.hs-hero-shader {
+    /* shown until the program compiles, and without WebGL2: the field's colours, not the runtime's dark poster */
+    --shader-poster: radial-gradient(closest-side, color-mix(in oklch, var(--hs-neural-2) 30%, transparent), transparent);
+    inset: -7rem -5rem 0;
+    opacity: 0.8;
+    mask-image: radial-gradient(closest-side, #000 40%, transparent);
+  }
+  @media (max-width: 63.99rem) {
+    .hs-fusion-stage > .shader.hs-hero-shader {
+      inset: -3rem -2rem 0;
+    }
+  }
+  .hs-hero-inner {
+    display: grid;
+    gap: 3rem;
+    align-items: center;
+    width: 100%;
+    max-width: var(--hs-max);
+    margin-inline: auto;
+  }
+  @media (min-width: 64rem) {
+    .hs-hero-inner {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    }
+  }
+  .hs-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+  .hs-hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .hs-hero-title {
+    margin: 0;
+    font-size: clamp(2.25rem, 4.2vw + 0.5rem, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  .hs-grad {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--hs-lexical), var(--hs-vector));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hs-hero .hs-flip {
+    font-size: clamp(1rem, 2.2vw, 1.375rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  /* The rotating line in a capsule: an edge in both retrieval colours, a pulsing dot, and a line along the bottom
+     that fills while each claim shows (four claims share the rotator's 18 s), so the change is expected. */
+  .hs-flip-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 100%;
+    padding: 0.5rem 1.125rem 0.5625rem 0.875rem;
+    border: 1px solid transparent;
+    border-radius: 1.5rem;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(
+          90deg,
+          color-mix(in oklch, var(--hs-lexical) 55%, var(--border)),
+          color-mix(in oklch, var(--hs-vector) 55%, var(--border))
+        )
+        border-box;
+    box-shadow: 0 12px 32px -18px color-mix(in oklch, var(--hs-vector) 70%, transparent);
+    overflow: hidden;
+  }
+  .hs-flip-pill::after {
+    content: '';
+    position: absolute;
+    inset: auto 1rem 0;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--hs-lexical), var(--hs-vector));
+    transform-origin: left;
+    animation: hs-flip-progress calc(var(--text-rotate-duration) / 4) linear infinite;
+  }
+  .hs-flip-pill:has(.text-rotate:hover)::after {
+    animation-play-state: paused;
+  }
+  .hs-flip-dot {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--hs-lexical), var(--hs-vector));
+    animation: hs-flip-pulse 2.25s ease-out infinite;
+  }
+  /* each claim rises into focus and leaves upwards out of it; one line at a time, like the design system's fade */
+  .hs-hero .text-rotate[data-effect='fade'] > span > * {
+    animation-name: hs-flip-4;
+  }
+  @keyframes hs-flip-4 {
+    0% {
+      opacity: 0;
+      translate: 0 0.4lh;
+      filter: blur(6px);
+    }
+    2%,
+    23% {
+      opacity: 1;
+      translate: 0;
+      filter: blur(0);
+    }
+    25%,
+    100% {
+      opacity: 0;
+      translate: 0 -0.4lh;
+      filter: blur(6px);
+    }
+  }
+  @keyframes hs-flip-progress {
+    from {
+      scale: 0 1;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+  @keyframes hs-flip-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--hs-vector) 55%, transparent);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 0.5rem transparent;
+    }
+  }
+  /* Reduced motion: the first claim stands still; this selector outweighs the one that sets the animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .hs-hero .text-rotate[data-effect='fade'] > span > *,
+    .hs-flip-dot {
+      animation: none;
+    }
+    .hs-flip-pill::after {
+      display: none;
+    }
+  }
+  /* The rotating line in full contrast with a sheen in both retrieval colours that passes over it: ink on a light
+     page, near-white on a dark one. Each line has its own span, since the rotator animates the line itself.
+     `color` stays the base colour, so the contrast audit measures it; both colours pass 4.5:1 on the capsule. */
+  .hs-shine {
+    --hs-shine-base: var(--foreground);
+    color: var(--hs-shine-base);
+    background: linear-gradient(
+        100deg,
+        var(--hs-shine-base) 0 34%,
+        var(--hs-lexical) 45%,
+        var(--hs-vector) 55%,
+        var(--hs-shine-base) 66% 100%
+      )
+      100% 0 / 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: hs-shine 4.5s ease-in-out infinite;
+  }
+  .dark .hs-shine {
+    --hs-shine-base: oklch(93% 0.01 266);
+  }
+  @keyframes hs-shine {
+    0%,
+    35% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: 0 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hs-shine {
+      animation: none;
+    }
+  }
+  /* The primary call to action: a blue glow that circles the button (defuss-shadcn's aura). */
+  .hs-cta-aura {
+    display: inline-grid;
+    --shape-round: var(--radius-md);
+    --shape-ink: var(--hs-vector);
+  }
+  .hs-hero-lead {
+    margin: 0;
+    max-width: 38rem;
+    color: var(--muted-foreground);
+    text-wrap: pretty;
+  }
+  .hs-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .hs-hero .hs-install {
+    max-width: 36rem;
+  }
+
+  /* the fusion figure: two ranked lists, wires, the fused list; its caption and the credit below */
+  .hs-hero-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  .hs-fusion,
+  .hs-fusion-stage {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    min-width: 0;
+  }
+  .hs-hero-credit {
+    margin: 0;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--border);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--muted-foreground);
+  }
+  .hs-hero-credit a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+    text-underline-offset: 2px;
+  }
+  .hs-fusion-sources {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .hs-rank {
+    --hs-rank-ink: var(--hs-lexical);
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-block-start: 3px solid var(--hs-rank-ink);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklch, var(--card) 88%, transparent);
+    backdrop-filter: blur(6px);
+    box-shadow: var(--shadow-md);
+  }
+  .hs-rank[data-source='vector'] {
+    --hs-rank-ink: var(--hs-vector);
+  }
+  .hs-rank-fused {
+    border-block-start: 0;
+    border-image: linear-gradient(90deg, var(--hs-lexical), var(--hs-vector)) 1;
+    border-image-width: 3px 0 0;
+    box-shadow:
+      var(--shadow-xl),
+      0 24px 60px -30px color-mix(in oklch, var(--hs-vector) 55%, transparent);
+  }
+  .hs-rank-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  /* the package that returns the list */
+  .hs-rank-source {
+    display: inline-block;
+    margin-block-start: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+  .hs-rank-source:hover {
+    color: var(--foreground);
+  }
+  /* two boxes side by side on a phone: a narrower frame, the package name on one line */
+  @media (max-width: 30rem) {
+    .hs-rank {
+      padding: 0.75rem;
+    }
+    .hs-rank-title {
+      flex-wrap: wrap;
+    }
+    .hs-rank-source {
+      font-size: 0.75rem;
+    }
+  }
+  .hs-rank-title code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--muted-foreground);
+  }
+  /* Ranks as small round badges in the list's colour; the fused list's in both. */
+  .hs-rank-list {
+    display: grid;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: hs-rank;
+    font-size: 0.875rem;
+  }
+  .hs-rank-list li {
+    counter-increment: hs-rank;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .hs-rank-list li::before {
+    content: counter(hs-rank);
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    font: 600 0.75rem/1 var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    background: var(--hs-rank-ink);
+  }
+  .hs-rank-fused .hs-rank-list li::before {
+    background: linear-gradient(135deg, var(--hs-lexical), var(--hs-vector));
+  }
+  .dark .hs-rank-list li::before {
+    color: oklch(16% 0.02 275);
+  }
+  .hs-rank-list code {
+    font-family: var(--font-mono);
+  }
+  .hs-rank-fused .hs-rank-list li {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+  }
+  .hs-rank-why {
+    margin-inline-start: auto;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+  }
+  .hs-fusion-wires {
+    display: block;
+    width: 100%;
+    height: 3rem;
+    overflow: visible;
+  }
+  .hs-fusion-wires path {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.25;
+    opacity: 0.6;
+  }
+  /* Below the stage, on the canvas: the field ends at the fused list. */
+  .hs-fusion-caption {
+    margin-block-start: 0.875rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-fusion-caption code {
+    font-family: var(--font-mono);
+  }
+
+  /* four measured figures under the hero */
+  .hs-usps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1.5rem 2rem;
+    width: 100%;
+    max-width: var(--hs-max);
+    margin-inline: auto;
+  }
+  /* One card surface for the hero's figures and the three strategies: a top edge in the retrieval colours (both,
+     or the one a card is about), the icon or flow in a tile. */
+  .hs-usp,
+  .hs-strategy {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 1.375rem 1.25rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    overflow: hidden;
+  }
+  :is(.hs-usp, .hs-strategy)::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--hs-edge, linear-gradient(90deg, var(--hs-lexical), var(--hs-vector)));
+  }
+  :root:not(.dark) :is(.hs-usp, .hs-strategy) {
+    box-shadow:
+      0 1px 2px oklch(30% 0.03 275 / 0.05),
+      0 12px 32px -16px oklch(35% 0.06 275 / 0.16);
+  }
+  .hs-usp-icon {
+    position: absolute;
+    inset-block-start: 1.125rem;
+    inset-inline-end: 1rem;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-lg);
+    font-size: 1.125rem;
+    color: var(--hs-vector);
+    background: color-mix(in oklch, var(--hs-vector) 10%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--hs-vector) 22%, transparent);
+  }
+  .hs-usp-value {
+    padding-inline-end: 2.75rem;
+  }
+  .hs-usp-value {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(90deg, var(--hs-lexical), var(--hs-vector));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hs-usp-label {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    text-wrap: pretty;
+  }
+  /* the condition each figure was measured under reads first: full text color and weight */
+  .hs-usp-label strong {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  /* a hyphenated name stays on one line */
+  .hs-nowrap {
+    white-space: nowrap;
+  }
+
+  /* ---- install switch: package managers above, the visible command in a terminal --------------------------- */
+  .hs-install {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .hs-install-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .hs-install .mockup-code {
+    margin: 0;
+    padding-block: 0.75rem;
+  }
+  .hs-install pre code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .hs-install:not([data-pm]) pre[data-pm]:not([data-pm='bun']),
+  .hs-install[data-pm='bun'] pre[data-pm]:not([data-pm='bun']),
+  .hs-install[data-pm='pnpm'] pre[data-pm]:not([data-pm='pnpm']),
+  .hs-install[data-pm='npm'] pre[data-pm]:not([data-pm='npm']),
+  .hs-install[data-pm='yarn'] pre[data-pm]:not([data-pm='yarn']) {
+    display: none;
+  }
+  /* Code follows the theme like the rest of the page: light terminals and code blocks in light mode, dark ones in
+     dark mode, each with its Shiki theme (website/shiki-themes.mjs). Only the closing call to action stays dark. */
+  .hs-shiki span[style],
+  .hs-pg-console span[style] {
+    color: var(--shiki-light);
+  }
+  .dark :is(.hs-shiki, .hs-pg-console) span[style] {
+    color: var(--shiki-dark);
+  }
+  :root:not(.dark) .mockup-code {
+    --_bg: oklch(97.6% 0.003 286);
+    --_fg: oklch(21% 0.006 286);
+    --_dim: oklch(46% 0.01 286);
+    --_success: oklch(45% 0.13 150);
+    --_warning: oklch(48% 0.11 70);
+    --_info: oklch(46% 0.13 245);
+    --_destructive: oklch(50% 0.19 25);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  :root:not(.dark) .mk-code-block {
+    color: var(--foreground);
+    background: oklch(97.6% 0.003 260);
+    border-color: var(--border);
+  }
+  :root:not(.dark) .mk-code-block-head {
+    border-block-end-color: var(--border);
+  }
+  :root:not(.dark) :is(.mk-code-block-file, .mk-code-block-copy) {
+    color: var(--muted-foreground);
+  }
+  :root:not(.dark) .mk-code-block-copy:hover {
+    color: var(--foreground);
+    background: var(--muted);
+  }
+  :root:not(.dark) .mk-code-block pre[data-numbers] code > span::before {
+    color: var(--muted-foreground);
+  }
+
+  /* ---- playground: the editor beside its console ------------------------------------------------------------ */
+  .hs-playground {
+    margin-block-start: 2.5rem;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+  }
+  .hs-pg-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    border-block-end: 1px solid var(--border);
+  }
+  .hs-pg-examples {
+    flex-wrap: wrap;
+  }
+  .hs-pg-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .hs-pg-actions .kbd-group {
+    margin-inline-start: 0.25rem;
+  }
+  .hs-pg-actions .btn:not([data-variant]) .kbd {
+    color: inherit;
+    background: color-mix(in oklch, var(--primary-foreground) 18%, transparent);
+    border-color: color-mix(in oklch, var(--primary-foreground) 30%, transparent);
+  }
+  .hs-pg-body {
+    display: grid;
+  }
+  @media (min-width: 64rem) {
+    .hs-pg-body {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+    .hs-pg-out {
+      border-inline-start: 1px solid var(--border);
+    }
+  }
+  .hs-pg-editor {
+    --code-example-font-size: 0.875rem;
+    --code-example-pad: 1.25rem;
+    background: color-mix(in oklch, var(--muted) 45%, transparent);
+  }
+  .hs-pg-editor .code-example-src {
+    min-block-size: 18rem;
+    resize: none;
+  }
+  .hs-pg-out {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1.25rem;
+  }
+  .hs-pg-out-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .hs-pg-console {
+    flex: 1;
+    min-height: 12rem;
+    margin: 0;
+    align-content: start;
+  }
+  .hs-pg-note {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-pg-note code {
+    font-family: var(--font-mono);
+  }
+  .hs-playground[aria-busy='true'] #pg-run {
+    opacity: 0.7;
+  }
+
+  /* ---- how it works: the two diagrams in tabs ---------------------------------------------------------------- */
+  .hs-how-tabs {
+    margin-block-start: 2.5rem;
+  }
+  .hs-how-tabs > .tab-list {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .hs-how-tabs .diagram {
+    margin: 0;
+    overflow-x: auto;
+  }
+  /* the diagrams' accent is text too: the logo's vector blue passes 4.5:1 on their paper in both themes, where
+     the design system's --chart-2 measured 3.7:1 on white */
+  .hs-pipeline {
+    --diagram-accent: var(--hs-vector);
+  }
+  /* A fading rotator stacks its lines in one grid cell, so a line may wrap: the cell grows to the tallest line
+     instead of running past a phone's edge. */
+  .text-rotate[data-effect='fade'] {
+    max-width: 100%;
+    height: auto;
+  }
+  .text-rotate[data-effect='fade'] > span > * {
+    height: auto;
+    white-space: normal;
+  }
+  /* narrow screens: the diagram's toolbar wraps instead of cutting its last buttons */
+  .hs-how-tabs .diagram-controls {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+  /* a long button label wraps on a phone instead of running out of its card */
+  [data-command-trigger='cmd'] {
+    max-width: 100%;
+    height: auto;
+    min-height: 2.75rem;
+    white-space: normal;
+    text-align: center;
+  }
+  /* before a stepped diagram starts: the parts its first step hides (website/chrome.mjs) */
+  .diagram.hs-awaiting :is(.diagram-node, .diagram-group, .diagram-cell)[data-step]:not([data-step='0']),
+  .diagram.hs-awaiting :is(.diagram-wire, .diagram-wire-label, .diagram-token) {
+    opacity: 0;
+  }
+  .hs-diagram-hint {
+    margin: 0.75rem 0 0;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-tab-text {
+    font-size: 0.875rem;
+  }
+
+  /* ---- performance: four chart cards ------------------------------------------------------------------------ */
+  .hs-charts {
+    display: grid;
+    gap: 1.5rem;
+    margin-block-start: 2.5rem;
+  }
+  @media (min-width: 64rem) {
+    .hs-charts {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .hs-chart-card {
+    margin: 0;
+    min-width: 0;
+  }
+  .hs-chart-card .card-description {
+    text-wrap: pretty;
+  }
+  .hs-chart-card .card-description a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .hs-chart-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-block-end: 0.75rem;
+  }
+  .hs-chart-controls .toggle-group {
+    flex-wrap: wrap;
+  }
+  .hs-select-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-select-label .select {
+    max-width: 16rem;
+  }
+  .hs-chart {
+    width: 100%;
+    height: 20rem;
+  }
+  .hs-chart-data {
+    margin-block-start: 0.75rem;
+  }
+  .hs-chart-data .table-container {
+    max-height: 22rem;
+    overflow: auto;
+  }
+
+  /* ---- for teams and enterprises: a circuit-surface panel ---------------------------------------------------- */
+  .hs-enterprise {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+    padding: clamp(1.5rem, 5vw, 3.5rem);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-xl) * 2);
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    box-shadow:
+      var(--shadow-xl),
+      0 40px 100px -50px color-mix(in oklch, var(--hs-lexical) 50%, transparent);
+  }
+  @media (min-width: 64rem) {
+    .hs-enterprise {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    }
+  }
+  .hs-enterprise-surface {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.35;
+    mask-image: linear-gradient(110deg, transparent 35%, #000 90%);
+  }
+  .hs-enterprise-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .hs-enterprise-title {
+    margin: 0;
+    font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .hs-enterprise-copy .lead {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+  .hs-services {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hs-services li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .hs-services .hs-icon {
+    margin-block-start: 0.2rem;
+    font-size: 1.25rem;
+    color: var(--hs-lexical);
+  }
+  .hs-services strong {
+    color: var(--foreground);
+  }
+  .hs-services span {
+    color: var(--muted-foreground);
+  }
+  .hs-enterprise-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+  .hs-enterprise-portrait {
+    width: 9rem;
+  }
+  .hs-enterprise-name {
+    margin: 0.5rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 650;
+  }
+  .hs-enterprise-role,
+  .hs-enterprise-note {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    text-wrap: balance;
+  }
+
+  /* ---- closing call to action: a plain dark panel in both themes, without the component's two glows ------- */
+  .hs-final[data-variant='dark'] .mk-cta-inner {
+    background: oklch(17% 0.012 275);
+    color: oklch(98% 0 0);
+  }
+  .hs-final[data-variant='dark'] .mk-cta-inner :is(.mk-cta-desc, .mk-cta-note) {
+    color: oklch(98% 0 0 / 0.75);
+  }
+  .dark .hs-final .mk-cta-inner {
+    border: 1px solid var(--border);
+  }
+  .hs-final .mk-cta-note {
+    font-size: 0.875rem;
+  }
+  .hs-ad-text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-footer-services .mk-footer-heading {
+    margin-block-end: 0.75rem;
+  }
+
+  /* ---- the Markdown pages ----------------------------------------------------------------------------------- */
+  .hs-lang-note {
+    margin-block: 1.5rem 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-inline-start: 3px solid var(--hs-lexical);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .hs-lang-note:empty {
+    display: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .hs-method {
       transition: none;
     }
   }
   @media (forced-colors: active) {
-    .hs-accent,
+    .hs-grad,
+    .hs-usp-value,
     .hs-fly-word {
       color: CanvasText;
       background: none;
     }
   }
+}
+
+/* Outside the layer, like the tokens it adjusts (defuss-shadcn core.css): light mode's muted text one step darker,
+   from 4.4:1 to above 6:1 on the tinted cards, so secondary text passes WCAG AA (4.5:1) on every surface. */
+:root:not(.dark) {
+  --muted-foreground: oklch(46% 0 0);
 }

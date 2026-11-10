@@ -45,12 +45,16 @@ export const languageCases = [
   query,
   analysis,
 }));
+/**
+ * Winzling-embed's target languages as defuss-vectorsearch counts them. VERIFIED: upstream commit "average the
+ * benchmark over eight target languages, without Indonesian" (2026-11-09, `TARGET_LANGUAGES` in its
+ * scripts/bench/dataset.ts); vectorsearch 0.4.0 on npm still lists nine.
+ */
 export const targetLanguages = new Set([
   'deu_Latn',
   'rus_Cyrl',
   'eng_Latn',
   'fra_Latn',
-  'ind_Latn',
   'nld_Latn',
   'ita_Latn',
   'por_Latn',

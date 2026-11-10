@@ -1,13 +1,14 @@
 /**
  * The demo's worker: it owns the benchmark corpus, the indexes, the user's notes and the models; the page only
- * renders what it posts. It follows the defuss-vectorsearch demo worker (model files fetched through `loadFile` with
- * byte progress, kept in the Cache API, newest query wins) and the defuss-lexicalsearch demo (corpus download and
- * index build on page load, notes searchable as you type).
+ * renders what it posts. It follows the defuss-vectorsearch demo worker (model files fetched as `<file>.br` through
+ * `loadFile` with byte progress, decoded by defuss-brotli, checked against their SHA-256 and kept in the Cache API,
+ * newest query wins) and the defuss-lexicalsearch demo (corpus download and index build on page load, notes
+ * searchable as you type). The data files are Brotli too (scripts/demo-data.mjs), so one 186 kB decoder serves all.
  * Every search runs the factory the reader picked, from defuss-search/strategies:
  * - lexical-only: createLexicalOnlySearch, no model;
  * - tiny: createLexicalSemanticTinySearch over the passages' prebuilt TurboQuant token index (scripts/demo-data.mjs);
- *   MoEdernColBERT encodes only the questions and the user's notes;
- * - semantic: createLexicalSemanticSearch over the recorded Winzling vectors, optionally with the ColBERT reranker.
+ *   Winzling-reranker encodes only the questions and the user's notes;
+ * - semantic: createLexicalSemanticSearch over the recorded Winzling-embed vectors, optionally with the ColBERT reranker.
  * The benchmark restricts BM25 to the question's language, so each factory runs once per language field. The
  * vector source is built once and shared through the factories' `vector` option: one copy of the token index or
  * the vectors serves all 20 searches.
@@ -15,6 +16,7 @@
  * example question ranks exactly as in the published figures, before any model download. VERIFIED: the e2e test
  * measures the efficient preset over all 1,000 questions here and compares each language with docs/data/recall.json.
  */
+import { decompress, init as initBrotli } from 'defuss-brotli/decompressor/slim';
 import { loadCld3Pack } from 'defuss-lid/cld3-pack';
 import { searchPreset } from 'defuss-search';
 import { createColbertRetriever } from 'defuss-search/colbert';
@@ -40,7 +42,7 @@ const message = (error) => (error instanceof Error ? error.message : String(erro
 const openCache = async () =>
   typeof caches === 'undefined' ? undefined : caches.open(CACHE_NAME).catch(() => undefined);
 
-/** Thrown by the reranker slot before MoEdernColBERT is loaded; the gate decided the question needs it. */
+/** Thrown by the reranker slot before Winzling-reranker is loaded; the gate decided the question needs it. */
 class RerankerMissing extends Error {}
 
 let manifest, manifestUrl;
@@ -77,12 +79,11 @@ function download(url, onBytes) {
     request.send();
   });
 }
-const gunzip = async (bytes) =>
-  new Uint8Array(
-    await new Response(
-      new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')),
-    ).arrayBuffer(),
-  );
+/** Decodes a downloaded `.br` file; the decoder's WASM loads once, from next to this worker (scripts/docs.mjs). */
+const unbrotli = async (bytes) => {
+  await initBrotli(new URL('./brotli/decompressor.wasm', import.meta.url));
+  return decompress(bytes);
+};
 const progress = (phase, loaded, total) => post({ type: 'progress', phase, loaded, total });
 
 /** The passages and questions with progress over their compressed size, then the lexical index build, timed. */
@@ -90,10 +91,10 @@ async function loadBench() {
   const response = await fetch(manifestUrl);
   if (!response.ok) throw new Error(`${manifestUrl}: HTTP ${response.status}`);
   manifest = await response.json();
-  log('info', `fetch corpus · ${mb(manifest.corpus.bytes)} passages and questions (gzip)`);
+  log('info', `fetch corpus, ${mb(manifest.corpus.bytes)} passages and questions (Brotli)`);
   const json = await download(new URL(manifest.corpus.file, manifestUrl).href, (n) =>
     progress('corpus', n, manifest.corpus.bytes),
-  ).then(gunzip);
+  ).then(unbrotli);
   const corpus = JSON.parse(new TextDecoder().decode(json));
   const documents = corpus.passages.text.map((text, i) => ({
     id: `${corpus.passages.group[i]}:${corpus.passages.language[i]}`,
@@ -102,7 +103,7 @@ async function loadBench() {
   }));
   log(
     'success',
-    `${documents.length.toLocaleString('en')} passages · ${corpus.languages.length} languages`,
+    `${documents.length.toLocaleString('en')} passages, ${corpus.languages.length} languages`,
   );
   post({ type: 'phase', phase: 'index', done: false });
   const started = performance.now();
@@ -112,7 +113,7 @@ async function loadBench() {
   const terms = index.stats().terms;
   log(
     'success',
-    `lexical index · ${terms.toLocaleString('en')} terms in 20 analyzer fields · ${Math.round(indexMs)} ms`,
+    `lexical index, ${terms.toLocaleString('en')} terms in 20 analyzer fields, ${Math.round(indexMs)} ms`,
   );
   bench = { corpus, index, documents };
   post({
@@ -135,15 +136,15 @@ const rowOf = (corpus, id) => {
   return group * corpus.languages.length + language;
 };
 
-/** The recorded Winzling vectors of the passages and questions, which only lexical-semantic needs. */
+/** The recorded Winzling-embed vectors of the passages and questions, which only lexical-semantic needs. */
 let vectorsLoading;
 const loadVectors = () =>
   (vectorsLoading ??= (async () => {
     const { dims, passages: count, bytes, rawBytes, file } = manifest.vectors;
-    log('info', `fetch recorded Winzling vectors · ${mb(bytes)} (gzip)`);
+    log('info', `fetch recorded Winzling-embed vectors, ${mb(bytes)} (Brotli)`);
     const binary = await download(new URL(file, manifestUrl).href, (n) =>
       progress('vectors', n, bytes),
-    ).then(gunzip);
+    ).then(unbrotli);
     const floats = new Float32Array(binary.buffer, binary.byteOffset, binary.byteLength / 4);
     const row = (i) => floats.subarray(i * dims, (i + 1) * dims);
     bench.vectors = createVectorRetriever({
@@ -151,7 +152,7 @@ const loadVectors = () =>
       vectors: bench.documents.map((_, i) => row(i)),
     });
     bench.queryVectors = bench.corpus.queries.text.map((_, i) => row(count + i));
-    log('success', `${count.toLocaleString('en')} passage vectors · ${mb(rawBytes)} float32`);
+    log('success', `${count.toLocaleString('en')} passage vectors, ${mb(rawBytes)} float32`);
     post({ type: 'ready', model: 'vectors' });
   })().catch((error) => {
     vectorsLoading = undefined;
@@ -160,7 +161,7 @@ const loadVectors = () =>
 
 /**
  * The tiny factory's token index: the passages' TurboQuant codes, built by scripts/demo-data.mjs from the matrices
- * the strategies benchmark encoded, so this browser runs no passage encoding. Queries need MoEdernColBERT, which
+ * the strategies benchmark encoded, so this browser runs no passage encoding. Queries need Winzling-reranker, which
  * loads in its own lane; the retriever reaches it only when a query is scanned.
  */
 let tokensLoading;
@@ -168,10 +169,10 @@ const loadTokens = () =>
   (tokensLoading ??= (async () => {
     const meta = manifest.tokens;
     const started = performance.now();
-    log('info', `fetch token index · ${mb(meta.bytes)} TurboQuant codes (gzip)`);
+    log('info', `fetch token index, ${mb(meta.bytes)} TurboQuant codes (Brotli)`);
     const bytes = await download(new URL(meta.file, manifestUrl).href, (n) =>
       progress('tokens', n, meta.bytes),
-    ).then(gunzip);
+    ).then(unbrotli);
     bench.tokens = createColbertRetriever({
       ids: bench.documents.map((doc) => doc.id),
       index: unpackTokenIndex(meta, bytes),
@@ -180,7 +181,7 @@ const loadTokens = () =>
     const ms = performance.now() - started;
     log(
       'success',
-      `token index · ${meta.size.toLocaleString('en')} tokens · ${mb(meta.rawBytes)} TurboQuant codes · ${Math.round(ms)} ms`,
+      `token index, ${meta.size.toLocaleString('en')} tokens, ${mb(meta.rawBytes)} TurboQuant codes, ${Math.round(ms)} ms`,
     );
     post({ type: 'ready', model: 'tokens', tokens: meta.size, bytes: meta.rawBytes, ms });
   })().catch((error) => {
@@ -188,10 +189,10 @@ const loadTokens = () =>
     throw error;
   }));
 
-/** The raw-reranker contract with MoEdernColBERT behind it once loaded; until then a marker the search reports. */
+/** The raw-reranker contract with Winzling-reranker behind it once loaded; until then a marker the search reports. */
 const colbertSlot = {
   rerank(query, texts, options) {
-    if (!colbert) throw new RerankerMissing('MoEdernColBERT is not loaded');
+    if (!colbert) throw new RerankerMissing('Winzling-reranker is not loaded');
     return colbert.rerank(query, texts, options);
   },
 };
@@ -204,7 +205,7 @@ async function searchFor(code, { factory, rerank } = choice) {
   let search;
   if (factory === 'lexical-only') search = createLexicalOnlySearch(bench.index, { lexical });
   else if (factory === 'tiny') {
-    // The index scans only with MoEdernColBERT there to encode the query.
+    // The index scans only with Winzling-reranker there to encode the query.
     if (!bench.tokens || !colbert) return undefined;
     search = await createLexicalSemanticTinySearch(bench.index, { vector: bench.tokens, lexical });
   } else {
@@ -221,7 +222,8 @@ async function searchFor(code, { factory, rerank } = choice) {
 }
 
 // ---- models -----------------------------------------------------------------------------------------------------
-// Each model downloads from its pinned Hugging Face revision; scripts/demo-data.mjs records the base URL.
+// Each model downloads from its pinned Hugging Face revision, every file as `<file>.br` (defuss-vectorsearch 0.4.0);
+// scripts/demo-data.mjs records the base URL and each `.br` size.
 const releaseBase = (name) => new URL(manifest.models[name].base, manifestUrl).href;
 const sha256 = async (bytes) =>
   Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (x) =>
@@ -237,8 +239,8 @@ async function isCached(name) {
 }
 
 /**
- * `loadFile` for one model: Cache API first, else a download whose bytes the page sees as progress. The cache
- * keeps a file only after its SHA-256 matched the pin.
+ * `loadFile` for one model: Cache API first, else the `.br` download, whose bytes the page sees as progress, decoded
+ * here. The cache keeps the decoded file, under its own URL, only after its SHA-256 matched the pin.
  */
 function fileLoader(name, stats) {
   const { files } = manifest.models[name];
@@ -260,15 +262,16 @@ function fileLoader(name, stats) {
     let bytes;
     if (hit) bytes = new Uint8Array(await hit.arrayBuffer());
     else {
-      log('info', `fetch ${name} ${file} · ${mb(entry.bytes)}`);
-      bytes = await download(url, (n) => report(file, n));
-      stats.downloaded += bytes.length;
+      log('info', `fetch ${name} ${file}.br, ${mb(entry.brotli)} (Brotli)`);
+      const packed = await download(`${url}.br`, (n) => report(file, n));
+      stats.downloaded += packed.length;
+      bytes = await unbrotli(packed);
       if ((await sha256(bytes)) !== entry.sha256)
         throw new Error(`${name} ${file}: SHA-256 differs from the pinned release`);
       if (cache) await cache.put(url, new Response(bytes));
     }
-    report(file, entry.bytes);
-    log('success', `${name} ${file} · ${mb(bytes.length)} · ${hit ? 'from cache' : 'downloaded'}`);
+    report(file, entry.brotli);
+    log('success', `${name} ${file}, ${mb(bytes.length)}, ${hit ? 'from cache' : 'downloaded'}`);
     return bytes;
   };
 }
@@ -314,7 +317,7 @@ async function loadModel(name, device = 'wasm') {
       } catch (error) {
         if (device !== 'webgpu') throw error;
         fallback = message(error);
-        log('warning', `WebGPU failed: ${fallback} · falling back to WASM`);
+        log('warning', `WebGPU failed: ${fallback}, falling back to WASM`);
         next = create('wasm');
         await next.load();
       }
@@ -329,7 +332,7 @@ async function loadModel(name, device = 'wasm') {
   const ms = performance.now() - started;
   log(
     'success',
-    `${name} ready · ${name === 'winzling' ? embedder.device : 'wasm'} · ${Math.round(ms)} ms`,
+    `${name} ready, ${name === 'winzling' ? embedder.device : 'wasm'}, ${Math.round(ms)} ms`,
   );
   post({
     type: 'ready',
@@ -346,9 +349,11 @@ async function loadModel(name, device = 'wasm') {
 
 // ---- the user's notes: lexical at once, then what the chosen factory adds --------------------------------------
 const CODES = languageCases.map((x) => x.code);
+/** Dataset code → the BCP 47 tag a query's `language` takes. */
+const TAG = Object.fromEntries(languageCases.map((x) => [x.code, x.entry]));
 const notes = new Map(); // id → { text, language, vector?, matrix? }
 let notesSearch;
-/** What a note needs beyond its text under the chosen factory: a Winzling vector, ColBERT tokens or nothing. */
+/** What a note needs beyond its text under the chosen factory: a Winzling-embed vector, ColBERT tokens or nothing. */
 const representation = () =>
   choice.factory === 'semantic' ? 'vector' : choice.factory === 'tiny' ? 'matrix' : undefined;
 const modelFor = { vector: () => embedder, matrix: () => colbert };
@@ -594,7 +599,7 @@ async function runSearch(job) {
       });
     if (factory !== 'semantic')
       return answer(columnOf(await search.searchWithStats(job.text, { limit: CANDIDATES }), toHit));
-    // Lexical-semantic: a benchmark question keeps its recorded vector; any other text needs Winzling.
+    // Lexical-semantic: a benchmark question keeps its recorded vector; any other text needs Winzling-embed.
     let vector,
       embedMs = 0;
     const recorded =
@@ -606,7 +611,8 @@ async function runSearch(job) {
       embedMs = performance.now() - embedding;
     }
     if (!vector) return answer({ state: 'needs-embedder' });
-    const query = { text: job.text, vector };
+    // Notes search every field without a language; a question's language picks the presets' fusion (byLanguage).
+    const query = { text: job.text, vector, ...(notesIndex ? {} : { language: TAG[job.language] }) };
     const efficient = columnOf(
       await search.searchWithStats(query, { ...searchPreset('efficient'), limit: CANDIDATES }),
       toHit,
@@ -631,7 +637,7 @@ async function runSearch(job) {
 async function measure() {
   const { factory, rerank } = choice;
   if (factory === 'tiny' && !bench.tokens) throw new Error('The token index is still loading');
-  if (factory === 'tiny' && !colbert) throw new Error('MoEdernColBERT is not loaded');
+  if (factory === 'tiny' && !colbert) throw new Error('Winzling-reranker is not loaded');
   if (factory === 'semantic' && !bench.vectors) throw new Error('The vectors are still loading');
   const methods =
     factory === 'semantic'
@@ -651,7 +657,7 @@ async function measure() {
     if (factory !== 'semantic') {
       ranks[methods[0]].push(rank(await search.search(text, { limit: CANDIDATES })));
     } else {
-      const query = { text, vector: bench.queryVectors[i] };
+      const query = { text, vector: bench.queryVectors[i], language: TAG[code] };
       ranks.efficient.push(
         rank(await search.search(query, { ...searchPreset('efficient'), limit: CANDIDATES })),
       );
@@ -670,7 +676,7 @@ async function measure() {
 /** Prepares the chosen factory: the token index or the vectors start loading when it needs them. */
 async function prepare() {
   const { factory } = choice;
-  log('info', `factory · ${factory}${choice.rerank ? ' with the ColBERT reranker' : ''}`);
+  log('info', `factory, ${factory}${choice.rerank ? ' with the ColBERT reranker' : ''}`);
   if (factory === 'semantic') await loadVectors();
   if (factory === 'tiny') await loadTokens();
   await representPendingNotes({ all: true });

@@ -10,8 +10,11 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 if (report.version !== pkg.version)
   throw new Error('Rerun the frontier benchmark for this release');
 const percent = (n) => `${(100 * n).toFixed(1)}%`;
-const { fusion } = report.selected;
-const fusionText = `weighted RRF with k=${fusion.k} and lexical/vector weights ${fusion.lexicalWeight}:1`;
+const { winzling, other } = report.selected.fusion;
+const groupOf = (name) => report.fusionGroups.find((group) => group.name === name);
+const developmentQueries = (name) => groupOf(name).grid[0].queries;
+const fusionText = `weighted RRF with lexical/vector weights ${other.lexicalWeight}:1 and k=${other.k}; a query whose \`language\` is one of Winzling-embed's ${groupOf('winzling').languages.length} target languages gets ${winzling.lexicalWeight}:1 and k=${winzling.k} (\`fusion.byLanguage\`)`;
+const ungrouped = (part) => report[part].results.find((row) => row.name === 'efficient-ungrouped');
 // Which preset has the higher mean R@5 over all 1,000 questions, as measured, not as last time.
 const allRow = (name) => report.all.results.find((row) => row.name === name);
 const rerankedLeads = allRow('reranked').r5 > allRow('efficient').r5;
@@ -79,11 +82,11 @@ VERIFIED: both presets also apply the weak-lexical rule: when BM25's first hit m
 
 VERIFIED: the objectives maximize R@1, R@5, R@10, R@25 and candidate recall while minimizing vector queries, neural queries and neural documents. One evaluated configuration dominates another only when it is no worse on every objective and strictly better on at least one. This is a finite empirical frontier, not a proof over all possible algorithms or production corpora. Lexical traversal work, vector distance evaluations, memory, energy, browser latency and index construction are not frontier objectives. Vector-query counts describe retrieval calls; supplied query vectors can avoid embedding inference.
 
-VERIFIED: 36 fusion candidates cover k in {0,1,5,10,20,60} and lexical/vector weight ratios in {0.25,0.5,1,2,3,4}:1. A separate 32-candidate neural sweep covers k in {0,1,10,60}, weights {0.25,0.5,1,2}, and an enabled/disabled 0.1 margin gate. Candidate budgets remain 25; these are not window-size or model-selection sweeps.
+VERIFIED: 36 fusion candidates cover k in {0,1,5,10,20,60} and lexical/vector weight ratios in {0.25,0.5,1,2,3,4}:1, selected separately for Winzling-embed's target languages (${developmentQueries('winzling')} development queries) and the other languages (${developmentQueries('other')}). A separate 32-candidate neural sweep covers k in {0,1,10,60}, weights {0.25,0.5,1,2}, and an enabled/disabled 0.1 margin gate. Candidate budgets remain 25; these are not window-size or model-selection sweeps.
 
 ## Selection without translation leakage
 
-VERIFIED: the first 25 original question groups and all their translations form the 500-query development partition. The last 25 groups and their translations form the 500-query holdout. Parameters are selected on development R@1, then R@5, R@10, R@25, candidate recall, then less inference work; names break remaining ties. Both selections are fixed before holdout evaluation. The fixture was already used for aggregate v0.2.0 reporting, so this is a parameter holdout, not a newly collected external test set. Different questions may still share a relevant passage.
+VERIFIED: the first 25 original question groups and all their translations form the 500-query development partition. The last 25 groups and their translations form the 500-query holdout. Parameters are selected on development R@1, then R@5, R@10, R@25, candidate recall, then less inference work; names break remaining ties. All selections are fixed before holdout evaluation. The fixture was already used for aggregate v0.2.0 reporting, so this is a parameter holdout, not a newly collected external test set. Different questions may still share a relevant passage.
 
 The lexical adapter knows the query language; vector search scans all 2,000 passages. Gold passages must match the query language. No automatic language identification is implemented. Exact promotion and source-coverage policies are disabled in this benchmark and tested separately.
 
@@ -94,7 +97,7 @@ VERIFIED: the selected configurations were evaluated unchanged on all 20 languag
 ${header}
 ${table(report.holdout.results)}
 
-VERIFIED: held-out frontier: ${report.holdout.frontier.map((x) => `\`${x}\``).join(', ')}. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. ${neuralText}.
+VERIFIED: held-out frontier: ${report.holdout.frontier.map((x) => `\`${x}\``).join(', ')}. \`efficient-ungrouped\` applies the other languages' setting to every language, as the presets did before \`byLanguage\`: ${percent(ungrouped('holdout').r1)} R@1 and ${percent(ungrouped('holdout').r5)} R@5 against efficient's ${percent(holdoutRow('efficient').r1)} and ${percent(holdoutRow('efficient').r5)}. Why two groups: Winzling-embed's vectors are far stronger in its target languages, and in \`bun run bench:language-groups\` four groups by language family led two by only 0.15 points R@1, while one group, searched bins and one group per language scored lower. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and ${holdoutRow('lexical').r5 > holdoutRow('efficient').r5 ? 'has slightly higher' : holdoutRow('lexical').r5 === holdoutRow('efficient').r5 ? 'reaches the same' : 'has lower'} R@5 on this split; efficient improves R@1 and candidate recall. ${neuralText}.
 
 ## Full fixture: 1,000 queries
 
@@ -137,7 +140,7 @@ await writeFile(
 
 VERIFIED: v${report.version} integrates all 20 lexicalsearch ${report.peers.lexical} analyzers with vectorsearch ${report.peers.vector}. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
 
-The efficient preset uses lexical-weighted RRF (${fusion.lexicalWeight}:1, k=${fusion.k}), selected on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
+The efficient preset uses lexical-weighted RRF (${other.lexicalWeight}:1, k=${other.k}; ${winzling.lexicalWeight}:1, k=${winzling.k} for Winzling-embed's target languages), selected per group on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
 
 | Language | Analyzer | Winzling target | Lexical R@5 | Vector R@5 | Efficient R@5 | Reranked R@5 |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
@@ -151,7 +154,7 @@ An application often cannot know which language a user types. BM25 can then sear
 
 ${guessBlock}
 
-VERIFIED: Winzling's nine target languages remain distinct from the additional eleven. Neither preset detects a language or silently routes an unsupported language to a different model: the caller passes \`language\`, chooses analyzers and supplies compatible query/document embeddings.
+VERIFIED: Winzling's eight target languages remain distinct from the other twelve. Neither preset detects a language or silently routes an unsupported language to a different model: the caller passes \`language\`, chooses analyzers and supplies compatible query/document embeddings.
 
 See [release provenance](upstreams.json), [API evaluation](evaluation.md), [verification](verification.md), and [Pareto methodology](pareto.md).
 `,

@@ -13,6 +13,8 @@ Source: https://github.com/kyr0/defuss-shadcn. Distribution: https://cdn.jsdeliv
 
 The docs build copies defuss-lid's `major_20` language pack and its CLD3 WebAssembly core into `docs/assets/lid`, where the demo worker loads them to detect a typed question's language. The pack holds Google CLD3 weights (Apache-2.0, Copyright 2016 Google Inc.), quantized and refitted by defuss-lid (MIT); the core is the cld3-asm WebAssembly (MIT). Their notice and both licenses are copied beside them.
 
+The docs build copies defuss-brotli's decoder (`decompressor.wasm`, MIT, Copyright 2026 Aron Homberg) into `docs/assets/brotli`, where the demo worker decodes the Brotli data and model files with it. It is compiled from the brotli-decompressor crate (BSD-3-Clause OR MIT) and wasm-bindgen (MIT OR Apache-2.0); the package's license and third-party notices are copied beside it.
+
 The docs build also copies the ONNX Runtime Web JavaScript/WASM files selected by defuss-vectorsearch. Their license and third-party notices are retained beside those files. Dependency versions and integrity hashes are locked in `bun.lock`.
 
 Model weights are downloaded separately from their pinned upstream revisions into `.models/`; neither the package nor the repository distributes them. `output/model-assets.json` records the pinned model files and SHA-256 hashes. The website demo fetches the same pinned files from Hugging Face in the browser.

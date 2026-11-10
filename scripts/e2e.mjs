@@ -5,6 +5,7 @@ import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { K, sortedCodes, percent } from './recall-docs.mjs';
 import { releases } from './models.mjs';
+import { checkLanguagesAndThemes, checkSite } from './e2e-site.mjs';
 const recall = JSON.parse(await readFile('docs/data/recall.json', 'utf8'));
 const strategies = JSON.parse(await readFile('docs/data/strategies.json', 'utf8'));
 /**
@@ -91,10 +92,11 @@ async function checkRecall(page) {
   await page.click('#recall-tab-semantic');
   await press(
     [
-      ['ArrowLeft', 'tiny'],
-      ['Home', 'lexical-only'],
-      ['ArrowLeft', 'semantic'],
-      ['End', 'semantic'],
+      ['ArrowLeft', 'lexical-only'],
+      ['Home', 'semantic'],
+      ['ArrowRight', 'tiny'],
+      ['End', 'lexical-only'],
+      ['ArrowRight', 'semantic'],
     ],
     'recall-tab-',
   );
@@ -141,6 +143,7 @@ try {
     '/defuss-search/',
     '/defuss-search/reference.html',
     '/defuss-search/pareto.html',
+    '/defuss-search/llms.txt',
     '/examples/node.mjs',
   ])
     assert.equal((await fetch(url + route)).status, 200, route);
@@ -160,6 +163,7 @@ try {
   const workers = [];
   page.on('worker', (worker) => workers.push(worker.url()));
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('crash', () => errors.push('The page crashed'));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
@@ -184,14 +188,15 @@ try {
     false,
     'Exercise the same header constraints as GitHub Pages',
   );
-  // The factory picker comes first; its figures are the published strategies benchmark.
+  // The factory picker comes first; its figures are the published strategies benchmark. Lexical-semantic tiny is
+  // preselected and starts by itself once the demo nears the view, with no button; before that nothing loads.
   assert.ok(await page.locator('#factory-picker').isVisible());
-  assert.ok(await page.isChecked('#factory-tiny'), 'The picker preselects lexical-semantic tiny');
-  assert.equal(
-    await page.locator('#demo-window').isVisible(),
-    false,
-    'The demo shows after a pick',
-  );
+  assert.ok(await page.isChecked('#factory-tiny'), 'The picker preselects Lexical-semantic tiny');
+  assert.equal(await page.locator('#demo-window').isVisible(), false, 'The demo waits until it nears the view');
+  await page.locator('#demo').scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => !document.getElementById('demo-window').hidden);
+  assert.equal((await page.textContent('#factory-name')).trim(), 'Lexical-semantic tiny');
+  assert.equal(await page.locator('#factory-start, #factory-change').count(), 0);
   const pct = (x) => `${(100 * x).toFixed(1)}%`;
   for (const [id, row] of [
     ['lexical-only', 'lexical-only'],
@@ -210,13 +215,13 @@ try {
       const x = strategies.corpora[corpus][row];
       assert.deepEqual(cells, [pct(x.r1), pct(x.r5)], `${id} ${corpus}`);
     }
-  /** Picks a factory in the picker and starts the demo; `ready` waits until its indexes are built. */
+  /** Picks a factory, which starts it; `ready` waits until its indexes are built. The reranker switch sits in the
+   * Lexical-semantic card and picks that factory too. */
   const startFactory = async (id, { rerank = true, ready = true } = {}) => {
-    if (await page.locator('#demo-window').isVisible()) await page.click('#factory-change');
     assert.ok(await page.locator('#factory-picker').isVisible());
     await page.check(`#factory-${id}`);
     if (id === 'semantic') await page.setChecked('#factory-rerank', rerank);
-    await page.click('#factory-start');
+    assert.ok(await page.isChecked(`#factory-${id}`));
     assert.ok(await page.locator('#demo-window').isVisible());
     if (ready) await page.waitForFunction((f) => window.demoReady === f, id, { timeout: 300000 });
   };
@@ -294,7 +299,7 @@ try {
   assert.equal(example.method, 'lexical-only');
   assert.ok(done(example));
   await checkColumn(example);
-  const german = await fromPalette('lexical-only', 'deu-Latn');
+  const german = await fromPalette('lexical-only', 'de-Latn');
   assert.equal(await page.inputValue('#language'), 'deu_Latn');
   await checkColumn(german);
   // Own text needs no model under lexical-only.
@@ -409,7 +414,7 @@ try {
 
   // ---- lexical-semantic with the reranker: recorded vectors; ColBERT for the gate's open questions ---------------
   await startFactory('semantic');
-  // The question on screen runs again: own text needs Winzling, which loads only on Search.
+  // The question on screen runs again: own text needs Winzling-embed, which loads only on Search.
   const typedSemantic = await ask(
     'semantic',
     () => page.click('#search'),
@@ -419,7 +424,7 @@ try {
   else assert.ok(await page.locator('#compare [data-load="winzling"]').first().isVisible());
   const recorded = await fromPalette(
     'semantic',
-    'jpn-Jpan',
+    'ja-Jpan',
     live ? done : (data) => data.column.state !== 'pending',
   );
   assert.equal(recorded.recorded, true);
@@ -453,12 +458,12 @@ try {
     assert.match(await page.textContent(`[data-measure="${preset.id}"]`), /same as published/);
   }
   if (live) assert.equal(semanticMeasure.neural, recall.presets[1].neuralQueries);
-  assert.equal(modelRequests.winzling > 0, live, 'Winzling loads only in the live run');
-  // Notes get Winzling vectors under lexical-semantic.
+  assert.equal(modelRequests.winzling > 0, live, 'Winzling-embed loads only in the live run');
+  // Notes get Winzling-embed vectors under lexical-semantic.
   await page.click('#tab-notes');
   await page.waitForFunction(
     (embedded) =>
-      document.querySelector('#notes-count').textContent === `6 notes · ${embedded} embedded`,
+      document.querySelector('#notes-count').textContent === `6 notes, ${embedded} embedded`,
     live ? 6 : 0,
     { timeout: 120000 },
   );
@@ -470,7 +475,7 @@ try {
   if (live) assert.ok(semanticNotes.column.hits.some((hit) => hit.id === 'note-6'));
   await page.click('#tab-bench');
 
-  // ---- lexical-semantic tiny: the prebuilt token index, MoEdernColBERT encodes the questions in this browser -----
+  // ---- lexical-semantic tiny: the prebuilt token index, Winzling-reranker encodes the questions in this browser -----
   let tinyMeasure;
   if (live) {
     await startFactory('tiny');
@@ -490,7 +495,7 @@ try {
     assert.match(await page.textContent('[data-measure="tiny"]'), /same as published/);
     await page.click('#tab-notes');
     await page.waitForFunction(
-      () => document.querySelector('#notes-count').textContent === '6 notes · 6 encoded',
+      () => document.querySelector('#notes-count').textContent === '6 notes, 6 encoded',
       {},
       { timeout: 120000 },
     );
@@ -507,15 +512,12 @@ try {
   }
   await page.click('#tab-bench');
   await checkRecall(page);
-  assert.equal(await page.locator('#pareto-results tr').count(), 3);
   const dark = await page.locator('html').evaluate((el) => el.classList.contains('dark'));
   await page.click('#theme-toggle');
   assert.notEqual(await page.locator('html').evaluate((el) => el.classList.contains('dark')), dark);
   await page.click('#theme-toggle');
-  for (const anchor of ['demo', 'how', 'pareto', 'recall', 'use']) {
-    await page.locator(`nav a[href="#${anchor}"]`).click();
-    assert.ok(page.url().endsWith(`#${anchor}`));
-  }
+  // The landing page beyond the demo: routes, anchors, install switch, playground, charts, diagrams, entrances.
+  const site = await checkSite(page, { recall, strategies });
   // The copy buttons copy the code and the prompt.
   await page.click('.mk-code-block-copy');
   await page.waitForFunction(() => document.querySelector('.mk-code-block-status').textContent);
@@ -525,12 +527,6 @@ try {
   assert.match(
     await page.evaluate(() => navigator.clipboard.readText()),
     /^Integrate defuss-search/,
-  );
-  const holdout = JSON.parse(await readFile('docs/data/pareto.json', 'utf8')).holdout.results;
-  const rerankedHoldout = holdout.find((row) => row.name === 'reranked');
-  assert.equal(
-    await page.textContent('[data-pareto="reranked-neural"]'),
-    `${rerankedHoldout.neuralQueries} of ${rerankedHoldout.queries}`,
   );
   await mkdir('output/e2e', { recursive: true });
   // Sections fade in when scrolled into view, so a full-page capture would show them blank; capture the demo itself.
@@ -543,12 +539,12 @@ try {
   );
   // Phones get the sheet menu instead of the header links.
   await page.click('[data-sheet-trigger="hs-menu"]');
-  await page.locator('#hs-menu a[href="#how"]').click();
-  assert.ok(page.url().endsWith('#how'));
+  await page.locator('#hs-menu a[href="#/how"]').click();
+  assert.ok(page.url().endsWith('#/how'));
   await page.waitForFunction(() => !document.querySelector('#hs-menu').open);
   await page.screenshot({ path: 'output/e2e/mobile.png', fullPage: true });
-  await page.locator('a[href="pareto.html"]').click();
-  assert.equal(await page.title(), 'defuss-search Pareto analysis');
+  await page.locator('.mk-footer a[href="pareto.html"]').click();
+  assert.equal(await page.title(), 'defuss-search: Pareto analysis');
   assert.ok(await page.locator('h1').isVisible());
   assert.ok(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
@@ -557,11 +553,11 @@ try {
   await page.getByRole('link', { name: 'Back to defuss-search' }).click();
   await page.waitForFunction(() => window.corpusReady, {}, { timeout: 120000 });
   await page.locator('a[href="reference.html"]').first().click();
-  assert.equal(await page.title(), 'defuss-search API reference');
+  assert.equal(await page.title(), 'defuss-search: API reference');
   assert.ok(await page.locator('h1').isVisible());
   assert.ok(
-    (await page.locator('.mk-code-block .mk-code-block-k').count()) > 0,
-    'Highlighted code',
+    (await page.locator('.mk-code-block span[style*="--shiki-dark"]').count()) > 0,
+    'Shiki-highlighted code',
   );
   assert.ok(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
@@ -569,6 +565,8 @@ try {
   );
   await page.getByRole('link', { name: 'Back to defuss-search' }).click();
   await page.waitForFunction(() => window.corpusReady, {}, { timeout: 120000 });
+  // German by the browser's language, the switch and its memory, light and dark by the system, screenshots.
+  const languages = await checkLanguagesAndThemes(browser, `${url}/defuss-search/`, errors);
   assert.deepEqual(errors, []);
   await writeFile(
     `output/e2e/browser${live ? '-live' : ''}.json`,
@@ -593,11 +591,13 @@ try {
         perLanguageParity: true,
         tiny: tinyMeasure
           ? { browser: meanOf(tinyMeasure, 'tiny'), published: strategies.corpora.belebele.tiny }
-          : 'needs MoEdernColBERT (models off)',
-        notes: live ? 'lexical, Winzling vectors and ColBERT tokens' : 'lexical',
+          : 'needs Winzling-reranker (models off)',
+        notes: live ? 'lexical, Winzling-embed vectors and ColBERT tokens' : 'lexical',
         recallFigures:
           (recall.presets.length + 2) * K.length * Object.keys(recall.languages).length,
         recallKeyboardTabs: true,
+        site,
+        languages,
         mobile: true,
         live,
         errors,
@@ -607,8 +607,13 @@ try {
     ) + '\n',
   );
   console.log(
-    `${new Date().toISOString()} INFO PASS: packed website, 3 pages, factory picker, demo with three factories, lexical-only and per-language parity with the published figures, notes, recall figures and tabs${live ? ', real WASM models' : ''}`,
+    `${new Date().toISOString()} INFO PASS: packed website, 3 pages, factory picker, demo with three factories, lexical-only and per-language parity with the published figures, notes, recall figures and tabs, landing page routes, playground, charts, German, readability in both themes${live ? ', real WASM models' : ''}`,
   );
+} catch (error) {
+  // The page's own errors usually explain a timeout; print them before the failure.
+  if (errors.length)
+    console.error(`${new Date().toISOString()} ERROR browser errors=${JSON.stringify(errors)}`);
+  throw error;
 } finally {
   if (browser) await browser.close();
   run('stop');

@@ -2,7 +2,7 @@
  * The three factories of defuss-search/strategies as the demo offers them: what each one downloads, which result
  * column it fills and which published figures its in-browser measurement compares with. Pure data, shared by the
  * page and the markup builders.
- * Why the demo asks for a factory first: each one downloads something different (nothing, MoEdernColBERT, Winzling),
+ * Why the demo asks for a factory first: each one downloads something different (nothing, Winzling-reranker, Winzling-embed),
  * so the choice decides what the page loads, and the results show one search as an application would run it.
  * VERIFIED: scripts/e2e.mjs starts every factory and checks each result's column method and measured rows by these ids.
  */
@@ -22,7 +22,7 @@ export const FACTORIES = [
     title: 'Lexical-semantic tiny',
     badge: 'ColBERT only',
     description:
-      'BM25 fused with MoEdernColBERT 1.5M as the only vector model. The 2,000 passages come as a prebuilt TurboQuant token index; this browser encodes each query and scans every token.',
+      'BM25 fused with Winzling-reranker as the only vector model. The 2,000 passages come as a prebuilt TurboQuant token index; this browser encodes each query and scans every token.',
     models: ['colbert'],
   },
   {
@@ -31,7 +31,7 @@ export const FACTORIES = [
     title: 'Lexical-semantic',
     badge: 'Measured default',
     description:
-      'BM25 fused with Winzling vectors (the efficient preset); with the reranker, MoEdernColBERT reorders the top 25 unless both sources agree on a clear winner (the reranked preset).',
+      'BM25 fused with Winzling-embed vectors (the efficient preset); with the reranker, Winzling-reranker reorders the top 25 unless both sources agree on a clear winner (the reranked preset).',
     models: ['winzling'],
   },
 ];
@@ -41,15 +41,16 @@ export const factoryOf = (id) => FACTORIES.find((factory) => factory.id === id);
 export const METHODS = {
   'lexical-only': { title: 'Lexical-only', published: 'strategies' },
   tiny: { title: 'Lexical-semantic tiny', published: 'strategies' },
-  efficient: { title: 'Lexical-semantic · efficient', published: 'recall' },
-  reranked: { title: 'Lexical-semantic · reranked', published: 'recall' },
+  efficient: { title: 'Lexical-semantic (efficient)', published: 'recall' },
+  reranked: { title: 'Lexical-semantic (reranked)', published: 'recall' },
 };
 /** The column a factory's search fills; lexical-semantic reports the preset it ran. */
 export const methodOf = (factory, rerank) =>
   factory === 'semantic' ? (rerank ? 'reranked' : 'efficient') : factory;
 
-/** One model's file sizes added up: the bytes its download progress counts and the browser cache keeps. */
+/**
+ * One model's download: its `.br` files added up (scripts/demo-data.mjs), the bytes its progress counts. The browser
+ * cache keeps the decoded files.
+ */
 export const modelBytes = (files) =>
-  Object.values(files).reduce((sum, file) => sum + file.bytes, 0);
-/** The same files gzipped: the transfer from a host that sends them compressed (scripts/demo-data.mjs). */
-export const gzipBytes = (files) => Object.values(files).reduce((sum, file) => sum + file.gzip, 0);
+  Object.values(files).reduce((sum, file) => sum + file.brotli, 0);

@@ -22,8 +22,9 @@ if (!report.languages)
 const manifest = JSON.parse(
   await readFile(new URL('../docs/data/manifest.json', import.meta.url), 'utf8'),
 );
+// A model's download: its `.br` files as the browser fetches them (defuss-vectorsearch 0.4.0, scripts/demo-data.mjs).
 const bytes = (name) =>
-  Object.values(manifest.models[name].files).reduce((sum, file) => sum + file.bytes, 0);
+  Object.values(manifest.models[name].files).reduce((sum, file) => sum + file.brotli, 0);
 const round = (x, digits) => Math.round(x * 10 ** digits) / 10 ** digits;
 const published = {
   generatedAt: report.generatedAt,

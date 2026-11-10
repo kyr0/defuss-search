@@ -1,20 +1,62 @@
-import type { HybridSearchOptions } from '../types';
+import type { FusionOptions, HybridSearchOptions, LanguageFusion } from '../types';
 import { integer, weight } from './validation';
+
+const primary = (tag: string) => tag.split('-')[0]!.toLowerCase();
+/** Copy one group, or return the value unchanged for languageGroups() to reject. */
+const copyGroup = (group: LanguageFusion) =>
+  group && typeof group === 'object'
+    ? {
+        ...group,
+        languages: Array.isArray(group.languages) ? [...group.languages] : group.languages,
+        weights: group.weights && { ...group.weights },
+      }
+    : group;
 
 /** Copy nested configuration so later caller mutations cannot change an in-flight query. */
 export function copyOptions(value: HybridSearchOptions): HybridSearchOptions {
   return {
     ...value,
-    fusion: value.fusion && { ...value.fusion, weights: { ...value.fusion.weights } },
+    fusion: value.fusion && {
+      ...value.fusion,
+      weights: { ...value.fusion.weights },
+      ...(Array.isArray(value.fusion.byLanguage)
+        ? { byLanguage: value.fusion.byLanguage.map(copyGroup) }
+        : {}),
+    },
     balance: value.balance && { ...value.balance },
     rerank: value.rerank && { ...value.rerank },
     weakLexical: value.weakLexical && { ...value.weakLexical },
   };
 }
+/**
+ * Validate `byLanguage` against the base settings it overrides; returns the groups with lower-case languages.
+ * VERIFIED: test/engine.test.mjs covers primary-subtag matching, precedence, `[]` and rejection at creation and per call.
+ */
+function languageGroups(groups: unknown, base: Required<Omit<FusionOptions, 'byLanguage'>>) {
+  if (groups === undefined) return [];
+  if (!Array.isArray(groups)) throw new TypeError('fusion.byLanguage must be an array');
+  return groups.map((group: LanguageFusion) => {
+    if (!group || typeof group !== 'object') throw new TypeError('fusion.byLanguage holds objects');
+    const { languages } = group;
+    if (!Array.isArray(languages) || !languages.length)
+      throw new TypeError('A fusion.byLanguage group needs languages');
+    for (const tag of languages)
+      if (typeof tag !== 'string' || !tag) throw new TypeError('Group languages are nonempty tags');
+    if (group.k !== undefined) integer(group.k, 'byLanguage k', 0, 1e9);
+    const weights = { ...base.weights, ...group.weights };
+    weight(weights.lexical, 'byLanguage lexical weight');
+    weight(weights.vector, 'byLanguage vector weight');
+    if (!(weights.lexical! + weights.vector!))
+      throw new RangeError('At least one byLanguage source weight must be positive');
+    return { languages: languages.map(primary), k: group.k ?? base.k, weights };
+  });
+}
+
 export function optionsFor(
   defaults: HybridSearchOptions,
   supplied: HybridSearchOptions,
   hasReranker: boolean,
+  language?: string,
 ) {
   const combined = { ...defaults, ...supplied };
   if (
@@ -23,13 +65,26 @@ export function optionsFor(
     (!combined.rerank || typeof combined.rerank !== 'object' || Array.isArray(combined.rerank))
   )
     throw new TypeError('rerank must be false or an options object');
-  const fusion = {
+  const { byLanguage: defaultGroups, ...defaultFusion } = defaults.fusion ?? {};
+  const { byLanguage: ownGroups, ...ownFusion } = supplied.fusion ?? {};
+  const base = {
     method: 'rrf' as const,
     k: 60,
-    ...defaults.fusion,
-    ...supplied.fusion,
-    weights: { lexical: 1, vector: 1, ...defaults.fusion?.weights, ...supplied.fusion?.weights },
+    ...defaultFusion,
+    ...ownFusion,
+    weights: { lexical: 1, vector: 1, ...defaultFusion.weights, ...ownFusion.weights },
   };
+  // A search that sets its own k or weights means them for every language, unless it names groups too.
+  const groups = languageGroups(
+    ownGroups ??
+      (ownFusion.k === undefined && ownFusion.weights === undefined ? defaultGroups : undefined),
+    base,
+  );
+  const group =
+    language === undefined
+      ? undefined
+      : groups.find((g) => g.languages.includes(primary(language)));
+  const fusion = group ? { ...base, k: group.k, weights: group.weights } : base;
   const rerank =
     combined.rerank === false || (!hasReranker && combined.rerank === undefined)
       ? (false as const)

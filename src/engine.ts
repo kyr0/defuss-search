@@ -65,7 +65,7 @@ export class HybridSearch {
   ): Promise<HybridResponse> {
     const started = performance.now();
     const query = queryCopy(input),
-      o = optionsFor(this.defaults, options, !!this.reranker);
+      o = optionsFor(this.defaults, options, !!this.reranker, query.language);
     const allowed = idsCopy(o.ids);
     throwIfAborted(o.signal);
     if (o.exact === 'promote' && !this.lexical.exact)

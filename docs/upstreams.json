@@ -11,11 +11,11 @@
     },
     {
       "url": "https://github.com/kyr0/defuss-vectorsearch",
-      "commit": "64c122942da17146684b80e006dd7c7dd0a15738",
+      "commit": "170fd0e8cf05df30ded8dac4fae4d26a97d5a0c7",
       "package": "defuss-vectorsearch",
-      "version": "0.3.1",
-      "npmIntegrity": "sha512-jqNpLo3e7TFFsjuh/yJpQ8c6JNGQz9Hcfh9uzZ6zYtJ9Jfb0As0SjufB1qv4JThTDQ5j0hmhk73qzmptDCNKyA==",
-      "publishedAt": "2026-11-08T23:21:41.857Z"
+      "version": "0.4.0",
+      "npmIntegrity": "sha512-uwjfxu8qWhnJ7hB0tvIPRi7eRivXyEMvWVNj8G15DIZvTT8/Zpy1CrcGJ5DHyMDWOjs2gkBJYs5rMWnZdiUHtQ==",
+      "publishedAt": "2026-11-09T19:39:32.363Z"
     }
   ],
   "defussVae": "0.9.0"

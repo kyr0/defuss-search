@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { decompress, init as initDecoder } from 'defuss-brotli/decompressor';
 import {
   WINZLING_MODEL_ID,
   WINZLING_REVISION,
@@ -75,5 +76,32 @@ export async function downloadModels() {
 }
 export const loadModelFile = (name) => async (file) =>
   new Uint8Array(await readFile(resolve(modelRoot, name, file)));
+
+/**
+ * The pinned file as browsers download it: `<file>.br` from the same revision (defuss-vectorsearch 0.4.0 serves
+ * every model file so), kept next to the file. Its decoded bytes must match the pin, so the size the website quotes
+ * belongs to the bytes inference checks. Returns the `.br` size in bytes.
+ */
+export async function brotliSize(name, file) {
+  const release = releases.find((entry) => entry.name === name);
+  const path = resolve(modelRoot, name, `${file}.br`);
+  let bytes;
+  try {
+    bytes = new Uint8Array(await readFile(path));
+  } catch {
+    const url = `https://huggingface.co/${release.id}/resolve/${release.revision}/${file}.br`;
+    console.log(`${new Date().toISOString()} INFO Downloading ${name}/${file}.br`);
+    const response = await fetch(url, { signal: AbortSignal.timeout(180000) });
+    if (!response.ok) throw new Error(`${response.status} ${url}`);
+    bytes = new Uint8Array(await response.arrayBuffer());
+  }
+  await initDecoder();
+  const digest = createHash('sha256').update(decompress(bytes)).digest('hex');
+  if (digest !== release.files[file]) throw new Error(`SHA-256 mismatch after decoding: ${name}/${file}.br`);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(`${path}.partial`, bytes);
+  await rename(`${path}.partial`, path);
+  return bytes.length;
+}
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
   await downloadModels();

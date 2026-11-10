@@ -3,9 +3,9 @@
  * buildColbertTokenIndex() returns, and the worker unpacks it for createColbertRetriever({ index }). The binary holds
  * each passage's token count (uint32) followed by the TurboQuant codes; the small fields (sizes, codebook, signs) go
  * into the manifest, which the worker reads first anyway. Typed arrays use the platform's byte order, little-endian
- * on every browser and CPU the demo targets, as docs/data/vectors.bin.gz does.
+ * on every browser and CPU the demo targets, as docs/data/vectors.bin.br does.
  * Why ship codes instead of encoding in the browser: VERIFIED: encoding the 2,000 passages with WASM MoEdernColBERT
- * took 13 to 15 s in Chromium, while the codes are 8.86 MB gzipped and need no model to load (2026-11-02).
+ * took 13 to 15 s in Chromium, while the codes are 7.80 MB as Brotli and need no model to load (2026-11-02, 2026-11-09).
  */
 
 /** Splits an index into manifest fields and one binary. */

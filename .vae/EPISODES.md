@@ -42,67 +42,67 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-01T19:40:39Z s=79e705da FINDING ARCH.md:72 B02 learn=none: Example wording from one probe.
 2026-11-01T19:40:39Z s=79e705da FINDING docs/pareto.md via scripts/pareto-docs.mjs B02 learn=none: Disclosure in generated prose; the generator prints it on every run.
 2026-11-01T19:40:39Z s=79e705da FINDING CHANGELOG.md:18 B03 learn=none: Number wording.
-2026-11-01T20:26:18Z s=79e705da DONE fp=de0448f79582 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+130)
 2026-11-01T20:26:18Z s=79e705da FINDING src/adapters/colbert-retriever.ts:rows learn=none: Ordering of allocation versus validation is not mechanically checkable by a rule; the existing validation test covers the messages.
-2026-11-01T20:26:18Z s=79e705da FINDING src/adapters/colbert-retriever.ts:run (last.scores rejection) learn=test: test/strategies.test.mjs a failed query encoding rejects that search and does not stick to the query.
 2026-11-01T20:26:18Z s=79e705da FINDING docs/reference.md:Ready-made strategies learn=none: A prose omission; no rule kind can check that a page mentions an option value.
-2026-11-01T20:26:18Z s=79e705da FINDING bench/error-analysis.mjs:12, bench/strategies.mjs:15 learn=verifier: The defuss-vae docs gate checks the prefix in every updated source header.
-2026-11-01T21:17:57Z s=79e705da DONE fp=b691c78783ab cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+136)
-2026-11-01T21:17:57Z s=79e705da FINDING website/search-worker.mjs:runSearch, onmessage factory learn=test: scripts/e2e.mjs waits for results of the named factory after every switch and checks the column method.
-2026-11-01T21:17:57Z s=79e705da FINDING website/demo.mjs:paintRing learn=test: The live e2e waits for demoReady === "tiny" and then requires a done tiny result and the token count in the runtime card.
 2026-11-01T21:17:57Z s=79e705da FINDING website/demo.mjs:start learn=none: The live e2e reaches the reranked column through other paths; a dedicated switch-then-wait check would add minutes to the live run.
-2026-11-01T21:17:57Z s=79e705da FINDING src/strategies.ts:createLexicalSemanticTinySearch, createLexicalSemanticSearch learn=test: test/strategies.test.mjs searches that differ in their lexical options can share one vector source.
 2026-11-01T21:17:57Z s=79e705da FINDING README.md:Pick a ready-made strategy learn=none: Documented behavior, not a defect fixed here; an engine change awaits the human's decision.
-2026-11-01T21:17:57Z s=79e705da FINDING scripts/package-test.mjs:website build learn=verifier: scripts/check-project.mjs (make verify, project.contracts) fails when a chunk in docs/assets/chunks is not imported; it failed on the stale chunk before the fix
-2026-11-01T23:32:35Z s=79e705da DONE fp=9cd23f448486 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+136)
-2026-11-01T23:32:35Z s=79e705da FINDING src/pipeline/weak-lexical.ts:weakLexical, src/adapters/vector.ts:embedText learn=test: test/weak-lexical.test.mjs asserts a text-only query is promoted with gapBound false and one embedding, and that the vector retriever embeds a repeated text onc
-2026-11-01T23:32:35Z s=79e705da FINDING src/strategies.ts:TINY_DEFAULTS learn=test: The live e2e compares the in-browser tiny measurement with docs/data/strategies.json, which bench:strategies writes from the default.
 2026-11-01T23:32:35Z s=79e705da FINDING src/adapters/vector.ts:embedText learn=none: No pinned embedder reuses buffers; a test would pin a hypothetical behavior.
-2026-11-01T23:32:35Z s=79e705da FINDING scripts/demo-data.mjs, website/search-worker.mjs:fileLoader, scripts/check-project.mjs learn=verifier: scripts/check-project.mjs fails when a copy does not unpack to its pin or a .gz file is not in the manifest.
-2026-11-02T01:34:40Z s=79e705da DONE fp=b2493ca04303 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+138)
-2026-11-02T01:34:40Z s=79e705da FINDING src/adapters/lexical.ts:createLexicalRetriever learn=test: test/surface.test.mjs asserts the restricted search ranks the written form first and averageLength() is unchanged.
 2026-11-02T01:34:40Z s=79e705da FINDING src/adapters/lexical.ts:withSurfaceFields, README.md#match-words-as-written, ARCH.md#unstemmed-companions learn=none: Wording defects; no mechanical check can express them.
-2026-11-02T01:34:40Z s=79e705da FINDING scripts/demo-data.mjs, website/search-worker.mjs:fileLoader, scripts/check-project.mjs, scripts/e2e.mjs learn=verifier: scripts/check-project.mjs fails when a manifest model base is not the pinned Hugging Face revision.
-2026-11-02T02:13:56Z s=79e705da DONE fp=3b6ed012f95d cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+138)
-2026-11-02T02:13:56Z s=79e705da FINDING website/demo.mjs, website/render.mjs, scripts/demo-data.mjs learn=test: scripts/e2e.mjs compares the docs rows with docs/data/strategies.json; scripts/check-project.mjs requires a gzip size for every pinned file.
-2026-11-02T02:15:16Z s=79e705da DONE fp=5ec141e00257 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+138)
-2026-11-02T02:20:28Z s=79e705da DONE fp=452afd35bbb6 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+138)
-2026-11-02T02:20:28Z s=79e705da FINDING website/demo.mjs (runtime figures fill), scripts/docs.mjs, website/render.mjs:factoryFiguresPage learn=verifier: scripts/check-project.mjs compares docs/index.html with factoryFiguresPage(website/index.html, FACTORIES, strategies.json); the e2e still checks the cells in Ch
-2026-11-02T02:39:46Z s=79e705da DONE fp=e6fee8a57ba2 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+138)
 2026-11-02T02:39:46Z s=79e705da FINDING website/index.html (hero, intro card, pipeline diagram, usage code, agent prompt) learn=none: An editorial preference; a rule banning two strings would pin wording, not behavior.
-2026-11-02T02:58:13Z s=79e705da DONE fp=50a7704518b3 cov=99.8% paths=.github/workflows/pages.yml,.github/workflows/verify.yml,.prettierrc.json,AGENTS.md(+134)
-2026-11-02T02:58:13Z s=79e705da FINDING test/readme.test.mjs learn=test: The README test itself enforces the stated outputs.
 2026-11-02T02:58:13Z s=79e705da FINDING bench/benchmark.mjs:markdown learn=none: Fixed at the root; the heading now derives from package.json.
-2026-11-02T02:58:13Z s=79e705da FINDING docs/data/recall.json, docs/data/pareto.json, package.json learn=verifier: scripts/check-project.mjs and scripts/recall-report.mjs reject reports of another version.
 2026-11-02T02:58:13Z s=79e705da FINDING .gitignore learn=none: Repository policy; the Pages workflow regenerates the files.
-2026-11-02T03:43:08Z s=7ec9146b DONE fp=6e10ed54b3dd cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+35)
-2026-11-02T03:43:08Z s=7ec9146b FINDING .github/workflows/pages.yml:on; .gitignore:docs/assets/ort/ learn=verifier: scripts/check-project.mjs (make verify) now fails when pages.yml stops running make docs on push to main and deploying the artifact; the repo's Pages source set
 2026-11-02T03:43:08Z s=7ec9146b FINDING docs/verification.md:18,19,32 (PROSE B evidence) learn=none: Describing coverage is a docs-sync judgment; a string rule would pin wording, not behavior.
-2026-11-02T03:45:37Z s=7ec9146b DONE fp=4bff522ba2c3 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+30)
-2026-11-02T04:01:59Z s=7ec9146b DONE fp=4f541b726764 cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+38)
-2026-11-02T04:01:59Z s=7ec9146b FINDING scripts/docs.mjs:Bun.build (splitting for search-worker.js); website/demo.mjs:new Worker learn=verifier: scripts/check-project.mjs fails when docs/assets/search-worker.js references chunks/ or a page's ?v differs from assetVersion(); scripts/e2e.mjs asserts the wor
-2026-11-02T04:04:24Z s=7ec9146b DONE fp=da3fba31185a cov=99.8% paths=.github/workflows/pages.yml,ARCH.md,CHANGELOG.md,README.md(+35)
-2026-11-06T13:16:24Z s=a22aa615 FAIL tests.e2e.1
-2026-11-06T13:25:00Z s=a22aa615 DONE fp=9e17a6b9f677 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+28)
-2026-11-06T13:25:00Z s=a22aa615 FINDING src/adapters/lexical.ts:surfaceAnalyzer learn=test: test/query-language.test.mjs asserts surfaceAnalyzer(de).language and the 3x score with companions.
 2026-11-06T13:25:00Z s=a22aa615 FINDING bench/language-guess.mjs:81 learn=none: A one-off resolution choice in a Bun-only bench; no rule can tell which package exports package.json.
-2026-11-06T13:25:00Z s=a22aa615 FINDING scripts/package-test.mjs:40 learn=test: make e2e (test:package) fails when the website imports a package the consumer does not install.
-2026-11-06T13:25:00Z s=a22aa615 FINDING scripts/recall-docs.mjs:writeRecall; scripts/check-project.mjs learn=verifier: scripts/check-project.mjs (make verify) fails on a stale block or a snapshot from another release.
 2026-11-06T13:25:00Z s=a22aa615 FINDING ARCH.md:98 (P09) learn=none: Editorial; a string rule would pin wording.
-2026-11-06T13:25:00Z s=a22aa615 FINDING website/search-worker.mjs:runSearch; website/demo.mjs:results learn=test: scripts/e2e.mjs asserts typed English and German detection, the menu value, the summary text and the menu override in Chromium.
-2026-11-08T23:25:18Z s=a22aa615 FAIL project.contracts
-2026-11-09T00:15:21Z s=a22aa615 FAIL tests.e2e.1
-2026-11-09T04:23:34Z s=a22aa615 FAIL project.contracts
-2026-11-09T04:24:56Z s=a22aa615 DONE fp=843816e89d94 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+44)
-2026-11-09T04:24:56Z s=a22aa615 FINDING src/presets.ts:27 learn=verifier: bench/pareto.mjs already fails when the preset differs from the development selection; scripts/check-project.mjs compares neural settings.
-2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/check-project.mjs:205 learn=verifier: scripts/check-project.mjs fails in both directions.
 2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/pareto-docs.mjs learn=none: Rendering from the report removes the stale-text class for these sentences; prose elsewhere is a review judgment.
 2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/e2e.mjs:88,484 learn=none: A regression test is not warranted: the defect was pinning data values; the fix derives them.
 2026-11-09T04:24:56Z s=a22aa615 FINDING bench/recall-core.mjs:PRESETS learn=none: Derived from code; no rule needed.
 2026-11-09T04:24:56Z s=a22aa615 FINDING README.md, ARCH.md, src comments (B09) learn=none: Dating claims is an editorial judgment per sentence.
 2026-11-09T04:24:56Z s=a22aa615 FINDING website/index.html:1458 learn=none: Editorial.
-2026-11-09T04:24:56Z s=a22aa615 FINDING scripts/package-test.mjs:92 learn=test: package-test asserts assetVersion(docs) is unchanged by the tarball build; a mutated worker made it fail with the new message, the clean run passed.
-2026-11-09T09:17:44Z s=a22aa615 DONE fp=6c4d9b1361b9 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+47)
 2026-11-09T09:17:44Z s=a22aa615 FINDING website/index.html:3015 (agent prompt) learn=none: Editorial ordering of a prompt; a string rule would pin wording.
 2026-11-09T09:17:44Z s=a22aa615 FINDING README.md:124, ARCH.md (tiny timing, P03) learn=none: Timings vary per run; a check would pin a measurement, not a requirement.
 2026-11-09T09:17:44Z s=a22aa615 FINDING scripts/strategies-report.mjs:languages learn=none: One-time migration of a generated file; the explicit error is the fix, and check-project fails on missing rows.
+2026-11-09T14:56:51Z s=a22aa615 FINDING website/charts.mjs:frontierOption learn=none: label overlap is visual; checked by screenshot in light 1280 and dark 390, no mechanical check reads rendered label boxes
+2026-11-09T14:56:51Z s=a22aa615 FINDING website/index.html:The numbers learn=none: visual requirement checked by screenshot; e2e still reads every table through the collapsible
+2026-11-09T15:22:29Z s=a22aa615 DONE fp=7b3f1a29106e cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
+2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-fusion-caption learn=test: scripts/e2e-readability.mjs measures text over the shader from pixels on every make e2e
+2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:hs-hero-shader learn=test: the same pixel audit runs on the phone viewport in both themes
+2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-hero > .shader learn=none: specificity against a vendored rule; checked by a computed-style probe and screenshots, no rule kind expresses it
+2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:data-background learn=none: visual; observed in SwiftShader screenshots after compile, before compile the poster
+2026-11-09T15:22:29Z s=a22aa615 FINDING website/i18n/de.mjs:270 learn=test: scripts/e2e-site.mjs asserts the new hero title in English and German; make docs fails on a marked text without German
+2026-11-09T20:32:57Z s=a22aa615 FAIL project.contracts
+2026-11-09T20:34:38Z s=a22aa615 FAIL tests.e2e.1
+2026-11-09T20:54:34Z s=a22aa615 DONE fp=8a196884168a cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
+2026-11-09T20:54:34Z s=a22aa615 FINDING website/site.css:.hs-factory .radio:checked::after learn=test: scripts/e2e-site.mjs opens the page with forcedColors 'active' and asserts the checked radio's dot and ring have non-zero alpha; re-injecting the gradient-only 
+2026-11-09T20:54:34Z s=a22aa615 FINDING scripts/e2e-readability.mjs:checkReadability learn=test: the audit itself now freezes the diagrams before measuring.
+2026-11-09T20:54:34Z s=a22aa615 FINDING website/site.css:.hs-final learn=test: the e2e readability audit (axe-core colour contrast in dark mode) covers this text; it passed after the fix.
+2026-11-09T20:54:34Z s=a22aa615 FINDING website/index.html:.hs-hero-credit learn=test: existing BANNED rule in scripts/check-project.mjs caught it.
+2026-11-09T20:54:34Z s=a22aa615 FINDING scripts/check-project.mjs:Built with learn=verifier: check-project asserts each Built with link is https://{short}.defuss.org/ unless the package is in NO_SITE, and that no bare defuss entry is listed.
+2026-11-09T21:16:12Z s=a22aa615 DONE fp=84b34700fad3 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
+2026-11-09T21:35:50Z s=a22aa615 FAIL tests.e2e.1,project.contracts
+2026-11-09T21:59:33Z s=a22aa615 FINDING Makefile:bench learn=none: ending the turn while make bench runs lets the stop-hook gate run pkgroll --clean-dist, which deletes dist/ that the next bench process imports; wait in-turn for long benches (observed 2026-11-09, the run survived).
+2026-11-09T22:01:49Z s=a22aa615 DONE fp=bfc5bec663ff cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+90)
+2026-11-09T22:01:49Z s=a22aa615 FINDING scripts/recall-report.mjs:presets learn=verifier: scripts/recall-docs.mjs already fails make docs when the description and its German drift apart.
+2026-11-09T22:01:49Z s=a22aa615 FINDING website/index.html:#p-colbert-label learn=none: spacing is visual; no rule distinguishes it from intended gaps.
+2026-11-09T23:46:05Z s=a22aa615 FAIL tests.e2e.1
+2026-11-09T23:50:56Z s=a22aa615 DONE fp=78c18c109648 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+91)
+2026-11-09T23:50:56Z s=a22aa615 FINDING scripts/e2e.mjs:92 learn=test: The e2e keyboard walk already encodes the tab order; it caught the change.
+2026-11-09T23:50:56Z s=a22aa615 FINDING bench/pareto.mjs:118 learn=none: Cleanup in a bench script; the default-run comparison is the behavior check.
+2026-11-10T01:29:42Z s=a22aa615 DONE fp=a3a552761fb5 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+95)
+2026-11-10T01:29:42Z s=a22aa615 FINDING website/router.mjs:64 learn=test: scripts/e2e-site.mjs repeats both hero links on their own address.
+2026-11-10T01:29:42Z s=a22aa615 FINDING bench/recall-core.mjs:13 learn=verifier: recall-docs already compares the description with its German; the new guard catches a preset the words no longer fit.
+2026-11-10T01:29:42Z s=a22aa615 FINDING src/core/options.ts:74 learn=test: engine test pins the documented precedence.
+2026-11-10T01:29:42Z s=a22aa615 FINDING src/presets.ts:25 learn=none: Wording fixed against the measured report.
+2026-11-10T02:01:05Z s=a22aa615 FAIL tests.e2e.1
+2026-11-10T02:13:34Z s=a22aa615 DONE fp=1b0528ac2a12 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T02:13:34Z s=a22aa615 FINDING website/render.mjs:17 learn=test: e2e axe audit covers the rendered tags.
+2026-11-10T02:13:34Z s=a22aa615 FINDING website/site.css:66 learn=test: readability 'nothing cut off' check at 1280 and 390.
+2026-11-10T02:13:34Z s=a22aa615 FINDING website/site.css:boot ring learn=test: readability text-size check.
+2026-11-10T02:13:34Z s=a22aa615 FINDING website/demo.mjs:data-bytes learn=test: e2e region equality check.
+2026-11-10T02:13:34Z s=a22aa615 FINDING scripts/package-test.mjs:37 learn=none: Test premise adjusted to the documented preset behavior; engine tests cover byLanguage.
+2026-11-10T02:13:34Z s=a22aa615 FINDING fixtures/languages.mjs:48 learn=none: Fixture comment cites the upstream source.
+2026-11-10T02:17:53Z s=a22aa615 FAIL tests.e2e.1
+2026-11-10T02:23:06Z s=a22aa615 DONE fp=d041571f6a6c cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T02:23:06Z s=a22aa615 FINDING website/site.css:locale learn=test: e2e checks the menu's switch on a phone; the readability audit checks cut-offs.
+2026-11-10T03:12:06Z s=a22aa615 DONE fp=ea660fc4749e cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T03:12:06Z s=a22aa615 FINDING bench/pareto.mjs:selectGroup learn=verifier: pareto.mjs throws when the preset differs from the rule's selection; check-project compares both groups with the report.

@@ -9,9 +9,9 @@
   },
   "peers": {
     "lexical": "0.4.0",
-    "vector": "0.3.1"
+    "vector": "0.4.0"
   },
-  "embedding": "winzling:8f37defd53558efb7f2cc7febf5a9c19a8033bea:uint4:mean-mask:l2:384:no-prefix",
+  "embedding": "winzling:dc961ecc2773117fb67114aa7e40adc83730653d:uint4:mean-mask:l2:384:no-prefix",
   "candidates": 25,
   "queryLanguageKnown": true,
   "runtimes": [
@@ -132,7 +132,7 @@
       "entry": "id",
       "name": "Indonesian",
       "analysis": "Snowball",
-      "target": true
+      "target": false
     },
     "vie_Latn": {
       "entry": "vi",
@@ -169,24 +169,24 @@
     {
       "id": "efficient",
       "name": "Efficient",
-      "description": "searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=0 and weights 2:1, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.",
+      "description": "searchPreset('efficient'): lexical and vector top 25, weighted RRF with weights 2:1, k=20 for Winzling-embed's eight target languages and k=0 for the others, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.",
       "mean": {
-        "r1": 0.9119999999999999,
+        "r1": 0.9249999999999998,
         "r5": 0.9730000000000001,
-        "r10": 0.9850000000000001,
+        "r10": 0.9860000000000001,
         "r25": 0.991
       },
       "target": {
-        "r1": 0.9422222222222223,
-        "r5": 0.9933333333333333,
-        "r10": 0.9955555555555556,
-        "r25": 0.9977777777777779
+        "r1": 0.9749999999999999,
+        "r5": 0.9924999999999999,
+        "r10": 0.9975,
+        "r25": 0.9975
       },
       "neuralQueries": 0,
       "languages": {
         "eng_Latn": {
           "questions": 50,
-          "r1": 0.96,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -194,7 +194,7 @@
         },
         "deu_Latn": {
           "questions": 50,
-          "r1": 0.94,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -202,7 +202,7 @@
         },
         "fra_Latn": {
           "questions": 50,
-          "r1": 0.98,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -210,7 +210,7 @@
         },
         "spa_Latn": {
           "questions": 50,
-          "r1": 0.9,
+          "r1": 0.92,
           "r5": 0.98,
           "r10": 1,
           "r25": 1,
@@ -218,7 +218,7 @@
         },
         "por_Latn": {
           "questions": 50,
-          "r1": 0.92,
+          "r1": 0.96,
           "r5": 0.98,
           "r10": 0.98,
           "r25": 0.98,
@@ -226,7 +226,7 @@
         },
         "ita_Latn": {
           "questions": 50,
-          "r1": 0.92,
+          "r1": 0.98,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -234,9 +234,9 @@
         },
         "nld_Latn": {
           "questions": 50,
-          "r1": 0.92,
+          "r1": 0.94,
           "r5": 0.98,
-          "r10": 0.98,
+          "r10": 1,
           "r25": 1,
           "neuralQueries": 0
         },
@@ -349,24 +349,24 @@
     {
       "id": "reranked",
       "name": "Reranked",
-      "description": "searchPreset('reranked'): the same retrieval, then MoEdernColBERT 1.5M refines the top 25 unless both sources agree on a clear vector winner.",
+      "description": "searchPreset('reranked'): the same retrieval, then Winzling-reranker refines the top 25 unless both sources agree on a clear vector winner.",
       "mean": {
-        "r1": 0.9119999999999999,
-        "r5": 0.9720000000000001,
-        "r10": 0.9850000000000001,
+        "r1": 0.9249999999999998,
+        "r5": 0.9730000000000001,
+        "r10": 0.9860000000000001,
         "r25": 0.991
       },
       "target": {
-        "r1": 0.9422222222222223,
-        "r5": 0.991111111111111,
-        "r10": 0.9955555555555556,
-        "r25": 0.9977777777777779
+        "r1": 0.9749999999999999,
+        "r5": 0.9924999999999999,
+        "r10": 0.9975,
+        "r25": 0.9975
       },
       "neuralQueries": 893,
       "languages": {
         "eng_Latn": {
           "questions": 50,
-          "r1": 0.96,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -374,7 +374,7 @@
         },
         "deu_Latn": {
           "questions": 50,
-          "r1": 0.94,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -382,7 +382,7 @@
         },
         "fra_Latn": {
           "questions": 50,
-          "r1": 0.98,
+          "r1": 1,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -390,7 +390,7 @@
         },
         "spa_Latn": {
           "questions": 50,
-          "r1": 0.9,
+          "r1": 0.92,
           "r5": 0.98,
           "r10": 1,
           "r25": 1,
@@ -398,7 +398,7 @@
         },
         "por_Latn": {
           "questions": 50,
-          "r1": 0.92,
+          "r1": 0.96,
           "r5": 0.98,
           "r10": 0.98,
           "r25": 0.98,
@@ -406,7 +406,7 @@
         },
         "ita_Latn": {
           "questions": 50,
-          "r1": 0.92,
+          "r1": 0.98,
           "r5": 1,
           "r10": 1,
           "r25": 1,
@@ -414,9 +414,9 @@
         },
         "nld_Latn": {
           "questions": 50,
-          "r1": 0.92,
-          "r5": 0.96,
-          "r10": 0.98,
+          "r1": 0.94,
+          "r5": 0.98,
+          "r10": 1,
           "r25": 1,
           "neuralQueries": 39
         },

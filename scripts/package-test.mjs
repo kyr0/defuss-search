@@ -40,8 +40,10 @@ try {
     '--exact',
     `defuss-lexicalsearch@${manifest.devDependencies['defuss-lexicalsearch']}`,
     `defuss-vectorsearch@${manifest.devDependencies['defuss-vectorsearch']}`,
-    // The website's language identifier; the package itself does not import it.
-    `defuss-lid@${manifest.devDependencies['defuss-lid']}`,
+    // The website's language identifier, router, translations, charts and highlighter; the package imports none.
+    ...['defuss-lid', 'defuss-dom-router', 'defuss-i18n', 'echarts', 'shiki'].map(
+      (name) => `${name}@${manifest.devDependencies[name]}`,
+    ),
   ]);
   await writeFile(join(temporary, 'consumer.mjs'), consumer);
   run(node, ['consumer.mjs']);

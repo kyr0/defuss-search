@@ -1,8 +1,8 @@
 # Multilingual retrieval
 
-VERIFIED: v0.4.0 integrates all 20 lexicalsearch 0.4.0 analyzers with vectorsearch 0.3.1. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
+VERIFIED: v0.4.0 integrates all 20 lexicalsearch 0.4.0 analyzers with vectorsearch 0.4.0. The pinned fixture contains 2,000 passages and 1,000 questions, with 50 questions per language. Lexical retrieval knows the query language; vector retrieval searches the entire corpus. Each query has one same-language gold passage.
 
-The efficient preset uses lexical-weighted RRF (2:1, k=0), selected on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
+The efficient preset uses lexical-weighted RRF (2:1, k=0; 2:1, k=20 for Winzling-embed's target languages), selected per group on 500 development queries, and the weak-lexical rule. The table includes all 1,000 queries; see the [Pareto report](pareto.md) for the separate held-out results and the finite scope of its optimality claim. Analyzer availability does not establish equal semantic quality.
 
 | Language | Analyzer | Winzling target | Lexical R@5 | Vector R@5 | Efficient R@5 | Reranked R@5 |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
@@ -12,7 +12,7 @@ The efficient preset uses lexical-weighted RRF (2:1, k=0), selected on 500 devel
 | Spanish | `es` | yes | 98.0% | 74.0% | 98.0% | 98.0% |
 | Portuguese | `pt` | yes | 98.0% | 94.0% | 98.0% | 98.0% |
 | Italian | `it` | yes | 98.0% | 90.0% | 100.0% | 100.0% |
-| Dutch | `nl` | yes | 98.0% | 90.0% | 98.0% | 96.0% |
+| Dutch | `nl` | yes | 98.0% | 90.0% | 98.0% | 98.0% |
 | Polish | `pl` | no | 96.0% | 76.0% | 98.0% | 98.0% |
 | Russian | `ru` | yes | 100.0% | 96.0% | 100.0% | 100.0% |
 | Turkish | `tr` | no | 96.0% | 70.0% | 96.0% | 96.0% |
@@ -20,7 +20,7 @@ The efficient preset uses lexical-weighted RRF (2:1, k=0), selected on 500 devel
 | Hindi | `hi` | no | 86.0% | 16.0% | 82.0% | 82.0% |
 | Bangla | `bn` | no | 94.0% | 10.0% | 94.0% | 94.0% |
 | Urdu | `ur` | no | 100.0% | 18.0% | 96.0% | 96.0% |
-| Indonesian | `id` | yes | 98.0% | 88.0% | 100.0% | 100.0% |
+| Indonesian | `id` | no | 98.0% | 88.0% | 100.0% | 100.0% |
 | Vietnamese | `vi` | no | 98.0% | 52.0% | 98.0% | 98.0% |
 | Thai | `th` | no | 98.0% | 16.0% | 100.0% | 100.0% |
 | Chinese | `zh` | no | 98.0% | 28.0% | 98.0% | 98.0% |
@@ -37,12 +37,12 @@ An application often cannot know which language a user types. BM25 can then sear
 | Language | Guessed right | Efficient R@5 | Reranked R@5 |
 | --- | ---: | ---: | ---: |
 | English | 48 of 50 | 98.0% | 100.0% |
-| German | 49 of 50 | 98.0% | 100.0% |
-| French | 48 of 50 | 98.0% | 98.0% |
+| German | 49 of 50 | 100.0% | 100.0% |
+| French | 48 of 50 | 96.0% | 98.0% |
 | Spanish | 50 of 50 | 98.0% | 98.0% |
 | Portuguese | 50 of 50 | 98.0% | 98.0% |
 | Italian | 49 of 50 | 98.0% | 98.0% |
-| Dutch | 49 of 50 | 98.0% | 96.0% |
+| Dutch | 49 of 50 | 98.0% | 98.0% |
 | Polish | 50 of 50 | 98.0% | 98.0% |
 | Russian | 50 of 50 | 100.0% | 100.0% |
 | Turkish | 48 of 50 | 92.0% | 92.0% |
@@ -56,15 +56,15 @@ An application often cannot know which language a user types. BM25 can then sear
 | Chinese | 49 of 50 | 98.0% | 98.0% |
 | Japanese | 50 of 50 | 98.0% | 98.0% |
 | Korean | 49 of 50 | 96.0% | 96.0% |
-| **Mean** | **987 of 1,000** | **96.5%** | **96.6%** |
+| **Mean** | **987 of 1,000** | **96.5%** | **96.7%** |
 
 | Question language | Efficient R@1 | Efficient R@5 | Reranked R@1 | Reranked R@5 |
 | --- | ---: | ---: | ---: | ---: |
 | Unknown: BM25 over all 20 fields | 81.5% | 93.1% | 81.5% | 93.8% |
-| Guessed by defuss-lid 0.5.0 `major_20`, passed as `language` | 89.9% | 96.5% | 89.9% | 96.6% |
-| Known: BM25 over the question's field | 91.2% | 97.3% | 91.2% | 97.2% |
+| Guessed by defuss-lid 0.5.0 `major_20`, passed as `language` | 89.7% | 96.5% | 89.7% | 96.7% |
+| Known: BM25 over the question's field | 92.5% | 97.3% | 92.5% | 97.3% |
 <!-- language-guess:end -->
 
-VERIFIED: Winzling's nine target languages remain distinct from the additional eleven. Neither preset detects a language or silently routes an unsupported language to a different model: the caller passes `language`, chooses analyzers and supplies compatible query/document embeddings.
+VERIFIED: Winzling's eight target languages remain distinct from the other twelve. Neither preset detects a language or silently routes an unsupported language to a different model: the caller passes `language`, chooses analyzers and supplies compatible query/document embeddings.
 
 See [release provenance](upstreams.json), [API evaluation](evaluation.md), [verification](verification.md), and [Pareto methodology](pareto.md).

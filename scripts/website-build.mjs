@@ -5,8 +5,8 @@
  * Why: GitHub Pages sends every file with `cache-control: max-age=600`, and each deploy replaces the hashed chunks.
  * VERIFIED: a browser that kept the previous deploy's search-worker.js imported its lazy chunk
  * browser-tcxbxgfd.js, which the new deploy no longer had, and every model load failed (2026-11-02). Two measures:
- * - The worker is one file without chunks, so a cached worker never imports a file a later deploy removed. It grows
- *   from 200 KB plus 350 KB of lazy chunks to 571 KB, which the default tiny factory loads anyway.
+ * - Each worker is one file without chunks, so a cached worker never imports a file a later deploy removed. The
+ *   search worker grows from 200 KB plus 350 KB of lazy chunks to 571 KB, which the default tiny factory loads anyway.
  * - `?v=<version>` on app.js, page.js and site.css (app.js passes it on to the worker) gives every build its own
  *   cache entries, so a reload, which revalidates the HTML, never runs the previous build's scripts. A content hash
  *   beats a timestamp: an unchanged build keeps its cached files.
@@ -41,7 +41,15 @@ export const versionPage = (html, version) =>
 export async function buildWebsite(docs = 'docs') {
   const assets = join(docs, 'assets');
   await rm(join(assets, 'chunks'), { recursive: true, force: true });
-  const options = { outdir: assets, target: 'browser', format: 'esm', minify: true };
+  // A browser has no environment: libraries that read process.env behind a `typeof process` guard (vscode-textmate,
+  // inside Shiki) see an empty one, so the bundles name no environment variable.
+  const options = {
+    outdir: assets,
+    target: 'browser',
+    format: 'esm',
+    minify: true,
+    define: { 'process.env': '{}' },
+  };
   const builds = [
     // The page entries share chunks; both load them at once, so they expire from a cache together.
     Bun.build({
@@ -50,7 +58,12 @@ export async function buildWebsite(docs = 'docs') {
       splitting: true,
       naming: { entry: '[name].js', chunk: 'chunks/[name]-[hash].js', asset: '[name].[ext]' },
     }),
-    Bun.build({ ...options, entrypoints: ['website/search-worker.mjs'], splitting: false }),
+    // Each Worker is one file of its own (see above); the playground's runs the edited snippets.
+    Bun.build({
+      ...options,
+      entrypoints: ['website/search-worker.mjs', 'website/playground-worker.mjs'],
+      splitting: false,
+    }),
   ];
   for (const build of await Promise.all(builds))
     if (!build.success) throw new AggregateError(build.logs, 'Website build failed');

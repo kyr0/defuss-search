@@ -83,7 +83,7 @@
   ],
   "peerDependencies": {
     "defuss-lexicalsearch": "^0.4.0",
-    "defuss-vectorsearch": "^0.3.1"
+    "defuss-vectorsearch": "^0.4.0"
   },
   "peerDependenciesMeta": {
     "defuss-lexicalsearch": {
@@ -94,15 +94,21 @@
     }
   },
   "devDependencies": {
+    "axe-core": "4.14.0",
+    "defuss-brotli": "0.3.0",
+    "defuss-dom-router": "0.1.1",
+    "defuss-i18n": "0.2.0",
     "defuss-lexicalsearch": "0.4.0",
     "defuss-lid": "0.5.0",
-    "defuss-vectorsearch": "0.3.1",
+    "defuss-vectorsearch": "0.4.0",
+    "echarts": "6.1.0",
     "marked": "16.4.2",
     "onnxruntime-node": "1.21.0",
     "oxlint": "1.90.0",
     "pkgroll": "2.29.0",
     "playwright": "1.64.1",
     "prettier": "3.6.2",
+    "shiki": "4.5.0",
     "typescript": "5.9.3"
   },
   "scripts": {
@@ -131,6 +137,7 @@
     "docs": "bun scripts/docs.mjs",
     "test:models:bun": "bun scripts/live.mjs",
     "test:wasm:bun": "bun scripts/wasm.mjs",
+    "bench:language-groups": "bun bench/language-groups.mjs",
     "bench:pareto": "bun bench/pareto.mjs && bun scripts/pareto-docs.mjs && bun scripts/recall-report.mjs && bun scripts/demo-data.mjs",
     "test:gate": "node scripts/gate-live.mjs",
     "test:gate:bun": "bun scripts/gate-live.mjs",

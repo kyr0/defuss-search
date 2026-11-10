@@ -1,70 +1,70 @@
 {
-  "schema": "defuss-search-demo-manifest.v1",
+  "schema": "defuss-search-demo-manifest.v2",
   "models": {
     "winzling": {
-      "base": "https://huggingface.co/kyr0/Winzling-Embed-a8m-64k/resolve/8f37defd53558efb7f2cc7febf5a9c19a8033bea/",
+      "base": "https://huggingface.co/kyr0/Winzling-Embed-a8m-64k/resolve/dc961ecc2773117fb67114aa7e40adc83730653d/",
       "files": {
         "tokenizer.json": {
           "bytes": 9292544,
           "sha256": "1500c16e2ad682e31dceffcff0a62bda448741c1b61120a3a398afdc3851de82",
-          "gzip": 1249423
+          "brotli": 862957
         },
         "tokenizer_config.json": {
           "bytes": 2448,
           "sha256": "0ec4307a0de6ad9c6ac3412082ebcae2f6dfa2864e327e756a8b9a67e6d0a6fc",
-          "gzip": 477
+          "brotli": 413
         },
         "onnx/model_uint4.onnx": {
           "bytes": 30464606,
           "sha256": "b07e0e6f5ba1b65a8f7c988c967572d55d166b32ab8d9c1508b5b550511b8218",
-          "gzip": 28221497
+          "brotli": 27942930
         }
       }
     },
     "colbert": {
-      "base": "https://huggingface.co/kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming/resolve/9d3b299bd0d4a327bfa18d8b5db695f3fec2b8e4/",
+      "base": "https://huggingface.co/kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming/resolve/bd312dffe70801e6aa4a53b287f35018aa5dd88e/",
       "files": {
         "tokenizer.json": {
           "bytes": 1568412,
           "sha256": "d7b2ba6bf68fd03cdb4f728196da966ba169572c4c8c1f06deda4ff5ee058598",
-          "gzip": 533312
+          "brotli": 411367
         },
         "tokenizer_config.json": {
           "bytes": 730,
           "sha256": "02db1534a52b9af97be6a6a066af67ad2d3ff1eb10cc0af928bed5ae70a04ecd",
-          "gzip": 350
+          "brotli": 303
         },
         "runtime.json": {
           "bytes": 946,
           "sha256": "aea3c634e5efad4f5aa31b85884582ca0106cb96c42482aa5ae7143fb5ab7822",
-          "gzip": 489
+          "brotli": 431
         },
         "model_q8.onnx": {
           "bytes": 2256923,
           "sha256": "162a2b7cf814940cc79cfc154ae33309063fc9d0dde8d5f067373a6ba35be09b",
-          "gzip": 1919683
+          "brotli": 1868325
         }
       }
     }
   },
   "corpus": {
-    "file": "corpus.json.gz",
-    "bytes": 429580,
+    "file": "corpus.json.br",
+    "bytes": 317871,
     "rawBytes": 955227
   },
   "vectors": {
-    "file": "vectors.bin.gz",
-    "bytes": 4285705,
+    "file": "vectors.bin.br",
+    "bytes": 4225383,
     "rawBytes": 4608000,
     "dims": 384,
     "passages": 2000,
     "queries": 1000
   },
   "tokens": {
-    "file": "tokens.bin.gz",
-    "bytes": 8887550,
+    "file": "tokens.bin.br",
+    "bytes": 7802639,
     "rawBytes": 11568064,
-    "model": "kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming@9d3b299bd0d4a327bfa18d8b5db695f3fec2b8e4:162a2b7cf814940cc79cfc154ae33309063fc9d0dde8d5f067373a6ba35be09b",
+    "model": "kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming@bd312dffe70801e6aa4a53b287f35018aa5dd88e:162a2b7cf814940cc79cfc154ae33309063fc9d0dde8d5f067373a6ba35be09b",
     "documents": 2000,
     "size": 180626,
     "dims": 128,

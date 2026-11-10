@@ -24,3 +24,4 @@ __pycache__/
 .coverage
 docs/assets/ort/
 docs/assets/lid/
+docs/assets/brotli/

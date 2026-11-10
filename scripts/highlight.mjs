@@ -1,62 +1,124 @@
 /**
- * Build-time syntax highlighting for the rendered Markdown pages, in the defuss-shadcn code block markup
- * (mk-code-block-k|s|n|c spans, one span per line) that the main page uses. A regular-expression tokenizer
- * covers the ts, js and sh fences in docs/; a full grammar package would add a dependency for no visible gain.
- * VERIFIED: e2e finds keyword spans in the reference page's code blocks (session 2026-11-01).
+ * Build-time syntax highlighting with Shiki for every code sample of the website: the file-style code blocks of the
+ * main page and the rendered Markdown pages, and the terminal lines of the command windows (defuss-shadcn
+ * mockup-code). Each token carries its light and dark colour (github-light and github-dark, raised to WCAG AA by
+ * website/shiki-themes.mjs) as `--shiki-light` / `--shiki-dark`; site.css picks the one for the surface.
+ * Why at build time: the page shows coloured code before, and without, its scripts, and loads no highlighter for it;
+ * only the playground's editor highlights while you type (website/highlight-runtime.mjs, the same themes).
+ * VERIFIED: make e2e checks that the built pages' code carries Shiki's token spans.
  */
-const KEYWORDS = new Set(
-  'import export from as const let var await async function return new if else for of in class extends type interface implements throw try catch finally typeof keyof readonly true false null undefined'.split(
-    ' ',
-  ),
-);
-const escape = (text) =>
-  text.replace(/[&<>]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[char]);
-const SCRIPT =
-  /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|('(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`)|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_$][\w$]*)\b/g;
-const SHELL = /(#[^\n]*)|('[^'\n]*'|"(?:\\.|[^"\\\n])*")|(^|\s)(\d+(?:\.\d+)?)(?=\s|$)/gm;
+import { createHighlighter } from 'shiki';
+import { DARK, LIGHT, THEMES } from '../website/shiki-themes.mjs';
 
-/** Splits code into [text, class] segments; class is k (keyword), s (string), n (number), c (comment) or ''. */
-function segments(code, lang) {
-  const out = [];
-  let last = 0;
-  const shell = lang === 'sh' || lang === 'bash';
-  for (const match of code.matchAll(shell ? SHELL : SCRIPT)) {
-    const [whole, comment, string] = match;
-    let start = match.index,
-      text = whole,
-      kind = comment ? 'c' : string ? 's' : 'n';
-    if (shell && match[4]) {
-      start += match[3].length;
-      text = match[4];
-    } else if (!shell && match[4]) {
-      if (!KEYWORDS.has(match[4])) continue;
-      kind = 'k';
-    }
-    out.push([code.slice(last, start), ''], [text, kind]);
-    last = start + text.length;
-  }
-  out.push([code.slice(last), '']);
-  return out;
-}
+const LANGS = { js: 'javascript', ts: 'typescript', sh: 'bash', shell: 'bash', bash: 'bash', json: 'json' };
+const highlighter = await createHighlighter({
+  themes: [LIGHT, DARK],
+  langs: [...new Set(Object.values(LANGS))],
+});
 
-/** Highlighted HTML lines; a token that spans lines is closed and reopened on each line. */
+export const escape = (text) =>
+  text.replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
+const style = (htmlStyle = {}) =>
+  Object.entries(htmlStyle)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(';');
+
+/** One HTML string per line of `code`; an unknown or empty language yields plain escaped text. */
 export function highlight(code, lang = '') {
-  const lines = [''];
-  for (const [text, kind] of segments(code, lang))
-    text.split('\n').forEach((part, i) => {
-      if (i) lines.push('');
-      if (part)
-        lines[lines.length - 1] += kind
-          ? `<span class="mk-code-block-${kind}">${escape(part)}</span>`
-          : escape(part);
-    });
-  return lines;
+  const language = LANGS[lang] ?? (Object.values(LANGS).includes(lang) ? lang : null);
+  if (!language) return code.split('\n').map(escape);
+  const { tokens } = highlighter.codeToTokens(code, { lang: language, themes: THEMES, defaultColor: false });
+  return tokens.map((line) =>
+    line
+      .map((token) => {
+        const css = style(token.htmlStyle);
+        return css ? `<span style="${css}">${escape(token.content)}</span>` : escape(token.content);
+      })
+      .join(''),
+  );
 }
 
-/** One file-style code block with a copy button, as on the main page. */
-export function codeBlock(code, lang = '') {
+const COPY_ICON =
+  '<svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+const FILE_ICON = '<svg class="hs-icon" aria-hidden="true"><use href="#i-file"/></svg>';
+
+/** One file-style code block with a copy button; `file` names the head, `id` the code element. */
+export function codeBlock(code, lang = '', { file, id } = {}) {
   const lines = highlight(code.replace(/\n$/, ''), lang)
     .map((line) => `<span>${line}</span>`)
     .join('');
-  return `<figure class="mk-code-block" data-variant="file"><div class="mk-code-block-head"><span class="mk-code-block-file">${escape(lang || 'text')}</span><button class="mk-code-block-copy" type="button" aria-label="Copy code"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><pre data-numbers><code>${lines}</code></pre><span class="mk-code-block-status" role="status"></span></figure>`;
+  const head = file ? `${FILE_ICON}${escape(file)}` : escape(lang || 'text');
+  return `<figure class="mk-code-block hs-shiki" data-variant="file"><div class="mk-code-block-head"><span class="mk-code-block-file">${head}</span><button class="mk-code-block-copy" type="button" aria-label="Copy code">${COPY_ICON}</button></div><pre data-numbers><code${id ? ` id="${escape(id)}"` : ''}>${lines}</code></pre><span class="mk-code-block-status" role="status"></span></figure>`;
+}
+
+/** Terminal lines: `$ ` starts a command (the prompt is generated content, never copied); other lines are output. */
+export function terminalLines(text, lang = 'bash') {
+  return text
+    .replace(/\n$/, '')
+    .split('\n')
+    .map((line) => {
+      const command = line.startsWith('$ ');
+      const body = command ? highlight(line.slice(2), lang)[0] : escape(line);
+      return `<pre${command ? ' data-prefix="$"' : ' data-tone="muted"'}><code>${body}</code></pre>`;
+    })
+    .join('');
+}
+
+/** The package managers of the install switch, bun first: its command is the default. */
+export const PACKAGE_MANAGERS = [
+  ['bun', 'bun add'],
+  ['pnpm', 'pnpm add'],
+  ['npm', 'npm install'],
+  ['yarn', 'yarn add'],
+];
+
+/**
+ * An install command for each package manager in one terminal, with a toggle group that picks the one shown
+ * (site.css hides the others) and a copy button for the visible line. website/chrome.mjs keeps every install
+ * switch on the page on the same package manager.
+ */
+export function installBlock(packages, { label = 'Package manager' } = {}) {
+  const toggles = PACKAGE_MANAGERS.map(
+    ([pm], i) =>
+      `<button class="toggle" type="button" aria-pressed="${i === 0}" value="${pm}">${pm}</button>`,
+  ).join('');
+  const lines = PACKAGE_MANAGERS.map(
+    ([pm, add]) =>
+      `<pre data-prefix="$" data-pm="${pm}"><code>${highlight(`${add} ${packages}`, 'bash')[0]}</code></pre>`,
+  ).join('');
+  return `<div class="hs-install" data-install><div class="hs-install-bar"><div class="toggle-group" role="group" aria-label="${escape(label)}" data-type="single" data-size="sm" data-variant="outline">${toggles}</div><button class="btn hs-install-copy" type="button" data-variant="ghost" data-size="sm" data-copy-install>${COPY_ICON}<span data-msg="copy">Copy</span></button></div><div class="mockup-code hs-shiki" data-chrome="none">${lines}</div><span class="sr-only" role="status" data-copy-status></span></div>`;
+}
+
+const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
+const unescape = (text) => text.replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => ENTITIES[entity]);
+/** Strips the common leading indentation, so a sample can sit indented inside the page source. */
+const dedent = (text) => {
+  const lines = text.replace(/^\n/, '').replace(/\n\s*$/, '').split('\n');
+  const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => /^ */.exec(l)[0].length));
+  return lines.map((l) => l.slice(indent)).join('\n');
+};
+
+/**
+ * The page source's code placeholders, expanded:
+ * - `<pre data-code="js" data-file="search.js" data-id="usage-code">…</pre>` becomes a file-style code block;
+ * - `<pre data-terminal="bash">$ command…</pre>` becomes the lines of the mockup-code window around it;
+ * - `<div data-install="pkg …"></div>` becomes the package manager switch with its terminal.
+ * The text inside a placeholder is HTML-escaped source; it is unescaped before highlighting.
+ */
+export function expandCode(html) {
+  return html
+    .replace(
+      /<pre data-code="([a-z]*)"((?: data-[a-z]+="[^"]*")*)>([\s\S]*?)<\/pre>/g,
+      (_, lang, attrs, body) => {
+        const attr = (name) => new RegExp(` data-${name}="([^"]*)"`).exec(attrs)?.[1];
+        return codeBlock(dedent(unescape(body)), lang, { file: attr('file'), id: attr('id') });
+      },
+    )
+    .replace(/<pre data-terminal="([a-z]*)">([\s\S]*?)<\/pre>/g, (_, lang, body) =>
+      terminalLines(dedent(unescape(body)), lang),
+    )
+    .replace(
+      /<div data-install="([^"]+)"(?: data-label="([^"]*)")?><\/div>/g,
+      (_, packages, label) => installBlock(packages, label ? { label } : {}),
+    );
 }

@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { searchPreset } from 'defuss-search';
 import { readFile, access, readdir } from 'node:fs/promises';
-import { gunzipSync } from 'node:zlib';
+import { brotliDecompressSync } from 'node:zlib';
 import { WINZLING_PROFILE } from 'defuss-vectorsearch/onnx.js';
 import { releases } from './models.mjs';
 import { languageCases } from '../fixtures/languages.mjs';
@@ -19,9 +19,12 @@ import {
   renderRecall,
   renderRecallTable,
 } from './recall-docs.mjs';
-import { FACTORIES } from '../website/factories.mjs';
-import { factoryFiguresPage } from '../website/render.mjs';
+import { renderIndex } from './figures.mjs';
+import { renderLlms } from './llms.mjs';
+import { normalize } from './localize.mjs';
 import { assetVersion, versionPage } from './website-build.mjs';
+import { MESSAGES } from '../website/messages.mjs';
+import catalog from '../website/i18n/de.mjs';
 const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const pkg = await json('package.json');
 const provenance = await json('docs/upstreams.json');
@@ -90,15 +93,85 @@ for (const page of ['docs/index.html', 'docs/reference.html', 'docs/pareto.html'
     `${page} names scripts version ${stamps} instead of ${version}; run make docs`,
   );
 }
-assert.ok(
-  !(await readFile('docs/assets/search-worker.js', 'utf8')).includes('chunks/'),
-  'The worker must not import chunks: a cached worker would request files a later deploy removed',
-);
+for (const worker of ['search-worker.js', 'playground-worker.js'])
+  assert.ok(
+    !(await readFile(`docs/assets/${worker}`, 'utf8')).includes('chunks/'),
+    `${worker} must not import chunks: a cached worker would request files a later deploy removed`,
+  );
 assert.equal(
   versionPage(await readFile('docs/index.html', 'utf8')),
-  factoryFiguresPage(await readFile('website/index.html', 'utf8'), FACTORIES, strategiesReport),
+  await renderIndex(await readFile('website/index.html', 'utf8'), {
+    recall,
+    strategies: strategiesReport,
+    manifest: JSON.parse(await readFile('docs/data/manifest.json', 'utf8')),
+  }),
   'docs/index.html is stale; run make docs',
 );
+// docs/llms.txt is what scripts/llms.mjs renders from the committed reports and the main page's example.
+assert.equal(
+  await readFile('docs/llms.txt', 'utf8'),
+  renderLlms({
+    pkg,
+    recall,
+    strategies: strategiesReport,
+    pareto: await json('docs/data/pareto.json'),
+    indexSource: await readFile('website/index.html', 'utf8'),
+  }),
+  'docs/llms.txt is stale; run make docs',
+);
+// The footer's "Built with" names defuss-vae first, then every installed defuss package, and nothing else, not
+// the defuss framework itself; each links its site, {name}.defuss.org (the maintainer's rules: the libraries under
+// the defuss projects are theirs to credit). Packages without a site keep their npm page.
+// VERIFIED: db.defuss.org and env.defuss.org had no DNS record on 2026-11-09; the other sites answered 200.
+{
+  const NO_SITE = ['defuss-db', 'defuss-env'];
+  const column = (await readFile('website/index.html', 'utf8')).match(/data-t>Built with<\/h3>\s*<ul[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? '';
+  const links = [...column.matchAll(/href="([^"]+)"[^>]*>([\w.-]+)<svg/g)].map((m) => ({ href: m[1], name: m[2] }));
+  const named = links.map((link) => link.name);
+  const installed = (await readdir('node_modules')).filter((name) => name.startsWith('defuss-') && name !== 'defuss-search');
+  assert.equal(named[0], 'defuss-vae', 'Built with: defuss-vae comes first');
+  assert.deepEqual(named.filter((name) => !name.startsWith('defuss-')), [], 'Built with: defuss packages only, not defuss itself');
+  assert.deepEqual(installed.filter((name) => !named.includes(name)), [], 'Built with: name every defuss project used');
+  for (const { href, name } of links)
+    assert.equal(
+      href,
+      NO_SITE.includes(name) ? `https://www.npmjs.com/package/${name}` : `https://${name.slice('defuss-'.length)}.defuss.org/`,
+      `Built with: ${name} links its site`,
+    );
+}
+// The hero says "0 runtime dependencies in the core", and the badges name the published version.
+assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'The page claims a core without dependencies');
+for (const [, shown] of (await readFile('website/index.html', 'utf8')).matchAll(/>(?:npm )?v(\d+\.\d+\.\d+)/g))
+  assert.equal(shown, pkg.version, `website/index.html shows v${shown}; the package is ${pkg.version}`);
+// Every German text reaches a page: each catalog entry appears in a built page's German template or attribute.
+const builtPages = await Promise.all(
+  ['docs/index.html', 'docs/reference.html', 'docs/pareto.html'].map((page) => readFile(page, 'utf8')),
+);
+const german = new Set();
+for (const html of builtPages) {
+  for (const [, text] of html.matchAll(/<template data-i18n-for="[^"]+" data-i18n-locale="de">([\s\S]*?)<\/template>/g))
+    // A figure slot carries its value on the page (scripts/figures.mjs) and is empty in the catalog.
+    german.add(normalize(text.replace(/<span data-fig="([\w-]+)"[^>]*>[^<]*<\/span>/g, '<span data-fig="$1"></span>')));
+  for (const [, text] of html.matchAll(/data-i18n-[\w-]+-de="([^"]*)"/g))
+    german.add(normalize(text.replace(/&quot;/g, '"').replace(/&amp;/g, '&')));
+}
+const unused = catalog.filter(([, de]) => !german.has(normalize(de))).map(([en]) => en);
+assert.deepEqual(unused, [], 'website/i18n/de.mjs has entries no page uses; remove them');
+// Prose in both languages: no dashes or quotes typed as typography, no arrows, check marks, emoji or middle dots.
+const BANNED = /[\u2014\u2026\u201a\u201c-\u201f\u2018\u2019\u00b7\u2022\u2190-\u21ff\u2713-\u2718\u2600-\u27bf\u{1f300}-\u{1faff}]| \u2013 /u;
+const visible = (html) =>
+  html
+    .replace(/<(script|style|kbd|pre|code|svg)\b[\s\S]*?<\/\1>/g, ' ')
+    .replace(/<[^>]*>/g, ' ');
+for (const [where, text] of [
+  ...catalog.map(([en, de]) => [`website/i18n/de.mjs: ${en}`, visible(de)]),
+  ...Object.entries(MESSAGES).flatMap(([lang, messages]) =>
+    Object.entries(messages).map(([key, text]) => [`website/messages.mjs ${lang}.${key}`, text]),
+  ),
+  ...builtPages.map((html, i) => [['docs/index.html', 'docs/reference.html', 'docs/pareto.html'][i], visible(html)]),
+  ['docs/llms.txt', await readFile('docs/llms.txt', 'utf8')],
+])
+  assert.ok(!BANNED.test(text), `${where}: replace ${JSON.stringify(text.match(BANNED)?.[0])} with plain text`);
 for (const path of [
   'ARCH.md',
   'bun.lock',
@@ -110,15 +183,19 @@ for (const path of [
   '.github/workflows/pages.yml',
   'docs/index.html',
   'docs/reference.html',
+  'docs/llms.txt',
   'docs/.nojekyll',
   'docs/assets/app.js',
   'docs/assets/search-worker.js',
+  'docs/assets/playground-worker.js',
   'docs/assets/page.js',
+  'docs/pareto.html',
   'docs/assets/ort/ort-wasm-simd-threaded.jsep.wasm',
   'docs/data/manifest.json',
-  'docs/data/corpus.json.gz',
-  'docs/data/vectors.bin.gz',
-  'docs/data/tokens.bin.gz',
+  'docs/assets/brotli/decompressor.wasm',
+  'docs/data/corpus.json.br',
+  'docs/data/vectors.bin.br',
+  'docs/data/tokens.bin.br',
 ])
   await access(path);
 const makefile = await readFile('Makefile', 'utf8');
@@ -162,13 +239,13 @@ const demo = await json('docs/data/manifest.json');
 for (const key of ['corpus', 'vectors', 'tokens']) {
   const bytes = await readFile(`docs/data/${demo[key].file}`);
   assert.equal(bytes.length, demo[key].bytes, `${demo[key].file} size; run make bench`);
-  assert.equal(gunzipSync(bytes).length, demo[key].rawBytes, `${demo[key].file} unpacked size`);
+  assert.equal(brotliDecompressSync(bytes).length, demo[key].rawBytes, `${demo[key].file} unpacked size`);
 }
 assert.equal(
   demo.vectors.rawBytes,
   4 * demo.vectors.dims * (demo.vectors.passages + demo.vectors.queries),
 );
-const corpus = JSON.parse(gunzipSync(await readFile(`docs/data/${demo.corpus.file}`)));
+const corpus = JSON.parse(brotliDecompressSync(await readFile(`docs/data/${demo.corpus.file}`)));
 assert.equal(
   corpus.model,
   WINZLING_PROFILE.fingerprint,
@@ -198,7 +275,7 @@ for (const release of releases) {
   for (const [file, sha256] of Object.entries(release.files)) {
     const entry = demo.models[release.name].files[file];
     assert.equal(entry?.sha256, sha256, `${release.name} ${file} pin; run make bench`);
-    assert.ok(Number.isInteger(entry.gzip) && entry.gzip > 0, `${release.name} ${file} gzip size`);
+    assert.ok(Number.isInteger(entry.brotli) && entry.brotli > 0, `${release.name} ${file} Brotli size`);
   }
 }
 // The website's per-language bars and the factory picker's Belebele figures for lexical-only and tiny come from one
@@ -232,8 +309,13 @@ assert.equal(
 assert.ok(pareto.holdout.frontier.includes('efficient'));
 const efficient = searchPreset('efficient'),
   neural = searchPreset('reranked').rerank;
-assert.equal(efficient.fusion.k, pareto.selected.fusion.k);
-assert.equal(efficient.fusion.weights.lexical, pareto.selected.fusion.lexicalWeight);
+// The presets' base fusion is the other languages' selection, their one byLanguage group Winzling's.
+const [group] = efficient.fusion.byLanguage;
+assert.equal(efficient.fusion.byLanguage.length, 1);
+assert.equal(efficient.fusion.k, pareto.selected.fusion.other.k);
+assert.equal(efficient.fusion.weights.lexical, pareto.selected.fusion.other.lexicalWeight);
+assert.equal(group.k, pareto.selected.fusion.winzling.k);
+assert.equal(group.weights.lexical, pareto.selected.fusion.winzling.lexicalWeight);
 assert.equal(neural.k, pareto.selected.neural.k);
 assert.equal(neural.weight, pareto.selected.neural.weight);
 assert.equal(pareto.selected.neural.gated, true);

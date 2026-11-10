@@ -1,0 +1,105 @@
+# defuss-search
+
+> Hybrid search for JavaScript and TypeScript in the browser, Bun and Node.js. BM25 and vector retrieval run over the same documents and are fused into one ranking; a document whose symbol or ID equals the query ranks first, an optional ColBERT reranker refines the top 25, and every hit explains its rank. No search server; the root entry has no runtime dependencies. MIT license, version 0.4.0.
+
+Use it when one search box must find exact strings (symbols, IDs, error codes, part numbers) and meaning (paraphrases, translations) in one ranked list, inside your app. It is not a hosted search service: it has no server, persistence, authentication or approximate nearest-neighbor index (see Limits).
+
+## Measured
+
+From this repository's benchmarks, version 0.4.0 (`make bench`, `bun run bench:strategies`, Bun 1.4.3, one thread). Recall@k (R@k) is the share of queries whose relevant document ranks in the top k.
+
+- 92.5% R@1 and 97.3% R@5 for 1,000 questions in 20 languages over 2,000 passages (tiny-embedding-bench-v1, a Belebele subset), default fusion without a reranker. Bun, Node.js and Chromium return the same rank for every question.
+- 98.0% R@1 for exact matches in 8,043 documentation sections (defuss-shadcn; each query uses a section's own words).
+- 97.8% R@1 for notes searched in another language; BM25 alone reaches 22.0%.
+- 93.6% R@1 on 500 held-out questions with the fusion settings tuned on 500 others; the gated reranker reaches the same R@1 (93.6%).
+- Fusing and ranking 2,000 passages takes 0.8 ms per query once the query vector exists; model inference is extra.
+- Model downloads: none for lexical-only search, 2.3 MB (Winzling-reranker) for the tiny factory, 28.8 MB (Winzling-embed) for the lexical-semantic factory, each as Brotli files decoded in the browser.
+
+| Query set, R@1 / R@5 | Lexical-only | Tiny | Lexical-semantic |
+| --- | ---: | ---: | ---: |
+| Belebele, 1,000 questions, 20 languages | 90.3% / 97.3% | 90.6% / 96.7% | 92.5% / 97.3% |
+| Notes found by their translations | 22.0% / 24.2% | 47.3% / 72.5% | 97.8% / 100.0% |
+| Notes found by a paraphrase | 27.3% / 27.3% | 45.5% / 81.8% | 81.8% / 100.0% |
+| API docs, exact matches | 98.0% / 98.0% | 98.0% / 98.0% | 98.0% / 98.0% |
+| API docs, natural-language questions | 40.0% / 70.0% | 40.0% / 72.0% | 40.0% / 76.0% |
+
+## Install
+
+```sh
+bun add defuss-search defuss-lexicalsearch defuss-vectorsearch
+```
+
+`pnpm add`, `npm install` and `yarn add` take the same packages. `defuss-lexicalsearch` and `defuss-vectorsearch` are optional peers: install the ones you use.
+
+## Quick start
+
+```js
+import { apiSearchPreset } from 'defuss-lexicalsearch';
+import { searchPreset } from 'defuss-search';
+import { createHybridIndex } from 'defuss-search/indexing';
+
+const search = createHybridIndex({
+  documents: [
+    { id: 'push', fields: { symbol: 'Array.prototype.push()', description: 'Add elements to the end of an array' } },
+    { id: 'pop', fields: { symbol: 'Array.prototype.pop()', description: 'Remove the last element of an array' } },
+  ],
+  vectors: [[1, 0], [0, 1]],
+  defaults: searchPreset('efficient'),
+  lexical: apiSearchPreset,
+  lexicalSearch: { exact: { fields: ['symbol'] } },
+});
+const hits = await search.search({ text: 'Array.prototype.push()', vector: [0, 1] }, {
+  strategy: 'fusion', exact: 'promote',
+});
+console.log(hits[0].id); // "push": the exact match ranks first
+```
+
+## Choose
+
+- Factories in `defuss-search/strategies`, each returning a `HybridSearch`: `createLexicalOnlySearch(index)` needs no model; `createLexicalSemanticTinySearch(index, { documents, colbert })` uses one 2.3 MB model; `createLexicalSemanticSearch(index, { documents, embedder, reranker })` uses Winzling-embed vectors and an optional ColBERT reranker. Start with lexical-only and add a model when translations or paraphrases matter.
+- Presets: `searchPreset('efficient')` fuses without a reranker; pass it whenever no reranker is configured. `searchPreset('reranked')`, the default, needs a reranker; on the benchmark it matched efficient's R@1 (92.5%) and ran ColBERT for 893 of 1,000 questions.
+- Retrieval: `strategy: 'fusion'` (default), `'vector-first'` or `'lexical-first'`. A cascade never adds candidates its first stage missed.
+- Exact matches: `exact: 'promote'` with `lexicalSearch: { exact: { fields: [...] } }` ranks original-string matches first.
+- Languages: one lexical analyzer per language field; pass the query's `language`, the package does not detect it.
+
+## Entry points
+
+| Entry | Exports |
+| --- | --- |
+| `defuss-search` | `HybridSearch`, `fuseRankings`, `searchPreset`, types |
+| `defuss-search/indexing` | `createHybridIndex` |
+| `defuss-search/strategies` | `createLexicalOnlySearch`, `createLexicalSemanticTinySearch`, `createLexicalSemanticSearch` |
+| `defuss-search/lexical` | `createLexicalRetriever`, `withSurfaceFields`, `surfaceAnalyzer`, `surfaceField` |
+| `defuss-search/vector` | `createVectorRetriever` |
+| `defuss-search/colbert` | `createColbertAdapter`, `createColbertRetriever`, `buildColbertTokenIndex` |
+
+ESM and CommonJS with TypeScript declarations. Importing the package downloads no model; the caller creates and disposes models.
+
+## Results
+
+- `rank` is the final order. Scores from different stages use different scales: never sort hits by score.
+- Each hit carries its rank and raw score per source, the fusion contributions and the reasons for a promotion; `searchWithStats()` adds candidate counts, stage timings and the reranker decision.
+- Shared `ids` eligibility restricts both sources before top-k.
+
+## Limits
+
+- No language detection, persistence, server, authentication, model download or embedding training.
+- Vector search scores every eligible row (exact or TurboQuant codes); there is no approximate nearest-neighbor index, so query cost grows with the corpus.
+- `createHybridIndex()` holds an immutable snapshot; rebuild it to update.
+- Query and document vectors must come from the same model and preprocessing.
+- An `AbortSignal` cannot interrupt a running ONNX call.
+- The figures above hold for these fixtures. Model quality differs by language: the weakest of the 20, Hindi, reaches 70.0% R@1.
+
+## Docs
+
+- [README](https://github.com/kyr0/defuss-search#readme): usage, presets, per-language recall table
+- [API reference](https://search.defuss.org/reference.html): every option, adapters, neural reranking
+- [Frontier analysis](https://search.defuss.org/pareto.html): how the presets were chosen, with costs and limits
+- [Live demo and playground](https://search.defuss.org/): the benchmark in your browser, and runnable code
+- [Architecture](https://github.com/kyr0/defuss-search/blob/main/ARCH.md): design, operations, security and privacy
+
+## Optional
+
+- [npm package](https://www.npmjs.com/package/defuss-search)
+- [Changelog](https://github.com/kyr0/defuss-search/blob/main/CHANGELOG.md)
+- [Models and licenses](https://github.com/kyr0/defuss-search/blob/main/THIRD_PARTY.md)

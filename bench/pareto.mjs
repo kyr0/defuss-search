@@ -1,4 +1,12 @@
-/** VERIFIED: finite quality/work frontier, with query-group development/holdout separation. */
+/**
+ * VERIFIED: finite quality/work frontier, with query-group development/holdout separation.
+ * The fusion is selected per language group, each on its own development questions, because Winzling's vectors are
+ * much stronger in its target languages: the other languages choose k and the weights, then the presets' `byLanguage`
+ * group (Winzling's target languages) chooses only k at those weights. Why shared weights: equal weights, the group's
+ * own pick, cost a guessed `language` 1.5 points R@1 when BM25 searches all 20 fields. VERIFIED: a replay of
+ * 2026-11-10 over all 1,000 questions gave the guess 88.4% R@1 with 1:1 at k=10, 89.7% with 2:1 at k=20 and 89.9%
+ * with one setting for every language, while the known language reached 92.5% with each group setting.
+ */
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { LexicalSearch } from 'defuss-lexicalsearch';
@@ -9,7 +17,7 @@ import { createColbertAdapter } from 'defuss-search/colbert';
 import { createColbertReranker } from 'defuss-vectorsearch/onnx.js';
 import { loadDataset, datasetSha256, datasetUrl } from './dataset.mjs';
 import { loadEmbeddings } from './embeddings.mjs';
-import { languageCases } from '../fixtures/languages.mjs';
+import { languageCases, targetLanguages } from '../fixtures/languages.mjs';
 import { downloadModels, loadModelFile, releases } from '../scripts/models.mjs';
 const log = (message) => console.log(`${new Date().toISOString()} INFO ${message}`);
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
@@ -109,27 +117,50 @@ const priority = (a, b) => {
   for (const metric of costs) if (a[metric] !== b[metric]) return a[metric] - b[metric];
   return a.name.localeCompare(b.name, 'en');
 };
-const fusionGrid = [];
-for (const k of [0, 1, 5, 10, 20, 60])
-  for (const lexicalWeight of [0.25, 0.5, 1, 2, 3, 4]) {
-    const p = { name: `rrf-k${k}-lex${lexicalWeight}`, k, lexicalWeight };
-    fusionGrid.push({
-      ...p,
-      ...scores(development, (row) => fuse(row, p)),
-      vectorQueries: development.length,
-      neuralQueries: 0,
-      neuralDocuments: 0,
-    });
-  }
-const selected = [...fusionGrid].sort(priority)[0];
 const supplied = searchPreset('efficient');
-if (supplied.fusion.k !== selected.k || supplied.fusion.weights.lexical !== selected.lexicalWeight)
-  throw new Error(
-    `Efficient preset differs from development selection: ${JSON.stringify(selected)}`,
-  );
-for (const row of records) row.prior = fuse(row, selected);
+const [grouped, ...extra] = supplied.fusion.byLanguage ?? [];
+const entryOf = Object.fromEntries(languageCases.map((x) => [x.code, x.entry]));
+const winzling = new Set(languages.filter((code) => grouped?.languages.includes(entryOf[code])));
+if (
+  extra.length ||
+  supplied.fusion.weights.vector !== 1 ||
+  grouped.weights?.vector !== 1 ||
+  winzling.size !== targetLanguages.size ||
+  [...targetLanguages].some((code) => !winzling.has(code))
+)
+  throw new Error("The efficient preset's one byLanguage group must hold Winzling's target languages, vector weight 1");
+/** One group's candidates on its development questions; `weights` limits the lexical weights it may choose. */
+const selectGroup = ({ name, member, preset }, weights = [0.25, 0.5, 1, 2, 3, 4]) => {
+  const rows = development.filter(member);
+  const grid = [];
+  for (const k of [0, 1, 5, 10, 20, 60])
+    for (const lexicalWeight of weights) {
+      const p = { name: `rrf-k${k}-lex${lexicalWeight}`, k, lexicalWeight };
+      grid.push({
+        ...p,
+        ...scores(rows, (row) => fuse(row, p)),
+        vectorQueries: rows.length,
+        neuralQueries: 0,
+        neuralDocuments: 0,
+      });
+    }
+  const selected = [...grid].sort(priority)[0];
+  if (preset.k !== selected.k || preset.weights.lexical !== selected.lexicalWeight)
+    throw new Error(`Efficient preset differs from the ${name} development selection: ${JSON.stringify(selected)}`);
+  return { name, languages: languages.filter((code) => member({ language: code })), member, grid, selected };
+};
+const other = selectGroup({ name: 'other', member: (row) => !winzling.has(row.language), preset: supplied.fusion });
+const fusionGroups = [
+  selectGroup({ name: 'winzling', member: (row) => winzling.has(row.language), preset: grouped }, [
+    other.selected.lexicalWeight,
+  ]),
+  other,
+];
+const settingOf = (row) => fusionGroups.find((group) => group.member(row)).selected;
+const ungrouped = { k: supplied.fusion.k, lexicalWeight: supplied.fusion.weights.lexical };
+for (const row of records) row.prior = fuse(row, settingOf(row));
 await mkdir('output/bench', { recursive: true });
-log(`Development selected ${selected.name}; preparing real neural scores`);
+log(`Development selected ${fusionGroups.map((g) => `${g.name} ${g.selected.name}`).join(', ')}; preparing real neural scores`);
 const neuralKey = hash(
   JSON.stringify({
     datasetSha256,
@@ -231,10 +262,11 @@ for (const k of [0, 1, 10, 60])
       });
     }
 const selectedNeural = [...neuralGrid].sort(priority)[0];
+const selectedFusion = Object.fromEntries(fusionGroups.map((g) => [g.name, g.selected]));
 // Freeze both selections before accessing holdout judgments for any profile.
 await writeFile(
   'output/bench/selection.json',
-  JSON.stringify({ fusion: selected, neural: selectedNeural }, null, 2) + '\n',
+  JSON.stringify({ fusion: selectedFusion, neural: selectedNeural }, null, 2) + '\n',
 );
 log(`Development selected ${selectedNeural.name}`);
 const profiles = [
@@ -248,6 +280,8 @@ const profiles = [
   },
   { name: 'legacy-fusion', vector: true, rank: (row) => fuse(row, { k: 60, lexicalWeight: 1 }) },
   { name: 'efficient', vector: true, rank: (row) => weak(row, row.prior) },
+  // The other group's setting for every language: the efficient preset without byLanguage.
+  { name: 'efficient-ungrouped', vector: true, rank: (row) => weak(row, fuse(row, ungrouped)) },
   {
     name: 'reranked-always',
     vector: true,
@@ -300,7 +334,7 @@ const report = {
   scope:
     'Finite empirical frontier; maximize R@1/5/10/25 and candidate recall; minimize vector queries, neural queries and neural documents. Not a universal or production optimum.',
   selectionRule:
-    'First 25 source question groups (500 translations): descending R@1, R@5, R@10, R@25, candidate recall, then ascending work; stable name tie-break. Last 25 groups (500 translations) held out from selection.',
+    'First 25 source question groups (500 translations): fusion per language group, then the neural stage, each by descending R@1, R@5, R@10, R@25, candidate recall, then ascending work; stable name tie-break. Last 25 groups (500 translations) held out from selection.',
   queryLanguageKnown: true,
   vectorScope: 'full 2000 documents; same-language gold',
   candidates: 25,
@@ -311,11 +345,15 @@ const report = {
     reusedCache: reusedNeuralCache,
     note: 'Raw neural scores measured once per query. Alternative fusions/gates replay those scores. Gated work and summed time are counterfactual savings, not a second end-to-end latency measurement.',
   },
-  fusionGrid,
-  fusionFrontier: frontier(fusionGrid),
+  fusionGroups: fusionGroups.map(({ name, languages, grid }) => ({
+    name,
+    languages,
+    grid,
+    frontier: frontier(grid),
+  })),
   neuralGrid,
   neuralFrontier: frontier(neuralGrid),
-  selected: { fusion: selected, neural: selectedNeural },
+  selected: { fusion: selectedFusion, neural: selectedNeural },
   development: evaluate(development),
   holdout: evaluate(holdout),
   all: evaluate(records),

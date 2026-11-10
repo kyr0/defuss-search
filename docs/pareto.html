@@ -1,44 +1,223 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-title-de="defuss-search: Pareto-Analyse">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>defuss-search Pareto analysis</title>
+<title>defuss-search: Pareto analysis</title>
 <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c8cff' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M3 5h7M3 12h5M3 19h7'/%3E%3Ccircle cx='16' cy='12' r='4'/%3E%3Cpath d='m19 15 2.5 2.5'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke-width='3' stroke-linecap='round'%3E%3Ccircle cx='12.5' cy='13' r='7.5' stroke='%23e04a99'/%3E%3Ccircle cx='17.5' cy='13' r='7.5' stroke='%235b7cff'/%3E%3Cpath d='m22.6 18.6 6 6' stroke='%235b7cff'/%3E%3C/svg%3E"
     />
     <script>
-      // Before paint, before df$ exists (defuss-shadcn Dark Mode guide): the saved choice, else the OS default.
-      let saved = '';
-      try {
-        const raw = JSON.parse(localStorage.getItem('defuss-shadcn-theme'));
-        saved = raw && raw.format === 'defuss-store' ? raw.value : raw;
-      } catch {}
-      if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
+      // Before the first paint and before df$ exists: the saved theme, else the system's (defuss-shadcn Dark Mode
+      // guide), and the saved language, else the first browser language the site has (website/i18n.mjs repeats the
+      // choice). A German page stays hidden until its regions are German, at most two seconds (site.css).
+      const stored = (key) => {
+        try {
+          const raw = JSON.parse(localStorage.getItem(key));
+          return raw && raw.format === 'defuss-store' ? raw.value : raw;
+        } catch {
+          return '';
+        }
+      };
+      document.documentElement.classList.add('hs-js');
+      const theme = stored('defuss-shadcn-theme');
+      if (theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
         document.documentElement.style.colorScheme = 'dark';
       }
+      let language = stored('defuss-search:language');
+      if (language !== 'en' && language !== 'de')
+        language =
+          (navigator.languages || [])
+            .map((tag) => tag.toLowerCase().split('-')[0])
+            .find((tag) => tag === 'en' || tag === 'de') || 'en';
+      if (language === 'de') document.documentElement.classList.add('hs-pending');
     </script>
     <link rel="stylesheet" href="assets/vendor/core.min.css" />
     <link rel="stylesheet" href="assets/vendor/shapes.min.css" />
     <link rel="stylesheet" href="assets/vendor/all.min.css" />
-    <link rel="stylesheet" href="assets/site.css?v=d780deba9f78" />
+    <link rel="stylesheet" href="assets/vendor/shaders.min.css" />
+    <link rel="stylesheet" href="assets/vendor/code-example.min.css" />
+    <link rel="stylesheet" href="assets/site.css?v=ea477d88ad18" />
 </head>
-<body>
-<div class="hs-page">
-<header class="mk-header" data-variant="floating"><div class="mk-header-inner"><a href="index.html" class="mk-header-brand"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h7M3 12h5M3 19h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/></svg><span class="mk-header-name">defuss-search</span></a><nav class="mk-header-nav" aria-label="Main"><ul class="nav-menu-list"><li class="nav-menu-item"><a class="nav-menu-link" href="index.html#demo">Demo</a></li><li class="nav-menu-item"><a class="nav-menu-link" href="reference.html">API reference</a></li><li class="nav-menu-item"><a class="nav-menu-link" href="pareto.html" aria-current="page">Frontier</a></li></ul></nav><div class="mk-header-actions"><label class="swap" data-variant="rotate" data-size="sm"><input type="checkbox" id="theme-toggle" aria-label="Dark mode"><span class="swap-on"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span><span class="swap-off"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span></label><a class="btn" data-variant="ghost" data-size="icon" href="https://github.com/kyr0/defuss-search" aria-label="defuss-search on GitHub"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a></div></div></header>
-<main class="hs-section hs-prose"><a class="btn" data-variant="ghost" data-size="sm" href="index.html"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7 7-7-7 7-7"/></svg>Back to defuss-search</a>
-<h1>Quality and inference-work frontier</h1>
-<p>VERIFIED: v0.4.0, lexicalsearch 0.4.0, vectorsearch 0.3.1, Bun 1.4.3. The held-out frontier holds <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. <code>searchPreset(&#39;efficient&#39;)</code> is the fastest hybrid: 25 candidates per source, weighted RRF with k=0 and lexical/vector weights 2:1, no neural reranking. <code>searchPreset(&#39;reranked&#39;)</code> adds a gated ColBERT stage; over all 1,000 questions it reaches 97.2% R@5 against 97.3% for efficient, so the neural stage buys no R@5 on this fixture. Constructors without a preset keep their earlier defaults.</p>
+<body data-i18n-component>
+<svg class="sr-only" aria-hidden="true">
+      <symbol id="i-logo" viewBox="0 0 32 32">
+        <circle cx="12.5" cy="13" r="7.5" />
+        <circle cx="17.5" cy="13" r="7.5" />
+        <path d="m22.6 18.6 6 6" />
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+        />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7" /></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14m7-7-7 7-7-7" /></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5" /></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24">
+        <rect width="16" height="16" x="4" y="4" rx="2" />
+        <rect width="6" height="6" x="9" y="9" rx="1" />
+        <path d="M15 2v2m0 16v2M2 15h2m-2-6h2m16 6h2m-2-6h2M9 2v2m0 16v2" />
+      </symbol>
+      <symbol id="i-languages" viewBox="0 0 24 24">
+        <path d="m5 8 6 6m-7 0 6-6 2-3M2 5h12M7 2h1m14 20-5-10-5 10m2-4h6" />
+      </symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path
+          d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"
+        />
+      </symbol>
+      <symbol id="i-braces" viewBox="0 0 24 24">
+        <path
+          d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"
+        />
+      </symbol>
+      <symbol id="i-merge" viewBox="0 0 24 24">
+        <circle cx="18" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <path d="M6 21V9a9 9 0 0 0 9 9" />
+      </symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24">
+        <path
+          d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"
+        />
+        <circle cx="12" cy="12" r="3" />
+      </symbol>
+      <symbol id="i-bot" viewBox="0 0 24 24">
+        <path d="M12 8V4H8" />
+        <rect width="16" height="12" x="4" y="8" rx="2" />
+        <path d="M2 14h2m16 0h2m-7-1v2m-6-2v2" />
+      </symbol>
+      <symbol id="i-package" viewBox="0 0 24 24">
+        <path
+          d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+        />
+        <path d="M12 22V12m0 0 8.7-5M12 12 3.3 7" />
+      </symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24">
+        <path
+          d="m12.83 2.18 8.58 3.9a1 1 0 0 1 0 1.83l-8.58 3.9a2 2 0 0 1-1.66 0L2.6 7.91a1 1 0 0 1 0-1.83l8.58-3.9a2 2 0 0 1 1.66 0Z"
+        />
+        <path
+          d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65M22 12.65l-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"
+        />
+      </symbol>
+      <symbol id="i-file" viewBox="0 0 24 24">
+        <path d="M10 12.5 8 15l2 2.5m4-5 2 2.5-2 2.5M14 2v4a2 2 0 0 0 2 2h4" />
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
+      </symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24">
+        <rect width="14" height="14" x="8" y="8" rx="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </symbol>
+      <symbol id="i-linkedin" viewBox="0 0 24 24">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z" />
+        <circle cx="4" cy="4" r="2" />
+      </symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 7h10v10M7 17 17 7" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24">
+        <path
+          d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+        />
+        <path d="M9 18c-4.51 2-5-2-7-2" />
+      </symbol>
+      <symbol id="i-db" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="9" ry="3" />
+        <path d="M3 5v14a9 3 0 0 0 18 0V5M3 12a9 3 0 0 0 18 0" />
+      </symbol>
+      <symbol id="i-sticky" viewBox="0 0 24 24">
+        <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z" />
+        <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" /></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24">
+        <path
+          d="m18 14 4 4-4 4M18 2l4 4-4 4M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"
+        />
+      </symbol>
+      <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6m8 14h8" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4m0 4h.01" />
+      </symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24">
+        <path d="m12 14 4-4" />
+        <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24">
+        <path
+          d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"
+        />
+      </symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </symbol>
+      <symbol id="i-table" viewBox="0 0 24 24">
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="M3 9h18M3 15h18M12 3v18" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M3 3v16a2 2 0 0 0 2 2h16M18 17V9M13 17V5M8 17v-3" />
+      </symbol>
+      <symbol id="i-building" viewBox="0 0 24 24">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+        <path
+          d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4"
+        />
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path
+          d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+        />
+        <path d="m9 12 2 2 4-4" />
+      </symbol>
+      <symbol id="i-plug" viewBox="0 0 24 24">
+        <path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+      </symbol>
+      <symbol id="i-target" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
+      </symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path
+          d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+        />
+      </symbol>
+      <symbol id="i-workflow" viewBox="0 0 24 24">
+        <rect width="8" height="8" x="3" y="3" rx="2" />
+        <path d="M7 11v4a2 2 0 0 0 2 2h4" />
+        <rect width="8" height="8" x="13" y="13" rx="2" />
+      </symbol>
+    </svg>
+<div class="hs-page" id="top">
+<header class="mk-header" data-variant="floating"><div class="mk-header-inner"><a href="index.html" class="mk-header-brand hs-brand"><svg class="hs-logo" viewBox="0 0 32 32" aria-hidden="true"><circle class="hs-logo-lexical" cx="12.5" cy="13" r="7.5"/><circle class="hs-logo-vector" cx="17.5" cy="13" r="7.5"/><path class="hs-logo-handle" d="m22.6 18.6 6 6"/></svg><span class="mk-header-name">defuss<span class="hs-brand-search">-search</span></span></a><nav class="mk-header-nav" aria-label="Main" data-i18n-aria-label-en="Main" data-i18n-aria-label-de="Hauptmenü"><ul class="nav-menu-list"><li class="nav-menu-item"><a class="nav-menu-link" href="index.html#/demo" data-i18n-target="t-62dmc6">Demo</a><template data-i18n-for="t-62dmc6" data-i18n-locale="en">Demo</template><template data-i18n-for="t-62dmc6" data-i18n-locale="de">Demo</template></li><li class="nav-menu-item"><a class="nav-menu-link" href="index.html#/playground" data-i18n-target="t-7p1ky4">Playground</a><template data-i18n-for="t-7p1ky4" data-i18n-locale="en">Playground</template><template data-i18n-for="t-7p1ky4" data-i18n-locale="de">Playground</template></li><li class="nav-menu-item"><a class="nav-menu-link" href="reference.html" data-i18n-target="t-ykj5ei">API reference</a><template data-i18n-for="t-ykj5ei" data-i18n-locale="en">API reference</template><template data-i18n-for="t-ykj5ei" data-i18n-locale="de">API-Referenz</template></li><li class="nav-menu-item"><a class="nav-menu-link" href="pareto.html" aria-current="page" data-i18n-target="t-1qgwgc2">Frontier analysis</a><template data-i18n-for="t-1qgwgc2" data-i18n-locale="en">Frontier analysis</template><template data-i18n-for="t-1qgwgc2" data-i18n-locale="de">Pareto-Analyse</template></li></ul></nav><div class="mk-header-actions"><div class="toggle-group hs-locale" role="group" aria-label="Language" data-type="single" data-size="xs" data-locale-switch data-i18n-aria-label-en="Language" data-i18n-aria-label-de="Sprache"><button class="toggle" type="button" aria-pressed="true" value="en" lang="en"><span aria-hidden="true">EN</span><span class="sr-only">English</span></button><button class="toggle" type="button" aria-pressed="false" value="de" lang="de"><span aria-hidden="true">DE</span><span class="sr-only">Deutsch</span></button></div><label class="swap" data-variant="rotate" data-size="sm"><input type="checkbox" id="theme-toggle" aria-label="Dark mode" data-i18n-aria-label-en="Dark mode" data-i18n-aria-label-de="Dunkler Modus"><span class="swap-on"><svg class="hs-icon" aria-hidden="true"><use href="#i-moon"/></svg></span><span class="swap-off"><svg class="hs-icon" aria-hidden="true"><use href="#i-sun"/></svg></span></label><a class="btn" data-variant="ghost" data-size="icon" href="https://github.com/kyr0/defuss-search" aria-label="defuss-search on GitHub" data-i18n-aria-label-en="defuss-search on GitHub" data-i18n-aria-label-de="defuss-search auf GitHub"><svg class="hs-icon" aria-hidden="true"><use href="#i-github"/></svg></a></div></div></header>
+<main class="hs-section hs-prose"><a class="btn" data-variant="ghost" data-size="sm" href="index.html"><svg class="hs-icon" aria-hidden="true"><use href="#i-arrow"/></svg><span data-i18n-target="t-1dp4s58">Back to defuss-search</span><template data-i18n-for="t-1dp4s58" data-i18n-locale="en">Back to defuss-search</template><template data-i18n-for="t-1dp4s58" data-i18n-locale="de">Zurück zu defuss-search</template></a>
+<p class="hs-lang-note" data-i18n-target="lang-note"></p><template data-i18n-for="lang-note" data-i18n-locale="en"></template><template data-i18n-for="lang-note" data-i18n-locale="de">Diese Seite gibt es nur auf Englisch: Sie beschreibt die API und ihre Messungen in den Begriffen des Codes.</template>
+<div lang="en">
+<h1 id="quality-and-inference-work-frontier">Quality and inference-work frontier</h1>
+<p>VERIFIED: v0.4.0, lexicalsearch 0.4.0, vectorsearch 0.4.0, Bun 1.4.3. The held-out frontier holds <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. <code>searchPreset(&#39;efficient&#39;)</code> is the fastest hybrid: 25 candidates per source, weighted RRF with lexical/vector weights 2:1 and k=0; a query whose <code>language</code> is one of Winzling-embed&#39;s 8 target languages gets 2:1 and k=20 (<code>fusion.byLanguage</code>), no neural reranking. <code>searchPreset(&#39;reranked&#39;)</code> adds a gated ColBERT stage; over all 1,000 questions it reaches 97.3% R@5 against 97.3% for efficient, so the neural stage buys no R@5 on this fixture. Constructors without a preset keep their earlier defaults.</p>
 <p>VERIFIED: both presets also apply the weak-lexical rule: when BM25&#39;s first hit matches less than 20% of the query&#39;s IDF-weighted words and trails the vector source&#39;s first hit by more than 0.15 cosine, the vector hit moves to the top. The replay below applies it after fusion and after the neural stage, as the engine does. Its thresholds were chosen by <code>bench/confidence-fusion.mjs</code> on all 1,000 questions and on other corpora, so the held-out figures are not independent of that choice; the fusion and neural settings were chosen on the development half alone.</p>
-<h2>What Pareto-optimal means here</h2>
+<h2 id="what-pareto-optimal-means-here"><a class="heading-anchor" href="#/what-pareto-optimal-means-here" data-router-link aria-label="Link to section: What Pareto-optimal means here" data-i18n-aria-label-en="Link to section: What Pareto-optimal means here" data-i18n-aria-label-de="Link zum Abschnitt: What Pareto-optimal means here">§</a>What Pareto-optimal means here</h2>
 <p>VERIFIED: the objectives maximize R@1, R@5, R@10, R@25 and candidate recall while minimizing vector queries, neural queries and neural documents. One evaluated configuration dominates another only when it is no worse on every objective and strictly better on at least one. This is a finite empirical frontier, not a proof over all possible algorithms or production corpora. Lexical traversal work, vector distance evaluations, memory, energy, browser latency and index construction are not frontier objectives. Vector-query counts describe retrieval calls; supplied query vectors can avoid embedding inference.</p>
-<p>VERIFIED: 36 fusion candidates cover k in {0,1,5,10,20,60} and lexical/vector weight ratios in {0.25,0.5,1,2,3,4}:1. A separate 32-candidate neural sweep covers k in {0,1,10,60}, weights {0.25,0.5,1,2}, and an enabled/disabled 0.1 margin gate. Candidate budgets remain 25; these are not window-size or model-selection sweeps.</p>
-<h2>Selection without translation leakage</h2>
-<p>VERIFIED: the first 25 original question groups and all their translations form the 500-query development partition. The last 25 groups and their translations form the 500-query holdout. Parameters are selected on development R@1, then R@5, R@10, R@25, candidate recall, then less inference work; names break remaining ties. Both selections are fixed before holdout evaluation. The fixture was already used for aggregate v0.2.0 reporting, so this is a parameter holdout, not a newly collected external test set. Different questions may still share a relevant passage.</p>
+<p>VERIFIED: 36 fusion candidates cover k in {0,1,5,10,20,60} and lexical/vector weight ratios in {0.25,0.5,1,2,3,4}:1, selected separately for Winzling-embed&#39;s target languages (200 development queries) and the other languages (300). A separate 32-candidate neural sweep covers k in {0,1,10,60}, weights {0.25,0.5,1,2}, and an enabled/disabled 0.1 margin gate. Candidate budgets remain 25; these are not window-size or model-selection sweeps.</p>
+<h2 id="selection-without-translation-leakage"><a class="heading-anchor" href="#/selection-without-translation-leakage" data-router-link aria-label="Link to section: Selection without translation leakage" data-i18n-aria-label-en="Link to section: Selection without translation leakage" data-i18n-aria-label-de="Link zum Abschnitt: Selection without translation leakage">§</a>Selection without translation leakage</h2>
+<p>VERIFIED: the first 25 original question groups and all their translations form the 500-query development partition. The last 25 groups and their translations form the 500-query holdout. Parameters are selected on development R@1, then R@5, R@10, R@25, candidate recall, then less inference work; names break remaining ties. All selections are fixed before holdout evaluation. The fixture was already used for aggregate v0.2.0 reporting, so this is a parameter holdout, not a newly collected external test set. Different questions may still share a relevant passage.</p>
 <p>The lexical adapter knows the query language; vector search scans all 2,000 passages. Gold passages must match the query language. No automatic language identification is implemented. Exact promotion and source-coverage policies are disabled in this benchmark and tested separately.</p>
-<h2>Held-out results: 500 queries</h2>
+<h2 id="held-out-results-500-queries"><a class="heading-anchor" href="#/held-out-results-500-queries" data-router-link aria-label="Link to section: Held-out results: 500 queries" data-i18n-aria-label-en="Link to section: Held-out results: 500 queries" data-i18n-aria-label-de="Link zum Abschnitt: Held-out results: 500 queries">§</a>Held-out results: 500 queries</h2>
 <p>VERIFIED: the selected configurations were evaluated unchanged on all 20 languages.</p>
 <table>
 <thead>
@@ -99,6 +278,15 @@
 </tr>
 <tr>
 <td>efficient</td>
+<td align="right">93.6%</td>
+<td align="right">96.8%</td>
+<td align="right">98.6%</td>
+<td align="right">99.6%</td>
+<td align="right">500</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>efficient-ungrouped</td>
 <td align="right">92.4%</td>
 <td align="right">96.8%</td>
 <td align="right">98.4%</td>
@@ -108,25 +296,25 @@
 </tr>
 <tr>
 <td>reranked-always</td>
-<td align="right">92.0%</td>
+<td align="right">93.4%</td>
 <td align="right">96.8%</td>
-<td align="right">98.6%</td>
+<td align="right">98.8%</td>
 <td align="right">99.6%</td>
 <td align="right">500</td>
 <td align="right">500</td>
 </tr>
 <tr>
 <td>reranked</td>
-<td align="right">92.4%</td>
+<td align="right">93.6%</td>
 <td align="right">96.8%</td>
-<td align="right">98.6%</td>
+<td align="right">98.8%</td>
 <td align="right">99.6%</td>
 <td align="right">500</td>
 <td align="right">445</td>
 </tr>
 </tbody></table>
-<p>VERIFIED: held-out frontier: <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Against efficient, reranking changes +1 R@10 success for 445 neural calls.</p>
-<h2>Full fixture: 1,000 queries</h2>
+<p>VERIFIED: held-out frontier: <code>lexical</code>, <code>efficient</code>, <code>reranked</code>. <code>efficient-ungrouped</code> applies the other languages&#39; setting to every language, as the presets did before <code>byLanguage</code>: 92.4% R@1 and 96.8% R@5 against efficient&#39;s 93.6% and 96.8%. Why two groups: Winzling-embed&#39;s vectors are far stronger in its target languages, and in <code>bun run bench:language-groups</code> four groups by language family led two by only 0.15 points R@1, while one group, searched bins and one group per language scored lower. Efficient dominates the previous equal-weight k=60 fusion on the measured objectives. Lexical-only remains cheaper and has slightly higher R@5 on this split; efficient improves R@1 and candidate recall. Against efficient, reranking changes +1 R@10 success for 445 neural calls.</p>
+<h2 id="full-fixture-1000-queries"><a class="heading-anchor" href="#/full-fixture-1000-queries" data-router-link aria-label="Link to section: Full fixture: 1,000 queries" data-i18n-aria-label-en="Link to section: Full fixture: 1,000 queries" data-i18n-aria-label-de="Link zum Abschnitt: Full fixture: 1,000 queries">§</a>Full fixture: 1,000 queries</h2>
 <table>
 <thead>
 <tr>
@@ -186,6 +374,15 @@
 </tr>
 <tr>
 <td>efficient</td>
+<td align="right">92.5%</td>
+<td align="right">97.3%</td>
+<td align="right">98.6%</td>
+<td align="right">99.3%</td>
+<td align="right">1000</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>efficient-ungrouped</td>
 <td align="right">91.2%</td>
 <td align="right">97.3%</td>
 <td align="right">98.5%</td>
@@ -195,31 +392,31 @@
 </tr>
 <tr>
 <td>reranked-always</td>
-<td align="right">91.0%</td>
-<td align="right">97.2%</td>
-<td align="right">98.5%</td>
+<td align="right">92.7%</td>
+<td align="right">97.3%</td>
+<td align="right">98.6%</td>
 <td align="right">99.3%</td>
 <td align="right">1000</td>
 <td align="right">1000</td>
 </tr>
 <tr>
 <td>reranked</td>
-<td align="right">91.2%</td>
-<td align="right">97.2%</td>
-<td align="right">98.5%</td>
+<td align="right">92.5%</td>
+<td align="right">97.3%</td>
+<td align="right">98.6%</td>
 <td align="right">99.3%</td>
 <td align="right">1000</td>
 <td align="right">893</td>
 </tr>
 </tbody></table>
 <p>The full-fixture table includes development data and is descriptive, not an independent generalization estimate. Each question has one gold passage; R@k is its inclusion rate. The fusion candidate pool is the deduplicated union, so its candidate recall can exceed either source&#39;s recall without guaranteeing better early ranks.</p>
-<h2>Optional neural stage</h2>
+<h2 id="optional-neural-stage"><a class="heading-anchor" href="#/optional-neural-stage" data-router-link aria-label="Link to section: Optional neural stage" data-i18n-aria-label-en="Link to section: Optional neural stage" data-i18n-aria-label-de="Link zum Abschnitt: Optional neural stage">§</a>Optional neural stage</h2>
 <p>VERIFIED: <code>searchPreset(&#39;reranked&#39;)</code> uses the same retrieval settings, then fuses the current prefix with raw ColBERT ranks using k=1, neural weight=0.25, and a 0.1 source-margin gate. It requires an attached reranker. With k=1 and weight=1/4, the prior winner scores at least 1/2; every other hit scores at most 1/3 + 1/8 = 11/24. Therefore this neural stage cannot displace the prior winner; it only refines lower ranks. Tests enumerate all 5,040 permutations of a seven-candidate list, alongside this general bound.</p>
 <p>VERIFIED: the gate skips inference only when (1) the raw vector list is monotonic with at least two hits, (2) its first score leads the second by at least the configured threshold, (3) its winner is already first after hybrid ranking/policies, and (4) lexical retrieval agrees or is empty. A skip preserves the whole current ordering. <code>rerankDecision</code> reports the evidence; skipped hits contain no invented neural scores. Infinity disables the gate. A 0.1 cosine gap is a heuristic from vectorsearch 0.2.1, not a calibrated correctness probability, and is not portable to arbitrary score scales.</p>
 <p>The upstream dense guard lives in <code>rerankHits</code> after inference. This package deliberately consumes raw <code>rerank</code> output to avoid double fusion, and evaluates its own hybrid-aware guard before calling that method. A wider dense lead never overrides lexical disagreement, literal promotion or global eligibility.</p>
 <p>VERIFIED: raw ColBERT 1.5m q8 scores were measured on all 1,000 query prefixes with explicit truncation. Alternative fusion weights and gates replay those same measured scores. The gated call counts and summed saved inference times are counterfactual work estimates, not second end-to-end latency measurements. Real CPU/WASM integration tests separately prove that the gate can avoid every ColBERT file read and still allow forced inference.</p>
 <p>UNKNOWN: quality on an external corpus, relevance judgments beyond one same-language gold, other embedding models, other neural budgets, and whether the neural stage helps on other data. No production superiority or universal optimum is claimed.</p>
-<h2>Reproduce</h2>
+<h2 id="reproduce"><a class="heading-anchor" href="#/reproduce" data-router-link aria-label="Link to section: Reproduce" data-i18n-aria-label-en="Link to section: Reproduce" data-i18n-aria-label-de="Link zum Abschnitt: Reproduce">§</a>Reproduce</h2>
 <p><code>make bench</code> runs the end-to-end recall benchmark on Bun, Node.js and Chromium, this frontier analysis, and report generation. The first run downloads pinned models and the SHA-verified dataset. Cached embeddings are keyed by dataset/model; cached neural scores also bind candidate IDs, query texts, adapter source, peers, runtime and model files. Delete <code>input/pareto-neural.json</code> to measure neural inference again.</p>
 <ul>
 <li>Machine-readable results: <code>output/bench/pareto.json</code> and <code>output/bench/selection.json</code>.</li>
@@ -228,10 +425,12 @@
 <li>SHA-256: <code>3d09d3653b72cf19c5226cd134bdd7d92ac31f2822cf45bc60879e7a95a75e6d</code>.</li>
 <li>Updated upstream guard: <a href="https://github.com/kyr0/defuss-vectorsearch/commit/2548805349efba8070d06739cb38e625c4619784">https://github.com/kyr0/defuss-vectorsearch/commit/2548805349efba8070d06739cb38e625c4619784</a></li>
 </ul>
-</main>
-<footer class="mk-footer" style="width:100%"><div class="mk-footer-inner"><div class="mk-footer-bottom"><a href="index.html" class="mk-footer-brand"><svg class="hs-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h7M3 12h5M3 19h7"/><circle cx="16" cy="12" r="4"/><path d="m19 15 2.5 2.5"/></svg><span class="mk-footer-brand-name">defuss-search</span></a><div class="mk-footer-meta"><p class="mk-footer-copy">© 2026 Aron Homberg (kyr0) · MIT</p></div></div></div></footer>
 </div>
+</main>
+<footer class="mk-footer" style="width:100%"><div class="mk-footer-inner"><div class="mk-footer-bottom"><a href="index.html" class="mk-footer-brand"><svg class="hs-icon" aria-hidden="true"><use href="#i-logo"/></svg><span class="mk-footer-brand-name">defuss-search</span></a><div class="mk-footer-meta"><p class="mk-footer-copy" data-i18n-target="t-l5lk9d">&copy; 2026 Aron Homberg (kyr0), MIT license.</p><template data-i18n-for="t-l5lk9d" data-i18n-locale="en">&copy; 2026 Aron Homberg (kyr0), MIT license.</template><template data-i18n-for="t-l5lk9d" data-i18n-locale="de">&copy; 2026 Aron Homberg (kyr0), MIT-Lizenz.</template></div></div></div></footer>
+</div>
+<div id="toast-container" class="toast-container" role="region" aria-label="Notifications" data-position="bottom-right" data-i18n-aria-label-en="Notifications" data-i18n-aria-label-de="Benachrichtigungen"></div>
 <script type="module" src="assets/vendor/all.min.js"></script>
-<script type="module" src="assets/page.js?v=d780deba9f78"></script>
+<script type="module" src="assets/page.js?v=ea477d88ad18"></script>
 </body>
 </html>

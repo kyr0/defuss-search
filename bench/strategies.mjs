@@ -38,6 +38,9 @@ import { loadApiDocs } from './api-docs.mjs';
 import { cachedMatrices, cachedVectors, createCachedColbert, notesCorpus } from './corpora.mjs';
 import { loadDataset } from './dataset.mjs';
 import { loadEmbeddings } from './embeddings.mjs';
+import { languageCases } from '../fixtures/languages.mjs';
+
+const tagOf = Object.fromEntries(languageCases.map((x) => [x.code, x.entry]));
 
 const N = 25;
 const GAPS = [0.05, 0.1, 0.15, 0.2];
@@ -130,9 +133,11 @@ const tokenCount = (matrices) => matrices.reduce((sum, m) => sum + m.tokenCount,
     };
     for (const q of asked) {
       const relevant = new Set([q.target]);
-      await measure('belebele', searches.lexical, { 'lexical-only': {} }, q.text, relevant, code);
-      await measure('belebele', searches.tiny, tinyVariants('tiny, TurboQuant'), q.text, relevant, code);
-      await measure('belebele', searches.semantic, semanticVariants, q.text, relevant, code);
+      // The language goes with the question, as an application that knows it passes it (fusion.byLanguage).
+      const query = { text: q.text, language: tagOf[code] };
+      await measure('belebele', searches.lexical, { 'lexical-only': {} }, query, relevant, code);
+      await measure('belebele', searches.tiny, tinyVariants('tiny, TurboQuant'), query, relevant, code);
+      await measure('belebele', searches.semantic, semanticVariants, query, relevant, code);
     }
     log(`belebele ${code}: ${asked.length} questions`);
   }

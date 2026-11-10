@@ -8,18 +8,34 @@
   },
   "selected": {
     "fusion": {
-      "name": "rrf-k0-lex2",
-      "k": 0,
-      "lexicalWeight": 2,
-      "queries": 500,
-      "r1": 0.9,
-      "r5": 0.978,
-      "r10": 0.986,
-      "r25": 0.99,
-      "candidateRecall": 0.99,
-      "vectorQueries": 500,
-      "neuralQueries": 0,
-      "neuralDocuments": 0
+      "winzling": {
+        "name": "rrf-k20-lex2",
+        "k": 20,
+        "lexicalWeight": 2,
+        "queries": 200,
+        "r1": 0.985,
+        "r5": 0.995,
+        "r10": 1,
+        "r25": 1,
+        "candidateRecall": 1,
+        "vectorQueries": 200,
+        "neuralQueries": 0,
+        "neuralDocuments": 0
+      },
+      "other": {
+        "name": "rrf-k0-lex2",
+        "k": 0,
+        "lexicalWeight": 2,
+        "queries": 300,
+        "r1": 0.8766666666666667,
+        "r5": 0.9666666666666667,
+        "r10": 0.9766666666666667,
+        "r25": 0.9833333333333333,
+        "candidateRecall": 0.9833333333333333,
+        "vectorQueries": 300,
+        "neuralQueries": 0,
+        "neuralDocuments": 0
+      }
     },
     "neural": {
       "name": "neural-k1-w0.25-gated",
@@ -27,8 +43,8 @@
       "weight": 0.25,
       "gated": true,
       "queries": 500,
-      "r1": 0.9,
-      "r5": 0.976,
+      "r1": 0.92,
+      "r5": 0.978,
       "r10": 0.984,
       "r25": 0.99,
       "candidateRecall": 0.99,
@@ -107,6 +123,19 @@
       {
         "name": "efficient",
         "queries": 500,
+        "r1": 0.914,
+        "r5": 0.978,
+        "r10": 0.986,
+        "r25": 0.99,
+        "candidateRecall": 0.99,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient-ungrouped",
+        "queries": 500,
         "r1": 0.9,
         "r5": 0.978,
         "r10": 0.986,
@@ -120,33 +149,34 @@
       {
         "name": "reranked-always",
         "queries": 500,
-        "r1": 0.9,
-        "r5": 0.976,
+        "r1": 0.92,
+        "r5": 0.978,
         "r10": 0.984,
         "r25": 0.99,
         "candidateRecall": 0.99,
         "vectorQueries": 500,
         "neuralQueries": 500,
         "neuralDocuments": 12500,
-        "summedMeasuredNeuralMs": 44428.54620799997
+        "summedMeasuredNeuralMs": 45683.70851100002
       },
       {
         "name": "reranked",
         "queries": 500,
-        "r1": 0.9,
-        "r5": 0.976,
+        "r1": 0.914,
+        "r5": 0.978,
         "r10": 0.984,
         "r25": 0.99,
         "candidateRecall": 0.99,
         "vectorQueries": 500,
         "neuralQueries": 448,
         "neuralDocuments": 11200,
-        "summedMeasuredNeuralMs": 39150.432292
+        "summedMeasuredNeuralMs": 40179.81443
       }
     ],
     "frontier": [
       "lexical",
-      "efficient"
+      "efficient",
+      "reranked-always"
     ]
   },
   "holdout": {
@@ -219,6 +249,19 @@
       {
         "name": "efficient",
         "queries": 500,
+        "r1": 0.936,
+        "r5": 0.968,
+        "r10": 0.986,
+        "r25": 0.992,
+        "candidateRecall": 0.996,
+        "vectorQueries": 500,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient-ungrouped",
+        "queries": 500,
         "r1": 0.924,
         "r5": 0.968,
         "r10": 0.984,
@@ -232,28 +275,28 @@
       {
         "name": "reranked-always",
         "queries": 500,
-        "r1": 0.92,
+        "r1": 0.934,
         "r5": 0.968,
-        "r10": 0.986,
+        "r10": 0.988,
         "r25": 0.992,
         "candidateRecall": 0.996,
         "vectorQueries": 500,
         "neuralQueries": 500,
         "neuralDocuments": 12500,
-        "summedMeasuredNeuralMs": 46318.21736899993
+        "summedMeasuredNeuralMs": 45452.594797999824
       },
       {
         "name": "reranked",
         "queries": 500,
-        "r1": 0.924,
+        "r1": 0.936,
         "r5": 0.968,
-        "r10": 0.986,
+        "r10": 0.988,
         "r25": 0.992,
         "candidateRecall": 0.996,
         "vectorQueries": 500,
         "neuralQueries": 445,
         "neuralDocuments": 11125,
-        "summedMeasuredNeuralMs": 40755.701118999896
+        "summedMeasuredNeuralMs": 39788.26146299983
       }
     ],
     "frontier": [
@@ -332,6 +375,19 @@
       {
         "name": "efficient",
         "queries": 1000,
+        "r1": 0.925,
+        "r5": 0.973,
+        "r10": 0.986,
+        "r25": 0.991,
+        "candidateRecall": 0.993,
+        "vectorQueries": 1000,
+        "neuralQueries": 0,
+        "neuralDocuments": 0,
+        "summedMeasuredNeuralMs": 0
+      },
+      {
+        "name": "efficient-ungrouped",
+        "queries": 1000,
         "r1": 0.912,
         "r5": 0.973,
         "r10": 0.985,
@@ -345,33 +401,34 @@
       {
         "name": "reranked-always",
         "queries": 1000,
-        "r1": 0.91,
-        "r5": 0.972,
-        "r10": 0.985,
+        "r1": 0.927,
+        "r5": 0.973,
+        "r10": 0.986,
         "r25": 0.991,
         "candidateRecall": 0.993,
         "vectorQueries": 1000,
         "neuralQueries": 1000,
         "neuralDocuments": 25000,
-        "summedMeasuredNeuralMs": 90746.7635769999
+        "summedMeasuredNeuralMs": 91136.30330899985
       },
       {
         "name": "reranked",
         "queries": 1000,
-        "r1": 0.912,
-        "r5": 0.972,
-        "r10": 0.985,
+        "r1": 0.925,
+        "r5": 0.973,
+        "r10": 0.986,
         "r25": 0.991,
         "candidateRecall": 0.993,
         "vectorQueries": 1000,
         "neuralQueries": 893,
         "neuralDocuments": 22325,
-        "summedMeasuredNeuralMs": 79906.1334109999
+        "summedMeasuredNeuralMs": 79968.07589299983
       }
     ],
     "frontier": [
       "lexical",
-      "efficient"
+      "efficient",
+      "reranked-always"
     ]
   }
 }

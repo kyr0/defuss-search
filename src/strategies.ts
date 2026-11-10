@@ -50,6 +50,8 @@ const NO_VECTOR = { retrieve: () => [] };
  */
 const TINY_DEFAULTS: HybridSearchOptions = {
   ...searchPreset('efficient'),
+  // The presets' language group was selected for Winzling's vectors; tiny's vector source is ColBERT.
+  fusion: { ...searchPreset('efficient').fusion, byLanguage: [] },
   weakLexical: { share: 0.2, gap: 0.1 },
 };
 

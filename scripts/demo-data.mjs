@@ -5,14 +5,16 @@
  * so the page searches with the published index instead of encoding 2,000 passages in the browser.
  * Vectors stay float32. VERIFIED: in a 2026-11-01 probe, float16 halved the transfer but changed 9 of 1,000
  * efficient top-25 lists below the gold passage, which the reranker fuses, so the demo could drift from the
- * published figures. Gzip runs here, so every static host sends the same bytes; the worker unpacks them with
- * DecompressionStream. Run by `make bench` after the embeddings exist.
- * The manifest points each model at its pinned Hugging Face revision, so the site carries no model bytes.
- * VERIFIED (2026-11-02): gzip copies served by the site would transfer 2.09 MB and 29.08 MB instead of 2.43 MB and
- * 39.76 MB, but would add about 31 MB to the repository per model version; ARCH.md "Website demo" records why the
- * demo loads from Hugging Face.
+ * published figures. Brotli (defuss-brotli, quality 11) runs here, so every static host sends the same bytes; the
+ * worker decodes them with defuss-brotli's WASM decoder, the one defuss-vectorsearch 0.4.0 uses for the models.
+ * Why Brotli over gzip: the three files shrink further, and the page then loads one decoder for data and models.
+ * VERIFIED (2026-11-09): 0.32 MB for the corpus, 4.23 MB for the vectors and 7.80 MB for the token index, against
+ * 0.43, 4.29 and 8.89 MB gzipped.
+ * Run by `make bench` after the embeddings exist.
+ * The manifest points each model at its pinned Hugging Face revision, which serves every file as `<file>.br`, and
+ * records each `.br` size, so the site carries no model bytes and quotes the bytes a browser downloads.
  */
-import { gzipSync } from 'node:zlib';
+import { compress, init as initCompressor } from 'defuss-brotli/compressor';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { buildColbertTokenIndex } from 'defuss-search/colbert';
 import { WINZLING_PROFILE, createColbertReranker } from 'defuss-vectorsearch/onnx.js';
@@ -20,7 +22,7 @@ import { cachedMatrices } from '../bench/corpora.mjs';
 import { datasetSha256, datasetUrl, loadDataset } from '../bench/dataset.mjs';
 import { loadEmbeddings } from '../bench/embeddings.mjs';
 import { packTokenIndex } from '../website/token-index.mjs';
-import { downloadModels, loadModelFile, modelRoot, releases } from './models.mjs';
+import { brotliSize, downloadModels, loadModelFile, releases } from './models.mjs';
 
 const log = (message) => console.log(`${new Date().toISOString()} INFO ${message}`);
 const { documents, queries, languages } = await loadDataset();
@@ -57,10 +59,10 @@ const corpus = {
 const json = Buffer.from(JSON.stringify(corpus));
 const floats = Float32Array.from([...vectors, ...queryVectors].flat());
 const binary = Buffer.from(floats.buffer);
-const gzip = (bytes) => gzipSync(bytes, { level: 9 });
-// Each model's pinned release with sizes and SHA-256 of the unpacked files, so the worker shows byte progress and
-// caches only verified files without importing the model runtime first. `gzip` is each file's gzip -9 size, which the
-// page shows next to the file size: the transfer from a host that sends the model files compressed.
+await initCompressor();
+// Each model's pinned release with sizes and SHA-256 of the decoded files, so the worker checks and caches only
+// verified files without importing the model runtime first; `brotli` is the size of the `.br` file it downloads,
+// which the page shows and its progress counts.
 const models = Object.fromEntries(
   releases.map((release) => [
     release.name,
@@ -69,8 +71,7 @@ const models = Object.fromEntries(
 );
 for (const { file, bytes, sha256, model } of await downloadModels()) {
   const name = releases.find((release) => release.id === model).name;
-  const packed = gzip(await readFile(`${modelRoot}/${name}/${file}`)).length;
-  models[name].files[file] = { bytes, sha256, gzip: packed };
+  models[name].files[file] = { bytes, sha256, brotli: await brotliSize(name, file) };
 }
 // The strategies benchmark encodes with this model on the CPU and caches the matrices; a cache miss encodes here.
 let colbert;
@@ -91,13 +92,13 @@ await colbert?.dispose();
 const tokens = packTokenIndex(buildColbertTokenIndex(matrices));
 await mkdir('docs/data', { recursive: true });
 const files = {
-  corpus: ['corpus.json.gz', json],
-  vectors: ['vectors.bin.gz', binary],
-  tokens: ['tokens.bin.gz', tokens.bytes],
+  corpus: ['corpus.json.br', json],
+  vectors: ['vectors.bin.br', binary],
+  tokens: ['tokens.bin.br', tokens.bytes],
 };
-const manifest = { schema: 'defuss-search-demo-manifest.v1', models };
+const manifest = { schema: 'defuss-search-demo-manifest.v2', models };
 for (const [key, [file, raw]] of Object.entries(files)) {
-  const packed = gzip(raw);
+  const packed = compress(raw);
   await writeFile(`docs/data/${file}`, packed);
   manifest[key] = { file, bytes: packed.length, rawBytes: raw.length };
 }

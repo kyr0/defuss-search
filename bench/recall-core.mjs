@@ -7,17 +7,24 @@ import { searchPreset } from 'defuss-search';
 import { createBenchSearch } from '../website/bench-search.mjs';
 import { languageCases, targetLanguages } from '../fixtures/languages.mjs';
 
+const tagOf = Object.fromEntries(languageCases.map((x) => [x.code, x.entry]));
+
 export const K = [1, 5, 10, 25];
 const { fusion } = searchPreset('efficient');
+const [group] = fusion.byLanguage;
+const ratio = (w) => `${w.lexical}:${w.vector}`;
+// The description below says "eight" and names one weight ratio; a preset that changes either needs new words.
+if (group.languages.length !== 8 || ratio(group.weights) !== ratio(fusion.weights))
+  throw new Error("Describe the efficient preset's language group in PRESETS");
 export const PRESETS = {
   efficient: {
     name: 'Efficient',
-    description: `searchPreset('efficient'): lexical and vector top 25, weighted RRF with k=${fusion.k} and weights ${fusion.weights.lexical}:${fusion.weights.vector}, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.`,
+    description: `searchPreset('efficient'): lexical and vector top 25, weighted RRF with weights ${ratio(fusion.weights)}, k=${group.k} for Winzling-embed's eight target languages and k=${fusion.k} for the others, no neural stage; when BM25's first hit matches few or only common query words and trails the vector first hit, that vector hit leads.`,
   },
   reranked: {
     name: 'Reranked',
     description:
-      "searchPreset('reranked'): the same retrieval, then MoEdernColBERT 1.5M refines the top 25 unless both sources agree on a clear vector winner.",
+      "searchPreset('reranked'): the same retrieval, then Winzling-reranker refines the top 25 unless both sources agree on a clear vector winner.",
   },
 };
 
@@ -53,7 +60,9 @@ export async function measureRecall({
       const query = queries[i];
       const searcher = route === 'known' ? searchers.get(query.language) : all;
       if (!searcher) throw new Error(`No analyzer for ${query.language}`);
-      const language = route === 'guessed' && guesses[i] ? { language: guesses[i] } : {};
+      // A known language goes with the query too: the presets pick their fusion by it (fusion.byLanguage).
+      const tag = route === 'known' ? tagOf[query.language] : route === 'guessed' ? guesses[i] : undefined;
+      const language = tag ? { language: tag } : {};
       const result = await searcher.searchWithStats(
         { text: query.text, vector: queryVectors[i], ...language },
         options,

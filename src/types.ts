@@ -6,7 +6,8 @@ export interface SearchQuery {
   /**
    * The query's language as a BCP 47 tag, such as a language identifier's guess. The lexical adapter passes it to
    * LexicalSearch's `language` option, which weighs the fields of that language higher and keeps every other field
-   * searchable; vector sources and rerankers ignore it. VERIFIED: bench/language-guess.mjs.
+   * searchable; `fusion.byLanguage` picks its fusion settings by it; vector sources and rerankers ignore it.
+   * VERIFIED: bench/language-guess.mjs.
    */
   readonly language?: string;
 }
@@ -58,6 +59,18 @@ export interface FusionOptions {
   /** RRF constant, default 60. */
   k?: number;
   weights?: Partial<Record<Source, number>>;
+  /**
+   * Fusion settings for queries in given languages: the first group that holds the query's `language` replaces
+   * `k` and the weights it names. A query without `language`, or in no group, keeps the settings above. A search's
+   * own `k` or `weights` replace the defaults' groups unless it passes `byLanguage` too; `[]` turns them off.
+   */
+  byLanguage?: readonly LanguageFusion[];
+}
+export interface LanguageFusion {
+  /** Primary language subtags such as 'de'; a query's `language` matches by its own, so 'de-AT' matches 'de'. */
+  readonly languages: readonly string[];
+  readonly k?: number;
+  readonly weights?: Partial<Record<Source, number>>;
 }
 export interface Contribution {
   rank: number;
