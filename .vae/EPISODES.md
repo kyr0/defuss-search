@@ -66,21 +66,8 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T14:56:51Z s=a22aa615 FINDING website/index.html:The numbers learn=none: visual requirement checked by screenshot; e2e still reads every table through the collapsible
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-hero > .shader learn=none: specificity against a vendored rule; checked by a computed-style probe and screenshots, no rule kind expresses it
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:data-background learn=none: visual; observed in SwiftShader screenshots after compile, before compile the poster
-2026-11-09T20:32:57Z s=a22aa615 FAIL project.contracts
-2026-11-09T20:34:38Z s=a22aa615 FAIL tests.e2e.1
-2026-11-09T20:54:34Z s=a22aa615 DONE fp=8a196884168a cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
-2026-11-09T20:54:34Z s=a22aa615 FINDING website/site.css:.hs-factory .radio:checked::after learn=test: scripts/e2e-site.mjs opens the page with forcedColors 'active' and asserts the checked radio's dot and ring have non-zero alpha; re-injecting the gradient-only 
-2026-11-09T20:54:34Z s=a22aa615 FINDING scripts/e2e-readability.mjs:checkReadability learn=test: the audit itself now freezes the diagrams before measuring.
-2026-11-09T20:54:34Z s=a22aa615 FINDING website/site.css:.hs-final learn=test: the e2e readability audit (axe-core colour contrast in dark mode) covers this text; it passed after the fix.
-2026-11-09T20:54:34Z s=a22aa615 FINDING website/index.html:.hs-hero-credit learn=test: existing BANNED rule in scripts/check-project.mjs caught it.
-2026-11-09T20:54:34Z s=a22aa615 FINDING scripts/check-project.mjs:Built with learn=verifier: check-project asserts each Built with link is https://{short}.defuss.org/ unless the package is in NO_SITE, and that no bare defuss entry is listed.
-2026-11-09T21:16:12Z s=a22aa615 DONE fp=84b34700fad3 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
-2026-11-09T21:35:50Z s=a22aa615 FAIL tests.e2e.1,project.contracts
 2026-11-09T21:59:33Z s=a22aa615 FINDING Makefile:bench learn=none: ending the turn while make bench runs lets the stop-hook gate run pkgroll --clean-dist, which deletes dist/ that the next bench process imports; wait in-turn for long benches (observed 2026-11-09, the run survived).
-2026-11-09T22:01:49Z s=a22aa615 DONE fp=bfc5bec663ff cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+90)
-2026-11-09T22:01:49Z s=a22aa615 FINDING scripts/recall-report.mjs:presets learn=verifier: scripts/recall-docs.mjs already fails make docs when the description and its German drift apart.
 2026-11-09T22:01:49Z s=a22aa615 FINDING website/index.html:#p-colbert-label learn=none: spacing is visual; no rule distinguishes it from intended gaps.
-2026-11-09T23:46:05Z s=a22aa615 FAIL tests.e2e.1
 2026-11-09T23:50:56Z s=a22aa615 DONE fp=78c18c109648 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+91)
 2026-11-09T23:50:56Z s=a22aa615 FINDING scripts/e2e.mjs:92 learn=test: The e2e keyboard walk already encodes the tab order; it caught the change.
 2026-11-09T23:50:56Z s=a22aa615 FINDING bench/pareto.mjs:118 learn=none: Cleanup in a bench script; the default-run comparison is the behavior check.
@@ -106,3 +93,16 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T03:37:11Z s=a22aa615 FINDING README.md:124 P (precision) learn=none: Timings vary per run; a check pinning them would pin values that held once.
 2026-11-10T03:51:22Z s=a22aa615 DONE fp=c7be7d2890ab cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
 2026-11-10T03:51:22Z s=a22aa615 FINDING scripts/e2e-site.mjs:checkLanguagesAndThemes (regions) learn=none: Only a Linux browser run reproduces it; the local gate runs on macOS, and CI on push is the check that exercises the Ctrl path.
+2026-11-10T04:11:03Z s=a22aa615 FAIL tests.e2e.1
+2026-11-10T04:17:10Z s=a22aa615 FAIL project.contracts
+2026-11-10T04:28:45Z s=a22aa615 FAIL tests.e2e.1
+2026-11-10T04:54:44Z s=a22aa615 DONE fp=3d0bb5e5dc1d cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+100)
+2026-11-10T04:54:44Z s=a22aa615 FINDING website/site.css:.hs-boot .radial-progress-value learn=test: scripts/e2e-readability.mjs measures the ring's text from pixels in every theme.
+2026-11-10T04:54:44Z s=a22aa615 FINDING website/site.css:.hs-load-aura::before learn=none: A cascade-layer outcome on one vendor rule; a pixel or computed-style check for one glow would pin a visual taste.
+2026-11-10T04:54:44Z s=a22aa615 FINDING website/demo.mjs:paintControls keydown learn=test: scripts/e2e.mjs opens a page with hung model downloads and asserts the questions, examples, palette button, add-note and ⌘K stay locked until lexical-only opens
+2026-11-10T04:54:44Z s=a22aa615 FINDING scripts/e2e-site.mjs:card order learn=test: The same check runs on every build.
+2026-11-10T04:54:44Z s=a22aa615 FINDING website/index.html:hero size cards learn=none: An external fact recorded with its revision in scripts/figures.mjs MODEL_FACTS.
+2026-11-10T04:54:44Z s=a22aa615 FINDING website/index.html:hero quality card learn=none: Model-card facts at pinned revisions; no repository check can verify them.
+2026-11-10T04:54:44Z s=a22aa615 FINDING bench/strategies.mjs learn=none: Nothing remains to check.
+2026-11-10T05:08:43Z s=a22aa615 DONE fp=782487f62da7 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+100)
+2026-11-10T05:08:43Z s=a22aa615 FINDING website/index.html:hero cards, technique badges learn=none: Model-card facts at pinned revisions; no repository check can verify their content.

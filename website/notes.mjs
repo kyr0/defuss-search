@@ -3,7 +3,10 @@
  * Each note goes to the worker 500 ms after the last keystroke, or when it loses focus. The worker indexes it
  * lexically at once and adds what the chosen factory needs once its model is loaded (a Winzling-embed vector or ColBERT
  * tokens), so lexical search over notes works before any model download. The board numbers the requests, so an answer for an older text never marks a newer one as indexed.
- * VERIFIED: scripts/e2e.mjs adds five random notes, waits for the count and finds note-1 by its longest word.
+ * A written note's language follows its text: the worker asks defuss-lid, as for a typed question, and the menu shows
+ * the answer, until the reader picks a language for that note. A sample note keeps the language it was written in.
+ * VERIFIED: scripts/e2e.mjs adds five random notes, waits for the count and finds note-1 by its longest word, and a
+ * German note typed under an English default ends up in the German field.
  */
 import { languageCases } from '../fixtures/languages.mjs';
 import { formatMs, locale, onLocale, t } from './i18n.mjs';
@@ -15,7 +18,7 @@ const CODES = languageCases.map((x) => x.code);
 const codeOf = Object.fromEntries(languageCases.map((x) => [x.entry, x.code]));
 
 export function createNotesBoard({ list, empty, count, worker, needModel, onChange }) {
-  const notes = new Map(); // id → { version, text, language, timer }: text and language as last sent
+  const notes = new Map(); // id → { version, text, language, timer, picked }: text and language as last sent
   let next = 1;
   // A new note starts in the language last picked, at first the browser's, so typing needs no extra step.
   let lastLanguage = codeOf[globalThis.navigator?.language?.split('-')[0]] ?? 'eng_Latn';
@@ -67,13 +70,13 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
     note.version += 1;
     element(id).setAttribute('aria-busy', 'true');
     if (text.trim()) needModel();
-    worker.postMessage({ type: 'note', id, version: note.version, text, language });
+    worker.postMessage({ type: 'note', id, version: note.version, text, language, detect: !note.picked });
   };
 
-  const add = ({ text = '', language = lastLanguage, focus = true } = {}) => {
+  const add = ({ text = '', language = lastLanguage, focus = true, picked = false } = {}) => {
     const id = `note-${next}`;
     const n = next++;
-    notes.set(id, { version: 0, text: '', language, timer: 0 });
+    notes.set(id, { version: 0, text: '', language, timer: 0, picked });
     list.insertAdjacentHTML('beforeend', renderNote(id, n, language, CODES));
     const textarea = element(id).querySelector('textarea');
     textarea.value = text;
@@ -81,6 +84,7 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
       .querySelector('select')
       .addEventListener('change', (event) => {
         lastLanguage = event.target.value;
+        notes.get(id).picked = true;
         textarea.lang = event.target.value.replace('_', '-');
         index(id);
       });
@@ -111,7 +115,7 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
   const addRandom = (amount) => {
     for (let i = 0; i < amount; i++) {
       const { text, lang } = draw();
-      add({ text, language: codeOf[lang], focus: false });
+      add({ text, language: codeOf[lang], focus: false, picked: true });
     }
     const scroller = list.closest('.hs-notes-scroll');
     scroller.scrollTo({ top: scroller.scrollHeight });
@@ -141,6 +145,12 @@ export function createNotesBoard({ list, empty, count, worker, needModel, onChan
       // version -1: the worker represented a waiting note after a model load or a factory change.
       if (!note || (data.version !== -1 && data.version !== note.version)) return;
       if (data.version !== -1) element(data.id).removeAttribute('aria-busy');
+      // The worker filed the note under the language defuss-lid read; the menu shows it, a pick overrides it.
+      if (data.language && !note.picked && data.language !== note.language) {
+        note.language = data.language;
+        element(data.id).querySelector('select').value = data.language;
+        element(data.id).querySelector('textarea').lang = data.language.replace('_', '-');
+      }
       if (data.removed) setStatus(data.id, 'removed');
       else if (data.embedded)
         setStatus(

@@ -46,6 +46,9 @@ export const MESSAGES = {
     'stat-languages': 'passages in {count} languages',
     'none-yet': 'none yet',
     'device-default': 'ONNX Runtime Web, 1 thread',
+    'models-none': 'none',
+    'models-lexical': 'BM25 needs no model',
+    'models-state': '{ready} of {total} loaded, {runtime}',
     'size-brotli': '{size} (Brotli)',
     // the question area
     'empty-default':
@@ -64,21 +67,9 @@ export const MESSAGES = {
     'summary-embed': 'embed {time}',
     'summary-search': 'search {time}',
     tally:
-      'Your questions so far, gold passage at #1: {parts}. One question is an anecdote; the measurement below runs all 1,000.',
+      'Your questions so far, gold passage at #1: {parts}. One question is an anecdote; the recall figures below count all 1,000.',
     'tally-part': '{method} {top} of {total}',
-    'language-option': '{language}, {analysis}',
     'group-heading': '{language}, {code}',
-    // the in-browser measurement
-    'measure-idle':
-      'Runs every benchmark question through the chosen factory in this browser and compares the means with the published figures. Each factory you measure adds a row.',
-    'measure-tiny': 'Measuring the tiny factory: one ColBERT encoding and token scan per question, a few minutes...',
-    'measure-efficient-first': 'Measuring efficient; load Winzling-reranker to measure reranked too...',
-    'measure-method': 'Measuring {method}...',
-    'measure-done': '{questions} questions in {seconds} in this browser.',
-    'measure-same': 'same as published',
-    'measure-differs': 'differs from published',
-    'measure-published': '{r1} R@1, {r5} R@5',
-    'measure-unpublished': 'not published',
     // errors
     'error-loading': 'Loading failed',
     'error-corpus': 'Loading the corpus failed',
@@ -127,7 +118,7 @@ export const MESSAGES = {
     'pending-rerank': 'Winzling-reranker is reranking...',
     'route-vector': 'vector only: {terms} terms per document, below {threshold}',
     'weak-promoted': "vector #1 first: BM25's #1 matched {share} of the weighted words",
-    'time-tiny': 'ColBERT query and token scan, {time}',
+    'time-tiny': 'ColBERT query and token scan {time}',
     'time-fuse': 'fuse {time}',
     'time-recorded': 'recorded vector',
     'time-embed': 'embed {time}',
@@ -250,6 +241,9 @@ export const MESSAGES = {
     'stat-languages': 'Passagen in {count} Sprachen',
     'none-yet': 'noch keine',
     'device-default': 'ONNX Runtime Web, 1 Thread',
+    'models-none': 'keine',
+    'models-lexical': 'BM25 braucht kein Modell',
+    'models-state': '{ready} von {total} geladen, {runtime}',
     'size-brotli': '{size} (Brotli)',
     'empty-default':
       'Eine Benchmark-Frage zeigt, auf welchen Rang die Factory ihre Goldpassage setzt; genau das zählen die veröffentlichten Zahlen.',
@@ -267,21 +261,9 @@ export const MESSAGES = {
     'summary-embed': 'Einbettung {time}',
     'summary-search': 'Suche {time}',
     tally:
-      'Ihre bisherigen Fragen, Goldpassage auf Platz 1: {parts}. Eine Frage ist eine Anekdote; die Messung unten führt alle 1.000 aus.',
+      'Ihre bisherigen Fragen, Goldpassage auf Platz 1: {parts}. Eine Frage ist eine Anekdote; die Recall-Zahlen weiter unten zählen alle 1.000.',
     'tally-part': '{method} {top} von {total}',
-    'language-option': '{language}, {analysis}',
     'group-heading': '{language}, {code}',
-    'measure-idle':
-      'Führt jede Benchmark-Frage mit der gewählten Factory in diesem Browser aus und vergleicht die Mittelwerte mit den veröffentlichten Zahlen. Jede gemessene Factory ergänzt eine Zeile.',
-    'measure-tiny':
-      'Die Tiny-Factory wird gemessen: eine ColBERT-Kodierung und ein Token-Scan pro Frage, einige Minuten...',
-    'measure-efficient-first': 'efficient wird gemessen; laden Sie Winzling-reranker, um auch reranked zu messen...',
-    'measure-method': '{method} wird gemessen...',
-    'measure-done': '{questions} Fragen in {seconds} in diesem Browser.',
-    'measure-same': 'wie veröffentlicht',
-    'measure-differs': 'weicht von der Veröffentlichung ab',
-    'measure-published': '{r1} R@1, {r5} R@5',
-    'measure-unpublished': 'nicht veröffentlicht',
     'error-loading': 'Laden fehlgeschlagen',
     'error-corpus': 'Der Korpus konnte nicht geladen werden',
     'error-model': 'Ein Modell konnte nicht geladen werden',
@@ -329,7 +311,7 @@ export const MESSAGES = {
     'pending-rerank': 'Winzling-reranker sortiert neu...',
     'route-vector': 'nur Vektor: {terms} Terme pro Dokument, unter {threshold}',
     'weak-promoted': 'Vektor #1 zuerst: BM25 #1 traf {share} der gewichteten Wörter',
-    'time-tiny': 'ColBERT-Anfrage und Token-Scan, {time}',
+    'time-tiny': 'ColBERT-Anfrage und Token-Scan {time}',
     'time-fuse': 'Fusion {time}',
     'time-recorded': 'aufgezeichneter Vektor',
     'time-embed': 'Einbettung {time}',

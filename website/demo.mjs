@@ -9,11 +9,11 @@
  * download from their pinned Hugging Face revisions.
  * The corpus downloads while the reader chooses. `?models=off` keeps the page model-free (slow connections, the
  * model-free e2e run).
- * VERIFIED: scripts/e2e.mjs drives the picker, every factory, examples, typed text, notes, the palette and the
- * in-browser measurement.
+ * VERIFIED: scripts/e2e.mjs drives the picker, every factory, examples, typed text, notes and the palette, and
+ * runs all 1,000 benchmark questions through this page's worker.
  */
 import { languageCases } from '../fixtures/languages.mjs';
-import { METHODS, factoryOf, methodOf, modelBytes } from './factories.mjs';
+import { METHODS, factoryOf, modelBytes } from './factories.mjs';
 import {
   formatMb,
   formatMs,
@@ -27,14 +27,13 @@ import {
 } from './i18n.mjs';
 import { createNotesBoard } from './notes.mjs';
 import {
+  badge,
   renderExampleButtons,
   renderLogLine,
-  renderMeasure,
   renderQueryGroups,
   renderResults,
 } from './render.mjs';
 
-const K = [1, 5, 10, 25];
 /** The steps a factory waits for before its first search; optional model loads stay out of the ring. */
 const REQUIRED = {
   'lexical-only': ['corpus', 'index'],
@@ -86,7 +85,6 @@ export function initDemo() {
     bench: null, // the current benchmark search: { id, text, example, language }
     notesId: 0,
     tally: new Map(), // method → Map(example index → gold rank)
-    measured: new Map(), // method → measurement row
   };
 
   // ---- the runtime card --------------------------------------------------------------------------------------------
@@ -156,21 +154,55 @@ export function initDemo() {
         : state.choice.factory === 'semantic'
           ? [...(state.choice.rerank ? ['colbert'] : []), 'winzling']
           : [];
+  /**
+   * The Models card names the chosen factory's models, Winzling-embed first, and how many of them are loaded; a
+   * model that another factory loaded earlier is not this factory's.
+   */
   const modelState = () => {
-    const loaded = Object.entries(state.models)
-      .filter(([, value]) => value === 'ready')
-      .map(([name]) => MODEL_NAMES[name]);
-    if (loaded.length) setStat('models', () => loaded.join(' + '));
-    else say(document.querySelector('[data-stat="models"]'), 'none-yet');
     const wanted = factoryModels();
+    const named = ['winzling', 'colbert'].filter((name) => wanted.includes(name));
+    if (named.length) setStat('models', () => named.map((name) => MODEL_NAMES[name]).join(' + '));
+    else say(document.querySelector('[data-stat="models"]'), 'models-none');
+    const device = document.querySelector('[data-stat="device"]');
+    if (!named.length) say(device, 'models-lexical');
+    else
+      say(device, 'models-state', () => ({
+        ready: named.filter((name) => state.models[name] === 'ready').length,
+        total: named.length,
+        runtime: state.device === 'webgpu' ? 'ONNX Runtime Web, WebGPU' : t('device-default'),
+      }));
     const button = document.querySelector('[data-load="factory"]');
     button.disabled = !wanted.length || wanted.every((name) => state.models[name] !== 'idle');
     if (state.manifest)
       say($('load-all-size'), 'value', () => ({
         value: formatMb(wanted.reduce((a, n) => a + size(n), 0)),
       }));
+    paintControls();
   };
   const size = (name) => modelBytes(state.manifest.models[name].files);
+  /**
+   * The questions, examples, palette and notes wait for the corpus and for every model of the chosen factory, so a
+   * reader downloads the models (the glowing button) before typing; lexical-only needs none. `?models=off` keeps
+   * them usable without models, since that page never downloads one by itself.
+   */
+  const controlsReady = () =>
+    state.queries.length > 0 &&
+    (modelsMode === 'off' || factoryModels().every((name) => state.models[name] === 'ready'));
+  const paintControls = () => {
+    const ok = controlsReady();
+    for (const control of document.querySelectorAll('[data-needs-models]')) control.disabled = !ok;
+    window.controlsReady = ok;
+  };
+  // ⌘K opens the palette by its own key binding, past the disabled button; while the controls wait, it stays shut.
+  addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey) || controlsReady()) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    },
+    { capture: true },
+  );
 
   /** Loads the named models unless they are loading or ready; `?models=off` waits for an explicit click. */
   const load = (names, { explicit = false } = {}) => {
@@ -194,8 +226,8 @@ export function initDemo() {
   };
 
   // ---- the factory picker ------------------------------------------------------------------------------------------
-  // A pick starts its factory at once; Lexical-semantic tiny starts by itself when the demo comes near the view, so
-  // a reader who never scrolls there downloads no model.
+  // A pick starts its factory at once; the preselected Lexical-semantic starts by itself when the demo comes near the
+  // view, so a reader who never scrolls there downloads no vectors and no model.
   const picked = () => document.querySelector('input[name="factory"]:checked').value;
   const start = () => {
     const factory = picked();
@@ -298,22 +330,21 @@ export function initDemo() {
         rank === null ? 'gold-pending' : rank ? 'gold-rank' : 'gold-missing',
         { rank },
       );
-    say($('summary-time'), 'value', () => ({
-      value: [
-        METHODS[data.method].title,
-        data.detected ? t('summary-detected', { language: languageName(data.detected) }) : '',
-        data.recorded
-          ? t('summary-recorded')
-          : data.embedMs
-            ? t('summary-embed', { time: formatMs(data.embedMs) })
-            : '',
-        column.state === 'done' || column.ms
-          ? t('summary-search', { time: formatMs(column.ms) })
-          : t('waiting'),
-      ]
-        .filter(Boolean)
-        .join(', '),
-    }));
+    $('summary-time').innerHTML = [
+      METHODS[data.method].title,
+      data.detected ? t('summary-detected', { language: languageName(data.detected) }) : '',
+      data.recorded
+        ? t('summary-recorded')
+        : data.embedMs
+          ? t('summary-embed', { time: formatMs(data.embedMs) })
+          : '',
+      column.state === 'done' || column.ms
+        ? t('summary-search', { time: formatMs(column.ms) })
+        : t('waiting'),
+    ]
+      .filter(Boolean)
+      .map((text) => badge(text))
+      .join('');
     return { gold, rank };
   };
   let lastBench = null;
@@ -321,9 +352,9 @@ export function initDemo() {
     lastBench = data;
     const { gold, rank } = paintBench(data);
     const column = data.column;
-    el.empty.hidden = true;
+    // The box shows the question; the examples and the palette button stay under it for the next one.
+    el.empty.dataset.asked = '';
     el.summary.hidden = false;
-    $('summary-query').textContent = data.text;
     if (data.final) el.compare.removeAttribute('aria-busy');
     state.benchDone = data.final && column.state === 'done';
     if (data.final && gold && column.state === 'done') {
@@ -363,7 +394,7 @@ export function initDemo() {
     const text = el.query.value.trim();
     if (!text) {
       el.summary.hidden = true;
-      el.empty.hidden = false;
+      delete el.empty.dataset.asked;
       el.compare.innerHTML = '';
       lastBench = null;
       return;
@@ -406,7 +437,6 @@ export function initDemo() {
   // ---- notes ----------------------------------------------------------------------------------------------------
   let notesDebounce = 0;
   let lastNotes = null;
-  let lastMeasure = null;
   const paintNotes = (data) => {
     el.notesCompare.innerHTML = renderResults(data, {
       limit: 8,
@@ -464,33 +494,11 @@ export function initDemo() {
     link.addEventListener('click', () => $(link.dataset.tab).click());
 
   // ---- measurement ----------------------------------------------------------------------------------------------
-  const recall = fetch(new URL('../data/recall.json', import.meta.url)).then((r) => r.json());
-  const strategies = fetch(new URL('../data/strategies.json', import.meta.url)).then((r) =>
-    r.json(),
-  );
-  $('measure-run').addEventListener('click', () => {
-    $('measure-run').disabled = true;
-    $('measure-progress').hidden = false;
-    const { factory, rerank } = state.choice;
-    if (factory === 'tiny') say($('measure-status'), 'measure-tiny');
-    else if (factory === 'semantic' && rerank && state.models.colbert !== 'ready')
-      say($('measure-status'), 'measure-efficient-first');
-    else say($('measure-status'), 'measure-method', { method: METHODS[methodOf(factory, rerank)].title });
+  // No control runs it: scripts/e2e.mjs calls this to run all 1,000 questions through the page's worker and compares
+  // the ranks with the published figures, the check that an example ranks here as in the benchmark.
+  window.measureDemo = () => {
+    window.lastMeasure = null;
     worker.postMessage({ type: 'measure' });
-  });
-  const summarize = (ranks) => {
-    const codes = state.languages;
-    return Object.fromEntries(
-      K.map((k) => {
-        const perLanguage = codes.map((_, language) => {
-          const own = state.queries
-            .map((query, i) => [query, ranks[i]])
-            .filter(([query]) => query.language === language);
-          return own.filter(([, rank]) => rank > 0 && rank <= k).length / own.length;
-        });
-        return [`r${k}`, perLanguage.reduce((a, b) => a + b, 0) / perLanguage.length];
-      }),
-    );
   };
 
   // ---- worker events --------------------------------------------------------------------------------------------
@@ -543,8 +551,7 @@ export function initDemo() {
       $('examples').innerHTML = renderExampleButtons(picks, data.queries, data.languages);
       state.firstExample = picks[0];
       runFirstExample();
-      for (const button of document.querySelectorAll('[data-needs-corpus]'))
-        button.disabled = false;
+      paintControls();
       window.corpusReady = true;
     },
     probe: ({ cached }) => {
@@ -576,12 +583,12 @@ export function initDemo() {
         return;
       }
       state.models[data.model] = 'ready';
-      setBar(data.model, 1, 1, true);
-      modelState();
       if (data.model === 'winzling') {
-        setStat('device', () => (data.device === 'webgpu' ? 'WebGPU' : 'WASM'));
+        state.device = data.device;
         el.backend.value = data.device;
       }
+      setBar(data.model, 1, 1, true);
+      modelState();
       say(el.status, data.cached ? 'model-ready-cached' : 'model-ready-downloaded', () => ({
         model: MODEL_NAMES[data.model],
         seconds: formatSeconds(data.ms),
@@ -611,38 +618,10 @@ export function initDemo() {
       if (data.final) window.lastSearch = { ...data, gold: goldOf() };
     },
     note: (data) => board.onNote(data),
-    'measure-progress': ({ done, total }) => {
-      $('measure-progress').max = total;
-      $('measure-progress').value = done;
-    },
-    measured: async (data) => {
-      const [reference, published] = await Promise.all([recall, strategies]);
-      const means = {
-        ...Object.fromEntries(
-          ['lexical-only', 'tiny'].map((id) => [id, published.corpora.belebele[id]]),
-        ),
-        ...Object.fromEntries(reference.presets.map((preset) => [preset.id, preset.mean])),
-      };
-      for (const [id, ranks] of Object.entries(data.ranks))
-        state.measured.set(id, {
-          id,
-          mean: summarize(ranks),
-          neural: id === 'reranked' ? data.neural : 0,
-        });
-      const rows = [...state.measured.values()];
-      lastMeasure = { rows, means };
-      $('measure-rows').innerHTML = renderMeasure(rows, means);
-      $('measure-table').hidden = false;
-      $('measure-progress').hidden = true;
-      $('measure-run').disabled = false;
-      say($('measure-status'), 'measure-done', () => ({
-        questions: formatNumber(state.queries.length),
-        seconds: formatSeconds(data.ms),
-      }));
+    measured: (data) => {
       window.lastMeasure = {
         factory: data.factory,
         ranks: data.ranks,
-        rows,
         neural: data.neural,
         languages: state.queries.map((query) => state.languages[query.language]),
       };
@@ -654,7 +633,6 @@ export function initDemo() {
         modelState();
       }
       if (data.note) board.onError(data.note, data.message);
-      if (data.measure) $('measure-run').disabled = false;
       say(
         $('boot-error-title'),
         data.corpus
@@ -699,10 +677,7 @@ export function initDemo() {
       ...languageCases.map((entry) => {
         const option = document.createElement('option');
         option.value = entry.code;
-        option.textContent = t('language-option', {
-          language: languageName(entry.code),
-          analysis: t(`analysis-${entry.analysis.replace(' ', '-')}`),
-        });
+        option.textContent = languageName(entry.code);
         return option;
       }),
     );
@@ -718,14 +693,13 @@ export function initDemo() {
     target.focus({ preventScroll: true });
     return true;
   });
-  // What the scripts wrote follows a language switch: the language menu, the palette, the results and the
-  // measurement; texts written with say() repaint themselves (website/i18n.mjs).
+  // What the scripts wrote follows a language switch: the language menu, the palette and the results; texts
+  // written with say() repaint themselves (website/i18n.mjs).
   onLocale(() => {
     paintLanguages();
     if (state.queries.length) $('cmd-list').innerHTML = renderQueryGroups(state.queries, state.languages);
     if (lastBench) paintBench(lastBench);
     if (lastNotes) paintNotes(lastNotes);
-    if (lastMeasure) $('measure-rows').innerHTML = renderMeasure(lastMeasure.rows, lastMeasure.means);
   });
   const preset = params.get('factory');
   if (factoryOf(preset)) $(`factory-${preset}`).checked = true;

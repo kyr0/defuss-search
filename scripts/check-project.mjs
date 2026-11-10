@@ -139,7 +139,7 @@ assert.equal(
       `Built with: ${name} links its site`,
     );
 }
-// The hero says "0 runtime dependencies in the core", and the badges name the published version.
+// The features say "No runtime dependencies", and the badges name the published version.
 assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'The page claims a core without dependencies');
 for (const [, shown] of (await readFile('website/index.html', 'utf8')).matchAll(/>(?:npm )?v(\d+\.\d+\.\d+)/g))
   assert.equal(shown, pkg.version, `website/index.html shows v${shown}; the package is ${pkg.version}`);
@@ -150,8 +150,15 @@ const builtPages = await Promise.all(
 const german = new Set();
 for (const html of builtPages) {
   for (const [, text] of html.matchAll(/<template data-i18n-for="[^"]+" data-i18n-locale="de">([\s\S]*?)<\/template>/g))
-    // A figure slot carries its value on the page (scripts/figures.mjs) and is empty in the catalog.
-    german.add(normalize(text.replace(/<span data-fig="([\w-]+)"[^>]*>[^<]*<\/span>/g, '<span data-fig="$1"></span>')));
+    // A figure or size slot carries its value on the page (scripts/figures.mjs) and is empty in the catalog.
+    german.add(
+      normalize(
+        text
+          .replace(/<span data-fig="([\w-]+)"[^>]*>[^<]*<\/span>/g, '<span data-fig="$1"></span>')
+          // a download size too (scripts/figures.mjs fillBytes)
+          .replace(/<span data-bytes="(\w+)"[^>]*>[^<]*<\/span>/g, '<span data-bytes="$1"></span>'),
+      ),
+    );
   for (const [, text] of html.matchAll(/data-i18n-[\w-]+-de="([^"]*)"/g))
     german.add(normalize(text.replace(/&quot;/g, '"').replace(/&amp;/g, '&')));
 }

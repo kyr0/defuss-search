@@ -21,6 +21,7 @@ import * as lexicalsearch from 'defuss-lexicalsearch';
 import * as en from 'defuss-lexicalsearch/en';
 import * as de from 'defuss-lexicalsearch/de';
 import { modelBytes } from '../website/factories.mjs';
+import { MODEL_FACTS } from './figures.mjs';
 import { runSnippet } from '../website/playground-source.mjs';
 import { SNIPPETS } from '../website/playground-snippets.mjs';
 import { PACKAGE_MANAGERS } from './highlight.mjs';
@@ -64,20 +65,52 @@ async function landsOn(page, id) {
   );
 }
 
-export async function checkSite(page, { recall, strategies }) {
+export async function checkSite(page, { strategies }) {
   const base = page.url().split('#')[0];
   // ---- hero figures: the reports, in the page's number format ------------------------------------------------
-  const efficient = recall.presets.find((preset) => preset.id === 'efficient');
-  assert.equal(await page.textContent('[data-fig="efficient-r1"]'), share('en', efficient.mean.r1));
-  assert.equal(await page.textContent('[data-fig="target-r1"]'), share('en', efficient.target.r1));
-  // The languages card states what was measured; its counts are the report's.
-  const targetQuestions = Object.entries(recall.languages)
-    .filter(([, language]) => language.target)
-    .reduce((sum, [code]) => sum + efficient.languages[code].questions, 0);
-  const languagesCard = await page.textContent('.hs-usp:has([data-fig="target-r1"]) .hs-usp-label');
-  for (const count of [targetQuestions, recall.dataset.passages, Object.keys(recall.languages).length, recall.dataset.questions])
-    assert.ok(languagesCard.includes(count.toLocaleString('en')), `the languages card names ${count}`);
-  assert.equal(await page.textContent('[data-fig="exact-r1"]'), share('en', strategies.corpora['api docs exact'].efficient.r1));
+  // The quality card quotes the model cards (scripts/figures.mjs MODEL_FACTS); the size card the manifest and the bases.
+  for (const [slot, value] of [
+    ['reranker-ndcg', MODEL_FACTS.reranker.ndcg],
+    ['reranker-original-ndcg', MODEL_FACTS.reranker.original],
+    ['embed-ndcg', MODEL_FACTS.embed.ndcg],
+    ['embed-fp32-ndcg', MODEL_FACTS.embed.fp32],
+  ])
+    assert.equal(await page.textContent(`[data-fig="${slot}"]`), value.toFixed(3), slot);
+  const megabytes = (bytes) => `${(bytes / 1e6).toFixed(bytes >= 1e7 ? 1 : 2)} MB`;
+  // Beside each figure, how many times better or smaller, from the same numbers.
+  const manifestFiles = JSON.parse(await readFile('docs/data/manifest.json', 'utf8')).models;
+  const download = (name) => modelBytes(manifestFiles[name].files);
+  const notes = strategies.corpora['notes translation'];
+  for (const [slot, ratio] of [
+    ['translation-times', notes.efficient.r1 / notes['lexical-only'].r1],
+    ['colbert-times', MODEL_FACTS.bases.sauerkraut / download('colbert')],
+    ['winzling-times', MODEL_FACTS.bases.bekko / download('winzling')],
+  ])
+    assert.equal(await page.textContent(`[data-fig="${slot}"]`), ratio.toFixed(1), slot);
+  // One size card per model: each against its own base model.
+  for (const base of ['bekko', 'sauerkraut'])
+    assert.equal(await page.textContent(`.hs-usp-vs [data-bytes="${base}"]`), megabytes(MODEL_FACTS.bases[base]));
+  // Each card: what it is about, the figure, its comparison, a rule, what was measured and the techniques behind it
+  // (the language templates sit between).
+  for (const card of await page.locator('.hs-usp').all())
+    assert.deepEqual(
+      await card.evaluate((el) => [...el.children].filter((x) => !x.matches('.hs-usp-icon, template')).map((x) => x.className)),
+      ['badge hs-usp-kicker', 'hs-usp-value', 'hs-usp-vs', 'separator hs-usp-rule', 'hs-usp-label', 'hs-usp-techniques'],
+    );
+  assert.deepEqual(
+    await page.locator('.hs-usp-kicker').allTextContents(),
+    ['Accuracy', 'Real-world quality', 'Model compression', 'Model compression'],
+  );
+  for (const count of await page.locator('.hs-usp-tags').evaluateAll((rows) => rows.map((row) => row.querySelectorAll('.badge').length)))
+    assert.ok(count >= 4, `a card names ${count} techniques`);
+  // The two model cards link their reproduction code on Hugging Face, at the revisions the demo pins.
+  const repro = await page.locator('.hs-usp-repro').evaluateAll((links) => links.map((link) => link.href));
+  assert.equal(repro.length, 2);
+  for (const model of ['colbert', 'winzling'])
+    assert.ok(
+      repro.includes(`${manifestFiles[model].base.replace('/resolve/', '/tree/')}reproduce`),
+      `${model} links its reproduction code`,
+    );
   assert.equal(await page.textContent('[data-fig="translation-r1"]'), share('en', strategies.corpora['notes translation'].efficient.r1));
   assert.equal(
     await page.textContent('[data-fig="translation-lexical-r1"]'),
@@ -377,10 +410,7 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
   assert.equal(await page.textContent('.mk-header-nav a[href="#/how"]'), 'So funktioniert es');
   assert.equal(await page.getAttribute('.mk-header-nav', 'aria-label'), 'Hauptmenü');
   assert.equal(await page.getAttribute('#how-title a.heading-anchor', 'aria-label'), 'Link zum Abschnitt: Zweimal abrufen, einmal fusionieren, nur bei Bedarf neu ordnen');
-  const recall = JSON.parse(await readFile('docs/data/recall.json', 'utf8'));
-  const efficient = recall.presets.find((preset) => preset.id === 'efficient');
-  assert.equal(await page.textContent('[data-fig="efficient-r1"]'), share('de', efficient.mean.r1));
-  assert.equal(await page.textContent('[data-fig="target-r1"]'), share('de', efficient.target.r1));
+  assert.equal(await page.textContent('[data-fig="reranker-ndcg"]'), MODEL_FACTS.reranker.ndcg.toFixed(3).replace('.', ','));
   // Every translated region has its two templates, and the German one is on screen.
   const regions = await page.evaluate(() => {
     // Numbers inside a region show in the page's format and a modifier key shows Ctrl off Apple systems

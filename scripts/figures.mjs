@@ -17,6 +17,28 @@ const pct = (x) => `${(100 * x).toFixed(1)}%`;
 const escape = (text) => String(text).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 /** A figure cell or slot the page reformats in its language (website/i18n.mjs). */
 const share = (x) => `data-num="${x}" data-num-style="percent">${pct(x)}`;
+const score = (x) => `data-num="${x}" data-num-digits="3">${x.toFixed(3)}`;
+const times = (x) => `data-num="${x}" data-num-digits="1">${x.toFixed(1)}`;
+
+/**
+ * What the models' own repositories publish, for the hero's quality and size cards. Quality: nDCG@10 from each model
+ * card at the revision docs/data/manifest.json pins; Winzling-reranker against the upstream FP32 model on NanoBEIR
+ * English (13 tasks), Winzling-embed against its own FP32 checkpoint, the 64k-vocabulary model before quantization,
+ * on 23 Nano retrieval tasks (the original 256k Bekko was not run on that suite). Size: the base models'
+ * model.safetensors and tokenizer.json as Hugging Face lists them at the named revision, uncompressed.
+ * VERIFIED (2026-11-10): the model cards' tables; Hugging Face's tree API for the sizes; the safetensors headers for
+ * the dtypes, BF16 for Bekko and F32 for SauerkrautLM-MoEdernColBERT-1.5M.
+ */
+export const MODEL_FACTS = {
+  reranker: { ndcg: 0.597, original: 0.591 },
+  embed: { ndcg: 0.626, fp32: 0.6233 },
+  bases: {
+    // hotchpotch/bekko-embedding-v1-a8m@c721113d59a1d91b447450324f51c4b3332c924a: weights 211,952,896 + tokenizer 34,363,442
+    bekko: 211952896 + 34363442,
+    // VAGOsolutions/SauerkrautLM-MoEdernColBERT-1.5M@9d360b8b88ae11bea5784bf9012ff509fdd5c2da: 5,875,264 + 1,956,542
+    sauerkraut: 5875264 + 1956542,
+  },
+};
 
 /**
  * The picker's measured figures for one factory, R@1 and R@5 from strategies.json; lexical-semantic shows its
@@ -54,18 +76,22 @@ export function factoryFiguresPage(html, factories, published) {
 }
 
 /**
- * The figures a `data-fig` slot may name: the hero's claims, each from the report that measured it. Exact words:
- * R@1 on 8,043 API doc sections queried by their exact words; meaning: notes found by a translation, hybrid against
- * BM25 alone; languages: the default preset's mean R@1 over Winzling-embed's 8 target languages, its best language
- * group, and over all 20.
+ * The figures a `data-fig` slot may name: the hero's claims, each from its source. Quality: the quantized models'
+ * nDCG@10 against their FP32 versions (MODEL_FACTS); meaning: notes found by a translation, hybrid against BM25
+ * alone (docs/data/strategies.json), and how many times better; size: how many times smaller each download
+ * (docs/data/manifest.json) is than its base model's files.
  */
-export function figures({ recall, strategies }) {
-  const efficient = recall.presets.find((preset) => preset.id === 'efficient');
+export function figures({ strategies, manifest }) {
   const corpus = (name, factory) => strategies.corpora[name][factory].r1;
+  const download = (name) => modelBytes(manifest.models[name].files);
   return {
-    'efficient-r1': share(efficient.mean.r1),
-    'target-r1': share(efficient.target.r1),
-    'exact-r1': share(corpus('api docs exact', 'efficient')),
+    'translation-times': times(corpus('notes translation', 'efficient') / corpus('notes translation', 'lexical-only')),
+    'colbert-times': times(MODEL_FACTS.bases.sauerkraut / download('colbert')),
+    'winzling-times': times(MODEL_FACTS.bases.bekko / download('winzling')),
+    'reranker-ndcg': score(MODEL_FACTS.reranker.ndcg),
+    'reranker-original-ndcg': score(MODEL_FACTS.reranker.original),
+    'embed-ndcg': score(MODEL_FACTS.embed.ndcg),
+    'embed-fp32-ndcg': score(MODEL_FACTS.embed.fp32),
     'translation-r1': share(corpus('notes translation', 'efficient')),
     'translation-lexical-r1': share(corpus('notes translation', 'lexical-only')),
   };
@@ -90,6 +116,7 @@ export function fillBytes(html, manifest) {
     tokens: manifest.tokens.bytes,
     colbert: modelBytes(manifest.models.colbert.files),
     winzling: modelBytes(manifest.models.winzling.files),
+    ...MODEL_FACTS.bases,
   };
   sizes.models = sizes.colbert + sizes.winzling;
   return html.replace(/<span data-bytes="(\w+)">[^<]*<\/span>/g, (_, name) => {
@@ -106,5 +133,5 @@ export async function renderIndex(source, { recall, strategies, manifest }) {
   const { html, missing } = localize(expandCode(factoryFiguresPage(source, FACTORIES, strategies)), catalogMap(pairs));
   if (missing.length)
     throw new Error(`website/i18n/de.mjs lacks German for ${missing.length} texts:\n${missing.join('\n')}`);
-  return fillBytes(fillFigures(html, { recall, strategies }), manifest);
+  return fillBytes(fillFigures(html, { recall, strategies, manifest }), manifest);
 }

@@ -188,15 +188,27 @@ try {
     false,
     'Exercise the same header constraints as GitHub Pages',
   );
-  // The factory picker comes first; its figures are the published strategies benchmark. Lexical-semantic tiny is
+  // The factory picker comes first; its figures are the published strategies benchmark. Lexical-semantic is
   // preselected and starts by itself once the demo nears the view, with no button; before that nothing loads.
   assert.ok(await page.locator('#factory-picker').isVisible());
-  assert.ok(await page.isChecked('#factory-tiny'), 'The picker preselects Lexical-semantic tiny');
+  assert.ok(await page.isChecked('#factory-semantic'), 'The picker preselects Lexical-semantic');
   assert.equal(await page.locator('#demo-window').isVisible(), false, 'The demo waits until it nears the view');
   await page.locator('#demo').scrollIntoViewIfNeeded();
   await page.waitForFunction(() => !document.getElementById('demo-window').hidden);
-  assert.equal((await page.textContent('#factory-name')).trim(), 'Lexical-semantic tiny');
+  assert.equal((await page.textContent('#factory-name')).trim(), 'Lexical-semantic with reranker');
   assert.equal(await page.locator('#factory-start, #factory-change').count(), 0);
+  // The Models card names the factory's models, not only the loaded ones; the download button glows (aura).
+  assert.equal((await page.textContent('[data-stat="models"]')).trim(), 'Winzling-embed + Winzling-reranker');
+  assert.match(await page.textContent('[data-stat="device"]'), /^0 of 2 loaded, /);
+  assert.match(
+    (await page.textContent('.hs-load-aura > [data-load="factory"]')).replace(/\s+/g, ' ').trim(),
+    /^Download AI models \(\d+\.\d MB\)$/,
+  );
+  // The question box, the language menu and Search share one height.
+  const heights = await page.locator('#form').evaluate((form) =>
+    [...form.querySelectorAll('.search-box, select, .btn')].map((x) => x.getBoundingClientRect().height),
+  );
+  assert.ok(Math.max(...heights) - Math.min(...heights) < 1, `search row heights ${heights}`);
   const pct = (x) => `${(100 * x).toFixed(1)}%`;
   for (const [id, row] of [
     ['lexical-only', 'lexical-only'],
@@ -223,7 +235,13 @@ try {
     if (id === 'semantic') await page.setChecked('#factory-rerank', rerank);
     assert.ok(await page.isChecked(`#factory-${id}`));
     assert.ok(await page.locator('#demo-window').isVisible());
-    if (ready) await page.waitForFunction((f) => window.demoReady === f, id, { timeout: 300000 });
+    // With models on, the questions wait for the factory's models, which the glowing button downloads.
+    if (live && id !== 'lexical-only' && (await page.isEnabled('[data-load="factory"]')))
+      await page.click('[data-load="factory"]');
+    if (ready) {
+      await page.waitForFunction((f) => window.demoReady === f, id, { timeout: 300000 });
+      await page.waitForFunction(() => window.controlsReady, {}, { timeout: 300000 });
+    }
   };
   /** Runs an action and returns the next final result of `factory`; `until` waits for a later one. */
   const ask = async (factory, action, until = () => true) => {
@@ -265,10 +283,9 @@ try {
     assert.equal(result.text, text);
     return result;
   };
-  /** The in-browser measurement's per-language R@k, as the page computes the means. */
+  /** All 1,000 questions through the page's worker; no control runs it (website/demo.mjs measureDemo). */
   const measure = async () => {
-    await page.evaluate(() => (window.lastMeasure = null));
-    await page.click('#measure-run');
+    await page.evaluate(() => window.measureDemo());
     await page.waitForFunction(
       () => window.lastMeasure || window.lastError,
       {},
@@ -296,6 +313,17 @@ try {
   await startFactory('lexical-only');
   const example = await ask('lexical-only', () => page.locator('#examples button').first().click());
   assert.equal(example.text, await page.inputValue('#query'));
+  // The box holds the question, so the summary repeats only its figures, each a badge.
+  assert.equal(await page.locator('#summary q').count(), 0);
+  assert.ok((await page.locator('#summary-time .badge').count()) >= 2);
+  // The language menu names the languages alone; the analyzers belong to the recall section.
+  assert.equal(await page.textContent('#language option[value="eng_Latn"]'), 'English');
+  // The examples and the palette button stay under the box after a question, a short rule between them.
+  for (const selector of ['#examples button', '#empty .hs-examples-rule', '#empty [data-command-trigger="cmd"]'])
+    assert.ok(await page.locator(selector).first().isVisible(), `${selector} after a question`);
+  assert.equal(await page.locator('#empty-title').isVisible(), false);
+  const rule = await page.locator('#empty .hs-examples-rule').evaluate((hr) => hr.offsetWidth / hr.parentElement.clientWidth);
+  assert.ok(rule <= 0.2 + 1e-6, `the rule spans ${rule} of the examples' width`);
   assert.equal(example.method, 'lexical-only');
   assert.ok(done(example));
   await checkColumn(example);
@@ -347,7 +375,6 @@ try {
       Math.abs(lexicalMean[`r${k}`] - strategies.corpora.belebele['lexical-only'][`r${k}`]) < 1e-9,
       `lexical-only R@${k}: browser ${lexicalMean[`r${k}`]}`,
     );
-  assert.match(await page.textContent('[data-measure="lexical-only"]'), /same as published/);
 
   // My data: notes are searchable lexically at once.
   await page.click('#tab-notes');
@@ -366,14 +393,17 @@ try {
     },
   );
   // A German note in its language's field: the stopword "mit" must not make it a lexical hit, its content word must.
+  // Nobody picks its language: defuss-lid reads German in the text and the note's menu follows.
   await page.click('#add-note');
-  await page.selectOption('#note-6-lang', 'deu_Latn');
+  assert.notEqual(await page.inputValue('#note-6-lang'), 'deu_Latn');
   await page.fill(
     '#note-6-text',
     'Rezept: Kartoffelsuppe mit Lauch, Möhren und einem Schuss Sahne.',
   );
   await page.waitForFunction(
-    () => document.querySelector('#notes-count').textContent === '6 notes',
+    () =>
+      document.querySelector('#notes-count').textContent === '6 notes' &&
+      document.querySelector('#note-6-lang').value === 'deu_Latn',
     {},
     {
       timeout: 120000,
@@ -430,6 +460,8 @@ try {
   assert.equal(recorded.recorded, true);
   assert.equal(recorded.method, 'reranked');
   await checkColumn(recorded);
+  // A hybrid hit names its language and both source ranks as badges.
+  assert.ok((await page.locator('#compare .hs-hit').first().locator('.hs-hit-meta .badge').count()) >= 3);
   if (!live) {
     assert.equal(
       modelRequests.winzling + modelRequests.colbert,
@@ -455,7 +487,6 @@ try {
           `${preset.id} ${code} R@${k}: browser ${value}, published ${preset.languages[code][`r${k}`]}`,
         );
       }
-    assert.match(await page.textContent(`[data-measure="${preset.id}"]`), /same as published/);
   }
   if (live) assert.equal(semanticMeasure.neural, recall.presets[1].neuralQueries);
   assert.equal(modelRequests.winzling > 0, live, 'Winzling-embed loads only in the live run');
@@ -492,7 +523,6 @@ try {
         Math.abs(tinyMean[`r${k}`] - strategies.corpora.belebele.tiny[`r${k}`]) < 1e-9,
         `tiny R@${k}: browser ${tinyMean[`r${k}`]}`,
       );
-    assert.match(await page.textContent('[data-measure="tiny"]'), /same as published/);
     await page.click('#tab-notes');
     await page.waitForFunction(
       () => document.querySelector('#notes-count').textContent === '6 notes, 6 encoded',
@@ -566,6 +596,23 @@ try {
   await page.getByRole('link', { name: 'Back to defuss-search' }).click();
   await page.waitForFunction(() => window.corpusReady, {}, { timeout: 120000 });
   // German by the browser's language, the switch and its memory, light and dark by the system, screenshots.
+  // With models on, the questions and notes wait for the factory's models: while the downloads hang, they and ⌘K
+  // stay locked; lexical-only, which needs no model, opens them.
+  {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await context.route(/^https:\/\/huggingface\.co\//, () => {});
+    const locked = await context.newPage();
+    await locked.goto(`${url}/defuss-search/#/demo`);
+    await locked.waitForFunction(() => window.corpusReady && window.demoReady === 'semantic', {}, { timeout: 120000 });
+    for (const selector of ['#query', '#search', '#examples button', '[data-command-trigger="cmd"]', '#add-note'])
+      assert.ok(await locked.locator(selector).first().isDisabled(), `${selector} waits for the models`);
+    await locked.keyboard.press('ControlOrMeta+k');
+    assert.equal(await locked.evaluate(() => document.querySelector('#cmd').open), false, '⌘K waits for the models');
+    await locked.check('#factory-lexical-only');
+    await locked.waitForFunction(() => window.controlsReady);
+    assert.ok(await locked.locator('#query').isEnabled());
+    await context.close();
+  }
   const languages = await checkLanguagesAndThemes(browser, `${url}/defuss-search/`, errors);
   assert.deepEqual(errors, []);
   await writeFile(

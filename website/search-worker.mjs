@@ -14,7 +14,8 @@
  * the vectors serves all 20 searches.
  * Why recorded question vectors: the 1,000 benchmark questions carry the vectors the recall benchmark used, so an
  * example question ranks exactly as in the published figures, before any model download. VERIFIED: the e2e test
- * measures the efficient preset over all 1,000 questions here and compares each language with docs/data/recall.json.
+ * runs all 1,000 questions here (the 'measure' message, which no control on the page sends) and compares each
+ * language with docs/data/recall.json.
  */
 import { decompress, init as initBrotli } from 'defuss-brotli/decompressor/slim';
 import { loadCld3Pack } from 'defuss-lid/cld3-pack';
@@ -403,9 +404,16 @@ async function rebuildNotes() {
     });
   notesSearch = { index, search, key: `${choice.factory}:${choice.rerank}` };
 }
-async function putNote({ id, version, text, language }) {
-  if (!CODES.includes(language)) throw new Error(`No analyzer for ${language}`);
+async function putNote({ id, version, text, language, detect }) {
   const removed = !text.trim();
+  // A note whose language the reader has not picked goes to the field of the language defuss-lid reads in it; a
+  // failed detection keeps the menu's language, so the note stays searchable.
+  if (detect && !removed)
+    language =
+      (await detectLanguage(text).catch((error) => {
+        log('warning', `language detection failed, keeping ${language}: ${message(error)}`);
+      })) ?? language;
+  if (!CODES.includes(language)) throw new Error(`No analyzer for ${language}`);
   let embedMs = 0;
   if (removed) notes.delete(id);
   else {
@@ -420,7 +428,7 @@ async function putNote({ id, version, text, language }) {
     notes.set(id, note);
   }
   await rebuildNotes();
-  post({ type: 'note', id, version, removed, ...noteState(id), embedMs, ...noteCounts() });
+  post({ type: 'note', id, version, removed, language, ...noteState(id), embedMs, ...noteCounts() });
 }
 /**
  * Notes added before the model was ready, or under another factory, get the representation now; `all` reports
@@ -646,7 +654,6 @@ async function measure() {
   const ranks = Object.fromEntries(methods.map((name) => [name, []]));
   const { corpus } = bench;
   let neural = 0;
-  const started = performance.now();
   for (let i = 0; i < corpus.queries.text.length; i++) {
     const code = corpus.languages[corpus.queries.language[i]];
     const gold = corpus.queries.gold[i];
@@ -667,10 +674,8 @@ async function measure() {
         if (response.rerankDecision.action === 'applied') neural++;
       }
     }
-    if ((i + 1) % 25 === 0)
-      post({ type: 'measure-progress', done: i + 1, total: corpus.queries.text.length });
   }
-  post({ type: 'measured', factory, ranks, neural, ms: performance.now() - started });
+  post({ type: 'measured', factory, ranks, neural });
 }
 
 /** Prepares the chosen factory: the token index or the vectors start loading when it needs them. */
