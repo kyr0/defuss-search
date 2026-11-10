@@ -3,11 +3,14 @@
  * - checkSite: section routes and Back/Forward, a heading anchor on every content h2 and none on the consulting
  *   block and the closing call to action, the install switch and its memory, the playground (each example prints
  *   what the same snippet prints in Node.js, an edited snippet, an error, a timeout), every chart and its table
- *   against docs/data, the diagram tabs, the scroll entrances, the hero figures and the credit's model links;
+ *   against docs/data, the diagram tabs, the scroll entrances, the hero figures and the credit's model links, the
+ *   hero's example searches against docs/data/hero-examples.json, their rotation and a tab that stops it;
  * - checkLanguagesAndThemes: German from the browser language, the switch and its memory, the subpages in German,
  *   light and dark from the system, screenshots of each in output/e2e/, readability (scripts/e2e-readability.mjs)
- *   in both themes on a desktop and a phone and in German, no rotator or diagram that flickers, and the chosen
- *   search method visible in forced colours, and the hero's rotating line still under reduced motion.
+ *   in both themes on a desktop and a phone, in light on a tablet and in German, the page at 75% of the desktop's
+ *   size on a tablet and a phone, no rotator or diagram that flickers, and the chosen
+ *   search method visible in forced colours, the hero's example searches in German, and the hero's rotating line
+ *   and example searches still under reduced motion.
  * Each returns a summary for output/e2e/browser.json.
  * VERIFIED: make e2e runs both on the packed build in Chromium and passes (2026-11-09).
  */
@@ -21,7 +24,7 @@ import * as lexicalsearch from 'defuss-lexicalsearch';
 import * as en from 'defuss-lexicalsearch/en';
 import * as de from 'defuss-lexicalsearch/de';
 import { modelBytes } from '../website/factories.mjs';
-import { MODEL_FACTS } from './figures.mjs';
+import { MODEL_FACTS, meters } from './figures.mjs';
 import { runSnippet } from '../website/playground-source.mjs';
 import { SNIPPETS } from '../website/playground-snippets.mjs';
 import { PACKAGE_MANAGERS } from './highlight.mjs';
@@ -48,6 +51,26 @@ const SETS = [
   'api docs natural',
 ];
 const FACTORIES = ['lexical-only', 'tiny', 'efficient', 'reranked'];
+const HERO = JSON.parse(await readFile('docs/data/hero-examples.json', 'utf8'));
+/** The documents each hero list shows in the page's language: the copies site.css does not hide. */
+const heroLists = (page, example, list) =>
+  page.evaluate(
+    ([example, list]) =>
+      [...document.querySelectorAll(`#hero-example-${example} [data-list="${list}"]`)]
+        .filter((ol) => getComputedStyle(ol).display !== 'none')
+        .map((ol) => [...ol.children].map((li) => li.dataset.doc)),
+    [example, list],
+  );
+/** Every hero example shows the run docs/data/hero-examples.json recorded for `locale` (bun run test:hero checks it). */
+async function checkHeroExamples(page, locale) {
+  for (const example of HERO.examples)
+    for (const list of ['lexical', 'vector', 'fused'])
+      assert.deepEqual(
+        await heroLists(page, example.id, list),
+        [example.locales[locale][list].map((hit) => hit.doc.id)],
+        `${locale}: the hero's ${example.id} example, ${list} list`,
+      );
+}
 const number = (tag, value, options) => new Intl.NumberFormat(tag, options).format(value);
 const share = (tag, value) =>
   number(tag, value, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -90,27 +113,31 @@ export async function checkSite(page, { strategies }) {
   // One size card per model: each against its own base model.
   for (const base of ['bekko', 'sauerkraut'])
     assert.equal(await page.textContent(`.hs-usp-vs [data-bytes="${base}"]`), megabytes(MODEL_FACTS.bases[base]));
-  // Each card: what it is about, the figure, its comparison, a rule, what was measured and the techniques behind it
-  // (the language templates sit between).
+  // Each card: what it is about, the figure, its two bars, its comparison, then on the lower band what was measured
+  // and the techniques behind it (the language templates sit between).
   for (const card of await page.locator('.hs-usp').all())
     assert.deepEqual(
-      await card.evaluate((el) => [...el.children].filter((x) => !x.matches('.hs-usp-icon, template')).map((x) => x.className)),
-      ['badge hs-usp-kicker', 'hs-usp-value', 'hs-usp-vs', 'separator hs-usp-rule', 'hs-usp-label', 'hs-usp-techniques'],
+      await card.evaluate((el) =>
+        [...el.querySelectorAll(':scope > *, :scope > .hs-usp-details > *')]
+          .filter((x) => !x.matches('template'))
+          .map((x) => x.className),
+      ),
+      ['hs-usp-head', 'hs-usp-value', 'hs-usp-meter', 'hs-usp-vs', 'hs-usp-details', 'hs-usp-label', 'hs-usp-tags'],
     );
+  // The bars: the figure first, then its comparison, as wide as the reports make them.
+  const bars = meters({ strategies, manifest: { models: manifestFiles } });
+  assert.deepEqual(
+    await page.locator('.hs-usp-meter').evaluateAll((meters) =>
+      meters.map((meter) => [meter.dataset.meter, [...meter.children].map((bar) => [bar.hasAttribute('data-ours'), bar.style.getPropertyValue('--hs-share')])]),
+    ),
+    Object.entries(bars).map(([name, [ours, base]]) => [name, [[true, `${(100 * ours).toFixed(1)}%`], [false, `${(100 * base).toFixed(1)}%`]]]),
+  );
   assert.deepEqual(
     await page.locator('.hs-usp-kicker').allTextContents(),
     ['Accuracy', 'Real-world quality', 'AI model compression', 'AI model compression'],
   );
   for (const count of await page.locator('.hs-usp-tags').evaluateAll((rows) => rows.map((row) => row.querySelectorAll('.badge').length)))
     assert.ok(count >= 4, `a card names ${count} techniques`);
-  // The two model cards link their reproduction code on Hugging Face, at the revisions the demo pins.
-  const repro = await page.locator('.hs-usp-repro').evaluateAll((links) => links.map((link) => link.href));
-  assert.equal(repro.length, 2);
-  for (const model of ['colbert', 'winzling'])
-    assert.ok(
-      repro.includes(`${manifestFiles[model].base.replace('/resolve/', '/tree/')}reproduce`),
-      `${model} links its reproduction code`,
-    );
   assert.equal(await page.textContent('[data-fig="translation-r1"]'), share('en', strategies.corpora['notes translation'].efficient.r1));
   assert.equal(
     await page.textContent('[data-fig="translation-lexical-r1"]'),
@@ -122,6 +149,22 @@ export async function checkSite(page, { strategies }) {
   for (const model of ['winzling', 'colbert'])
     assert.ok(credit.includes(models[model].base.split('/resolve/')[0]), `the hero credit links ${model}`);
   assert.ok(credit.includes('https://www.linkedin.com/in/aronhomberg/'), 'the hero credit links the author');
+  // The example searches: each shows its recorded English run; they rotate by themselves, and a press on a tab
+  // shows that example and stops the rotation there.
+  await checkHeroExamples(page, 'en');
+  const active = () => page.getAttribute('.hs-fusion-example[data-active]', 'data-example');
+  // The rotation pauses out of view and under the pointer, so the figure comes into view with the pointer elsewhere.
+  await page.locator('.hs-fusion').scrollIntoViewIfNeeded();
+  await page.mouse.move(0, 0);
+  const first = await active();
+  await page.waitForFunction((first) => document.querySelector('.hs-fusion-example[data-active]')?.dataset.example !== first, first, { timeout: 10000 });
+  await page.click('.hs-fusion-tabs button[value="symbols"]');
+  await page.mouse.move(0, 0); // pointing at the figure would pause the rotation, which must stop by itself here
+  assert.equal(await active(), 'symbols');
+  assert.equal(await page.getAttribute('.hs-fusion-tabs button[value="symbols"]', 'aria-pressed'), 'true');
+  await page.waitForTimeout(4500);
+  assert.equal(await active(), 'symbols', 'a pressed tab stops the rotation');
+  assert.equal(await page.locator('.hs-fusion-example:not([data-active])[inert]').count(), HERO.examples.length - 1);
   // Each recall strategy names its model download under the strategy tabs, the Brotli sizes of the manifest.
   const manifest = JSON.parse(await readFile('docs/data/manifest.json', 'utf8'));
   const bytes = { colbert: modelBytes(manifest.models.colbert.files), winzling: modelBytes(manifest.models.winzling.files) };
@@ -407,6 +450,9 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
   assert.equal(await page.evaluate(() => document.documentElement.classList.contains('hs-pending')), false);
   assert.equal((await page.textContent('#hero-title')).trim(), 'Effizient suchen nach exakten Treffern und nach Bedeutung');
   assert.match(await page.textContent('.hs-hero-credit'), /^\s*Lexikalische Suche, Vektorsuche, Fusion und Modell-Inferenz implementiert von Aron Homberg/);
+  // German asks the examples in German, and each shows that question's own run.
+  await checkHeroExamples(page, 'de');
+  assert.equal(await page.textContent('#hero-example-translation .hs-fusion-placeholder[data-hero-locale="de"]'), 'Wann ist mein Zahnarzttermin?');
   assert.equal(await page.textContent('.mk-header-nav a[href="#/how"]'), 'So funktioniert es');
   assert.equal(await page.getAttribute('.mk-header-nav', 'aria-label'), 'Hauptmenü');
   assert.equal(await page.getAttribute('#how-title a.heading-anchor', 'aria-label'), 'Link zum Abschnitt: Zweimal abrufen, einmal fusionieren, nur bei Bedarf neu ordnen');
@@ -462,16 +508,21 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
   await context.close();
   let flicker;
 
-  // ---- themes from the system, English, desktop and phone; screenshots of the main sections ------------------
+  // ---- themes from the system, English, desktop, tablet (light) and phone; screenshots of the main sections ---
+  const devices = [
+    ['desktop', { width: 1280, height: 900 }],
+    ['tablet', { width: 768, height: 1024 }],
+    ['mobile', { width: 390, height: 844 }],
+  ];
   for (const colorScheme of ['light', 'dark'])
-    for (const [device, viewport] of [
-      ['desktop', { width: 1280, height: 900 }],
-      ['mobile', { width: 390, height: 844 }],
-    ]) {
+    for (const [device, viewport] of devices.filter(([device]) => device !== 'tablet' || colorScheme === 'light')) {
       const opened = await open(browser, `${url}?models=off`, { locale: 'en-US', colorScheme, viewport }, errors);
       if (colorScheme === 'light' && device === 'desktop') flicker = await checkNoFlicker(opened.page);
       const dark = await opened.page.evaluate(() => document.documentElement.classList.contains('dark'));
       assert.equal(dark, colorScheme === 'dark', `${colorScheme}: the page follows the system`);
+      // Below the desktop layout the page shows at 75%: the root at 15px instead of 20px.
+      const rootSize = await opened.page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+      assert.equal(rootSize, device === 'desktop' ? '20px' : '15px', `${device}: the page's size`);
       assert.ok(
         await opened.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
         `${device} ${colorScheme}: no horizontal scroll`,
@@ -484,7 +535,11 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
         await target.screenshot({ path: `output/e2e/${section}-${colorScheme}-${device}.png` });
         shots.push(`${section}-${colorScheme}-${device}`);
       }
-      readability[`en-${colorScheme}-${device}`] = await checkReadability(opened.page, `${colorScheme} ${device}`);
+      readability[`en-${colorScheme}-${device}`] = await checkReadability(
+        opened.page,
+        `${colorScheme} ${device}`,
+        device === 'desktop' ? {} : { min: 11, running: 13 },
+      );
       // On a phone the language switch sits in the menu, where the header bar has no room for it.
       if (device === 'mobile') {
         assert.equal(await opened.page.locator('.mk-header-actions .hs-locale').isVisible(), false);
@@ -514,6 +569,9 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
       claims.map((_, i) => [i ? 0 : 1, 0]),
       'reduced motion: the first claim stands still',
     );
+    // Reduced motion: the example searches do not rotate; the first stays until a tab is pressed.
+    assert.equal(await forced.page.getAttribute('.hs-fusion-tabs', 'data-auto'), null);
+    assert.equal(await forced.page.getAttribute('.hs-fusion-example[data-active]', 'data-example'), HERO.examples[0].id);
     const radio = await forced.page.evaluate(() => {
       const checked = document.querySelector('input[name="factory"]:checked');
       const dot = getComputedStyle(checked, '::after');

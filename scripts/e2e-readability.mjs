@@ -1,7 +1,9 @@
 /**
  * Readability of the built page in one theme and viewport (scripts/e2e-site.mjs runs it in light and dark, on a
  * desktop and a phone):
- * - size: no visible text under 12px, and running text (60 characters or more) at least 14px;
+ * - size: no visible text under 12px, and running text (60 characters or more) at least 14px; below the desktop
+ *   layout the page shows at 75% (website/site.css), and the floors are the platforms' own minimums, 11px (Apple's
+ *   Human Interface Guidelines and Material Design's smallest label) and 13px, Apple's footnote, for running text;
  * - layout: no control or text block runs past the viewport's edge, unless a horizontal scroller holds it;
  * - axe-core's WCAG 2.2 A and AA rules, colour contrast included, report no violation;
  * - text axe cannot measure, because it sits on the hero's shader, a surface pattern, a gradient or a translucent
@@ -33,7 +35,7 @@ const HIDE_TEXT = `
   html.hs-audit .mk-header, html.hs-audit .fab { visibility: hidden !important; }
   html.hs-audit.hs-audit-header .mk-header { visibility: visible !important; }`;
 
-export async function checkReadability(page, label) {
+export async function checkReadability(page, label, { min = 12, running = 14 } = {}) {
   // Bring every lazy part in: scroll the page through, let the charts and entrances finish.
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   for (let y = 0; y < height; y += 600) {
@@ -53,7 +55,7 @@ export async function checkReadability(page, label) {
   await page.waitForTimeout(300);
 
   // ---- size --------------------------------------------------------------------------------------------------
-  const small = await page.evaluate(() => {
+  const small = await page.evaluate(({ min, running }) => {
     const found = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -65,11 +67,11 @@ export async function checkReadability(page, label) {
       if (!box.width || !box.height || style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
       const size = parseFloat(style.fontSize);
       const sentence = el.closest('p, li, td, figcaption')?.textContent.trim().length >= 60;
-      if (size < 12 || (sentence && size < 14 && !el.closest('code, kbd, pre, .badge, .mockup-code, .mk-code-block, table')))
+      if (size < min || (sentence && size < running && !el.closest('code, kbd, pre, .badge, .mockup-code, .mk-code-block, table')))
         found.push(`${size}px "${text.slice(0, 40)}" in <${el.localName} class="${el.className}">`);
     }
     return found;
-  });
+  }, { min, running });
   assert.deepEqual(small, [], `${label}: text too small`);
 
   // ---- nothing cut off: controls and text stay inside the viewport, unless a scroller holds them ---------------

@@ -104,6 +104,7 @@ assert.equal(
     recall,
     strategies: strategiesReport,
     manifest: JSON.parse(await readFile('docs/data/manifest.json', 'utf8')),
+    hero: JSON.parse(await readFile('docs/data/hero-examples.json', 'utf8')),
   }),
   'docs/index.html is stale; run make docs',
 );

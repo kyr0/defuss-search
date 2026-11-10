@@ -107,6 +107,46 @@ function initInstall() {
   }
 }
 
+/**
+ * The hero's example searches (scripts/hero-render.mjs): the pressed tab's panel shows. While the tabs carry
+ * `data-auto`, the pressed tab's progress bar fills for --hs-dwell (site.css) and its end shows the next example. The
+ * bar pauses while the reader points at or focuses the figure, or the figure is out of view; pressing a tab stops the
+ * rotation on that example. With reduced motion the bar does not run, so the first example stays until a press.
+ * Why the bar's animation as the clock, not a timer: pausing the bar pauses the rotation with it, and the readability
+ * check, which stops every animation, sees one example throughout.
+ */
+function initHeroExamples() {
+  const tabs = document.querySelector('.hs-fusion-tabs');
+  if (!tabs) return;
+  const buttons = [...tabs.querySelectorAll('button[value]')];
+  const panels = [...document.querySelectorAll('.hs-fusion-example')];
+  const show = (value) => {
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.value === value));
+    for (const panel of panels) {
+      const active = panel.dataset.example === value;
+      panel.toggleAttribute('data-active', active);
+      panel.inert = !active;
+    }
+  };
+  show(buttons[0].value);
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) tabs.dataset.auto = '';
+  tabs.addEventListener('animationend', (event) => {
+    if (tabs.dataset.auto === undefined || !event.target.classList.contains('hs-fusion-progress')) return;
+    show(buttons[(buttons.indexOf(event.target.closest('button')) + 1) % buttons.length].value);
+  });
+  tabs.addEventListener('click', (event) => {
+    const button = event.target.closest('button[value]');
+    if (!button) return;
+    delete tabs.dataset.auto;
+    // After the toggle group's own handler, which would let a second press clear the item.
+    queueMicrotask(() => show(button.value));
+  });
+  if (typeof IntersectionObserver === 'function')
+    new IntersectionObserver(([entry]) => tabs.toggleAttribute('data-paused', !entry.isIntersecting)).observe(
+      tabs.closest('figure') ?? tabs,
+    );
+}
+
 /** Shortcuts show ⌘ on Apple systems and Ctrl elsewhere; the keys work with either (website/playground.mjs). */
 function paintModifiers() {
   if (isMac()) return;
@@ -175,6 +215,7 @@ export function initChrome() {
   initTheme();
   initCopy();
   initInstall();
+  initHeroExamples();
   initEntrances();
   initDiagramStart();
   paintModifiers();

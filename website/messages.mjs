@@ -88,6 +88,9 @@ export const MESSAGES = {
     'source-no-lexical': 'no lexical match',
     'source-vector': 'vector #{rank}',
     'source-no-vector': 'not in vector top 25',
+    // the hero's example searches (scripts/hero-render.mjs)
+    'hero-exact': 'exact symbol',
+    'hero-weak-lexical': 'ahead of a weak BM25 hit',
     'name-lexical': 'Lexical',
     'name-vector': 'Vector',
     'name-reranker': 'ColBERT',
@@ -279,6 +282,8 @@ export const MESSAGES = {
     'source-no-lexical': 'kein lexikalischer Treffer',
     'source-vector': 'Vektor #{rank}',
     'source-no-vector': 'nicht in den Vektor-Top-25',
+    'hero-exact': 'exaktes Symbol',
+    'hero-weak-lexical': 'vor einem schwachen BM25-Treffer',
     'name-lexical': 'Lexikalisch',
     'name-vector': 'Vektor',
     'name-reranker': 'ColBERT',

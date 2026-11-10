@@ -3,13 +3,17 @@
  * compares, so docs/index.html cannot drift from what the source and the reports render:
  * 1. the factory picker's figures from docs/data/strategies.json;
  * 2. the code placeholders, highlighted by Shiki (scripts/highlight.mjs);
- * 3. the translation markup from website/i18n/de.mjs (scripts/localize.mjs), failing on any text without German;
- * 4. the figures named by `data-fig`, from the reports, after the translation, so a translated sentence keeps its
+ * 3. the hero's example searches from docs/data/hero-examples.json (scripts/hero-render.mjs), before the translation,
+ *    so their labels go through the catalog;
+ * 4. the translation markup from website/i18n/de.mjs (scripts/localize.mjs), failing on any text without German;
+ * 5. the figures named by `data-fig`, from the reports, after the translation, so a translated sentence keeps its
  *    slot and the catalog does not change when a benchmark does;
- * 5. the download sizes named by `data-bytes`, from docs/data/manifest.json, in the page's number format.
+ * 6. the download sizes named by `data-bytes`, from docs/data/manifest.json, in the page's number format;
+ * 7. the hero cards' bars named by `data-meter`, from the same numbers as their figures.
  * VERIFIED: scripts/check-project.mjs compares the committed docs/index.html with this rendering.
  */
 import { FACTORIES, modelBytes } from '../website/factories.mjs';
+import { heroExamplesPage } from './hero-render.mjs';
 import { expandCode } from './highlight.mjs';
 import { catalogMap, localize } from './localize.mjs';
 
@@ -127,11 +131,44 @@ export function fillBytes(html, manifest) {
   });
 }
 
+/**
+ * The two bars under each hero card's figure, the figure against its comparison, as shares of the bar's width:
+ * scores and recall on their own scale from 0 to 1, sizes against the larger file, the base model's. Why bars: "as
+ * good", "4.5x better" and "3.4x smaller" read at a glance, before the numbers; why from the reports: a bar cannot
+ * disagree with the figure printed above it.
+ */
+export function meters({ strategies, manifest }) {
+  const notes = strategies.corpora['notes translation'];
+  const download = (name) => modelBytes(manifest.models[name].files);
+  const against = (ours, base) => [ours / Math.max(ours, base), base / Math.max(ours, base)];
+  return {
+    accuracy: [MODEL_FACTS.reranker.ndcg, MODEL_FACTS.reranker.original],
+    translation: [notes.efficient.r1, notes['lexical-only'].r1],
+    colbert: against(download('colbert'), MODEL_FACTS.bases.sauerkraut),
+    winzling: against(download('winzling'), MODEL_FACTS.bases.bekko),
+  };
+}
+/** Fills every empty `data-meter` slot with its two bars, ours first; throws on an unknown name. */
+export function fillMeters(html, reports) {
+  const values = meters(reports);
+  const bar = (share, ours) =>
+    `<span class="hs-usp-bar"${ours ? ' data-ours' : ''} style="--hs-share: ${(100 * share).toFixed(1)}%"></span>`;
+  return html.replace(/<span class="hs-usp-meter" data-meter="(\w+)" aria-hidden="true"><\/span>/g, (_, name) => {
+    if (!values[name]) throw new Error(`Unknown meter ${name}`);
+    const [ours, base] = values[name];
+    return `<span class="hs-usp-meter" data-meter="${name}" aria-hidden="true">${bar(ours, true)}${bar(base, false)}</span>`;
+  });
+}
+
 /** website/index.html as Pages serves it, before the build stamps the script versions. */
-export async function renderIndex(source, { recall, strategies, manifest }) {
+export async function renderIndex(source, { recall, strategies, manifest, hero }) {
   const { default: pairs } = await import('../website/i18n/de.mjs');
-  const { html, missing } = localize(expandCode(factoryFiguresPage(source, FACTORIES, strategies)), catalogMap(pairs));
+  const { html, missing } = localize(
+    expandCode(heroExamplesPage(factoryFiguresPage(source, FACTORIES, strategies), hero)),
+    catalogMap(pairs),
+  );
   if (missing.length)
     throw new Error(`website/i18n/de.mjs lacks German for ${missing.length} texts:\n${missing.join('\n')}`);
-  return fillBytes(fillFigures(html, { recall, strategies, manifest }), manifest);
+  const reports = { recall, strategies, manifest };
+  return fillMeters(fillBytes(fillFigures(html, reports), manifest), reports);
 }

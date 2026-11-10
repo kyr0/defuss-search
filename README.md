@@ -369,6 +369,7 @@ bun run test:models:bun && bun run test:models   # native CPU Winzling-embed and
 bun run test:wasm:bun && bun run test:wasm       # browser entry with WASM, in Bun and Node.js
 bun run test:gate:bun && bun run test:gate       # a skipped neural stage reads no ColBERT file
 bun run test:gate:wasm:bun && bun run test:gate:wasm   # the same with the WASM backend
+bun run test:hero                                # the hero's example searches equal a fresh run (bun run hero rewrites them)
 DEFUSS_LIVE_BROWSER=1 make e2e                   # real WASM models in Chromium
 ```
 

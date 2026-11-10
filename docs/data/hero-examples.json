@@ -1,0 +1,640 @@
+{
+  "schema": "defuss-search-hero-examples.v1",
+  "examples": [
+    {
+      "id": "translation",
+      "corpus": {
+        "kind": "notes",
+        "documents": 100,
+        "languages": 9
+      },
+      "lexicalMode": "bm25",
+      "locales": {
+        "en": {
+          "question": "When is my dentist appointment?",
+          "lexicalTotal": 2,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n39",
+                "lang": "en",
+                "text": "Dentist appointment tomorrow at 9, bring the insurance card."
+              }
+            },
+            {
+              "doc": {
+                "id": "n96",
+                "lang": "es",
+                "text": "Mañana a las nueve tengo cita con el dentista."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n39",
+                "lang": "en",
+                "text": "Dentist appointment tomorrow at 9, bring the insurance card."
+              }
+            },
+            {
+              "doc": {
+                "id": "n96",
+                "lang": "es",
+                "text": "Mañana a las nueve tengo cita con el dentista."
+              }
+            },
+            {
+              "doc": {
+                "id": "n1",
+                "lang": "de",
+                "text": "Morgen um 9 Uhr Zahnarzttermin, Versichertenkarte nicht vergessen."
+              }
+            },
+            {
+              "doc": {
+                "id": "n73",
+                "lang": "ru",
+                "text": "Завтра в девять запись к стоматологу, не забыть полис."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n39",
+                "lang": "en",
+                "text": "Dentist appointment tomorrow at 9, bring the insurance card."
+              },
+              "lexical": 1,
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n96",
+                "lang": "es",
+                "text": "Mañana a las nueve tengo cita con el dentista."
+              },
+              "lexical": 2,
+              "vector": 2,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n1",
+                "lang": "de",
+                "text": "Morgen um 9 Uhr Zahnarzttermin, Versichertenkarte nicht vergessen."
+              },
+              "vector": 3,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n73",
+                "lang": "ru",
+                "text": "Завтра в девять запись к стоматологу, не забыть полис."
+              },
+              "vector": 4,
+              "reasons": []
+            }
+          ]
+        },
+        "de": {
+          "question": "Wann ist mein Zahnarzttermin?",
+          "lexicalTotal": 1,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n1",
+                "lang": "de",
+                "text": "Morgen um 9 Uhr Zahnarzttermin, Versichertenkarte nicht vergessen."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n1",
+                "lang": "de",
+                "text": "Morgen um 9 Uhr Zahnarzttermin, Versichertenkarte nicht vergessen."
+              }
+            },
+            {
+              "doc": {
+                "id": "n96",
+                "lang": "es",
+                "text": "Mañana a las nueve tengo cita con el dentista."
+              }
+            },
+            {
+              "doc": {
+                "id": "n39",
+                "lang": "en",
+                "text": "Dentist appointment tomorrow at 9, bring the insurance card."
+              }
+            },
+            {
+              "doc": {
+                "id": "n73",
+                "lang": "ru",
+                "text": "Завтра в девять запись к стоматологу, не забыть полис."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n1",
+                "lang": "de",
+                "text": "Morgen um 9 Uhr Zahnarzttermin, Versichertenkarte nicht vergessen."
+              },
+              "lexical": 1,
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n96",
+                "lang": "es",
+                "text": "Mañana a las nueve tengo cita con el dentista."
+              },
+              "vector": 2,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n39",
+                "lang": "en",
+                "text": "Dentist appointment tomorrow at 9, bring the insurance card."
+              },
+              "vector": 3,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n73",
+                "lang": "ru",
+                "text": "Завтра в девять запись к стоматологу, не забыть полис."
+              },
+              "vector": 4,
+              "reasons": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "meaning",
+      "corpus": {
+        "kind": "notes",
+        "documents": 100,
+        "languages": 9
+      },
+      "lexicalMode": "bm25",
+      "locales": {
+        "en": {
+          "question": "Water, there was sand and I was hungry",
+          "lexicalTotal": 2,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n68",
+                "lang": "en",
+                "text": "Water the neighbours' plants while they are on holiday."
+              }
+            },
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n67",
+                "lang": "en",
+                "text": "Breakfast by the sea with fresh bread and coffee."
+              }
+            },
+            {
+              "doc": {
+                "id": "n28",
+                "lang": "de",
+                "text": "Frühstück am Meer: frische Brötchen und Kaffee mit Blick aufs Wasser."
+              }
+            },
+            {
+              "doc": {
+                "id": "n68",
+                "lang": "en",
+                "text": "Water the neighbours' plants while they are on holiday."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n67",
+                "lang": "en",
+                "text": "Breakfast by the sea with fresh bread and coffee."
+              },
+              "vector": 1,
+              "reasons": [
+                "weak-lexical"
+              ]
+            },
+            {
+              "doc": {
+                "id": "n68",
+                "lang": "en",
+                "text": "Water the neighbours' plants while they are on holiday."
+              },
+              "lexical": 1,
+              "vector": 3,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              },
+              "lexical": 2,
+              "vector": 5,
+              "reasons": []
+            }
+          ]
+        },
+        "de": {
+          "question": "Wasser, es war Sand da und ich hatte Hunger",
+          "lexicalTotal": 2,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              }
+            },
+            {
+              "doc": {
+                "id": "n28",
+                "lang": "de",
+                "text": "Frühstück am Meer: frische Brötchen und Kaffee mit Blick aufs Wasser."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n67",
+                "lang": "en",
+                "text": "Breakfast by the sea with fresh bread and coffee."
+              }
+            },
+            {
+              "doc": {
+                "id": "n28",
+                "lang": "de",
+                "text": "Frühstück am Meer: frische Brötchen und Kaffee mit Blick aufs Wasser."
+              }
+            },
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n67",
+                "lang": "en",
+                "text": "Breakfast by the sea with fresh bread and coffee."
+              },
+              "vector": 1,
+              "reasons": [
+                "weak-lexical"
+              ]
+            },
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              },
+              "lexical": 1,
+              "vector": 3,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n28",
+                "lang": "de",
+                "text": "Frühstück am Meer: frische Brötchen und Kaffee mit Blick aufs Wasser."
+              },
+              "lexical": 2,
+              "vector": 2,
+              "reasons": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "symbols",
+      "corpus": {
+        "kind": "api",
+        "documents": 52
+      },
+      "lexicalMode": "exact",
+      "locales": {
+        "en": {
+          "question": "??",
+          "lexicalTotal": 1,
+          "lexical": [
+            {
+              "doc": {
+                "id": "operator.coalesce",
+                "symbol": "??",
+                "text": "The nullish coalescing operator selects a fallback only for null or undefined."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "event",
+                "symbol": "EventTarget.addEventListener()",
+                "text": "Subscribe a callback to a DOM event."
+              }
+            },
+            {
+              "doc": {
+                "id": "promise.allSettled",
+                "symbol": "Promise.allSettled()",
+                "text": "Wait for every promise and collect fulfilled and rejected outcomes."
+              }
+            },
+            {
+              "doc": {
+                "id": "promise.race",
+                "symbol": "Promise.race()",
+                "text": "Settle as soon as the first promise settles."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "operator.coalesce",
+                "symbol": "??",
+                "text": "The nullish coalescing operator selects a fallback only for null or undefined."
+              },
+              "lexical": 1,
+              "vector": 4,
+              "reasons": [
+                "literal-exact"
+              ]
+            },
+            {
+              "doc": {
+                "id": "event",
+                "symbol": "EventTarget.addEventListener()",
+                "text": "Subscribe a callback to a DOM event."
+              },
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "dotnet",
+                "symbol": ".NET",
+                "text": "A managed runtime and developer platform."
+              },
+              "vector": 6,
+              "reasons": []
+            }
+          ]
+        },
+        "de": {
+          "question": "??",
+          "lexicalTotal": 1,
+          "lexical": [
+            {
+              "doc": {
+                "id": "operator.coalesce",
+                "symbol": "??",
+                "text": "The nullish coalescing operator selects a fallback only for null or undefined."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "event",
+                "symbol": "EventTarget.addEventListener()",
+                "text": "Subscribe a callback to a DOM event."
+              }
+            },
+            {
+              "doc": {
+                "id": "promise.allSettled",
+                "symbol": "Promise.allSettled()",
+                "text": "Wait for every promise and collect fulfilled and rejected outcomes."
+              }
+            },
+            {
+              "doc": {
+                "id": "promise.race",
+                "symbol": "Promise.race()",
+                "text": "Settle as soon as the first promise settles."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "operator.coalesce",
+                "symbol": "??",
+                "text": "The nullish coalescing operator selects a fallback only for null or undefined."
+              },
+              "lexical": 1,
+              "vector": 4,
+              "reasons": [
+                "literal-exact"
+              ]
+            },
+            {
+              "doc": {
+                "id": "event",
+                "symbol": "EventTarget.addEventListener()",
+                "text": "Subscribe a callback to a DOM event."
+              },
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "dotnet",
+                "symbol": ".NET",
+                "text": "A managed runtime and developer platform."
+              },
+              "vector": 6,
+              "reasons": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "typos",
+      "corpus": {
+        "kind": "notes",
+        "documents": 100,
+        "languages": 9
+      },
+      "lexicalMode": "fuzzy",
+      "locales": {
+        "en": {
+          "question": "piza dugh",
+          "lexicalTotal": 1,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n88",
+                "lang": "ru",
+                "text": "Тесто для пиццы: мука, вода, дрожжи, соль и оливковое масло."
+              }
+            },
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              }
+            },
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              },
+              "lexical": 1,
+              "vector": 2,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n88",
+                "lang": "ru",
+                "text": "Тесто для пиццы: мука, вода, дрожжи, соль и оливковое масло."
+              },
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              },
+              "vector": 3,
+              "reasons": []
+            }
+          ]
+        },
+        "de": {
+          "question": "Pizzatieg",
+          "lexicalTotal": 1,
+          "lexical": [
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              }
+            }
+          ],
+          "vector": [
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              }
+            },
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              }
+            },
+            {
+              "doc": {
+                "id": "n88",
+                "lang": "ru",
+                "text": "Тесто для пиццы: мука, вода, дрожжи, соль и оливковое масло."
+              }
+            }
+          ],
+          "fused": [
+            {
+              "doc": {
+                "id": "n20",
+                "lang": "de",
+                "text": "Pizzateig: 500 g Mehl, 300 ml Wasser, Hefe, Salz und Olivenöl."
+              },
+              "lexical": 1,
+              "vector": 1,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n65",
+                "lang": "en",
+                "text": "Pizza dough: 500 g flour, 300 ml water, yeast, salt and olive oil."
+              },
+              "vector": 2,
+              "reasons": []
+            },
+            {
+              "doc": {
+                "id": "n88",
+                "lang": "ru",
+                "text": "Тесто для пиццы: мука, вода, дрожжи, соль и оливковое масло."
+              },
+              "vector": 3,
+              "reasons": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -23,6 +23,7 @@ await writeFile(
     recall,
     strategies,
     manifest: JSON.parse(await readFile('docs/data/manifest.json', 'utf8')),
+    hero: JSON.parse(await readFile('docs/data/hero-examples.json', 'utf8')),
   }),
 );
 await writeFile('docs/.nojekyll', '');
