@@ -383,8 +383,9 @@ export async function checkLanguagesAndThemes(browser, url, errors) {
   assert.equal(await page.textContent('[data-fig="target-r1"]'), share('de', efficient.target.r1));
   // Every translated region has its two templates, and the German one is on screen.
   const regions = await page.evaluate(() => {
-    // Numbers inside a region show in the page's format, so the comparison leaves their text out.
-    const same = (html) => html.replace(/(<[^>]*\bdata-num\b[^>]*>)[^<]*/g, '$1').replace(/\s+/g, ' ').trim();
+    // Numbers inside a region show in the page's format and a modifier key shows Ctrl off Apple systems
+    // (website/chrome.mjs), so the comparison leaves their text out.
+    const same = (html) => html.replace(/(<[^>]*\bdata-(?:num|mod)\b[^>]*>)[^<]*/g, '$1').replace(/\s+/g, ' ').trim();
     return [...document.querySelectorAll('[data-i18n-target]')].map((el) => {
       const name = el.dataset.i18nTarget;
       const de = document.querySelector(`template[data-i18n-for="${name}"][data-i18n-locale="de"]`);

@@ -64,10 +64,8 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T09:17:44Z s=a22aa615 FINDING scripts/strategies-report.mjs:languages learn=none: One-time migration of a generated file; the explicit error is the fix, and check-project fails on missing rows.
 2026-11-09T14:56:51Z s=a22aa615 FINDING website/charts.mjs:frontierOption learn=none: label overlap is visual; checked by screenshot in light 1280 and dark 390, no mechanical check reads rendered label boxes
 2026-11-09T14:56:51Z s=a22aa615 FINDING website/index.html:The numbers learn=none: visual requirement checked by screenshot; e2e still reads every table through the collapsible
-2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:hs-hero-shader learn=test: the same pixel audit runs on the phone viewport in both themes
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/site.css:.hs-hero > .shader learn=none: specificity against a vendored rule; checked by a computed-style probe and screenshots, no rule kind expresses it
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:data-background learn=none: visual; observed in SwiftShader screenshots after compile, before compile the poster
-2026-11-09T15:22:29Z s=a22aa615 FINDING website/i18n/de.mjs:270 learn=test: scripts/e2e-site.mjs asserts the new hero title in English and German; make docs fails on a marked text without German
 2026-11-09T20:32:57Z s=a22aa615 FAIL project.contracts
 2026-11-09T20:34:38Z s=a22aa615 FAIL tests.e2e.1
 2026-11-09T20:54:34Z s=a22aa615 DONE fp=8a196884168a cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+86)
@@ -106,3 +104,5 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T03:12:06Z s=a22aa615 FINDING bench/pareto.mjs:selectGroup learn=verifier: pareto.mjs throws when the preset differs from the rule's selection; check-project compares both groups with the report.
 2026-11-10T03:37:11Z s=a22aa615 DONE fp=a0ad6a36bc40 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
 2026-11-10T03:37:11Z s=a22aa615 FINDING README.md:124 P (precision) learn=none: Timings vary per run; a check pinning them would pin values that held once.
+2026-11-10T03:51:22Z s=a22aa615 DONE fp=c7be7d2890ab cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T03:51:22Z s=a22aa615 FINDING scripts/e2e-site.mjs:checkLanguagesAndThemes (regions) learn=none: Only a Linux browser run reproduces it; the local gate runs on macOS, and CI on push is the check that exercises the Ctrl path.
