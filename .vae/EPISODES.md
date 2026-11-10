@@ -69,8 +69,6 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T21:59:33Z s=a22aa615 FINDING Makefile:bench learn=none: ending the turn while make bench runs lets the stop-hook gate run pkgroll --clean-dist, which deletes dist/ that the next bench process imports; wait in-turn for long benches (observed 2026-11-09, the run survived).
 2026-11-09T22:01:49Z s=a22aa615 FINDING website/index.html:#p-colbert-label learn=none: spacing is visual; no rule distinguishes it from intended gaps.
 2026-11-09T23:50:56Z s=a22aa615 FINDING bench/pareto.mjs:118 learn=none: Cleanup in a bench script; the default-run comparison is the behavior check.
-2026-11-10T01:29:42Z s=a22aa615 FINDING bench/recall-core.mjs:13 learn=verifier: recall-docs already compares the description with its German; the new guard catches a preset the words no longer fit.
-2026-11-10T01:29:42Z s=a22aa615 FINDING src/core/options.ts:74 learn=test: engine test pins the documented precedence.
 2026-11-10T01:29:42Z s=a22aa615 FINDING src/presets.ts:25 learn=none: Wording fixed against the measured report.
 2026-11-10T02:01:05Z s=a22aa615 FAIL tests.e2e.1
 2026-11-10T02:13:34Z s=a22aa615 DONE fp=1b0528ac2a12 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
@@ -106,3 +104,5 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T05:15:47Z s=a22aa615 FINDING website/index.html:hero credit learn=none: A copy change; the e2e region check covers its German.
 2026-11-10T05:22:11Z s=a22aa615 DONE fp=1a5c93f148ce cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
 2026-11-10T05:22:11Z s=a22aa615 FINDING website/index.html, website/i18n/de.mjs: copy learn=none: Copy changes; the existing region and label checks cover them.
+2026-11-10T05:29:26Z s=a22aa615 DONE fp=151f58e0387c cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T05:29:26Z s=a22aa615 FINDING website/site.css:.hs-usps learn=none: A layout choice; the e2e overflow and readability checks at 390 and 1280 px cover regressions.

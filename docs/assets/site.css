@@ -1889,12 +1889,17 @@
   /* four measured figures under the hero */
   .hs-usps {
     display: grid;
-    /* four cards, two by two on a desktop: a size such as 28.8 MB keeps one line beside the icon tile */
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    /* four cards: one column on a phone, two by two from a tablet's width up */
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem 2rem;
     width: 100%;
     max-width: var(--hs-max);
     margin-inline: auto;
+  }
+  @media (min-width: 48rem) {
+    .hs-usps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   /* One card surface for the hero's figures and the three strategies: a top edge in the retrieval colours (both,
      or the one a card is about), the icon or flow in a tile. */
@@ -1936,8 +1941,8 @@
     background: color-mix(in oklch, var(--hs-vector) 10%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--hs-vector) 22%, transparent);
   }
-  /* the figure and its comparison keep clear of the icon tile */
-  :is(.hs-usp-value, .hs-usp-vs) {
+  /* the figure keeps clear of the icon tile; the comparison below it already runs under the tile */
+  .hs-usp-value {
     padding-inline-end: 5rem;
   }
   .hs-usp-value {
