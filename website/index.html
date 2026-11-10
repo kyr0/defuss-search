@@ -404,7 +404,7 @@
                 <a href="https://www.linkedin.com/in/aronhomberg/" target="_blank" rel="noopener">Aron Homberg (kyr0)<svg class="hs-icon hs-ext" aria-hidden="true"><use href="#i-external" /></svg><span class="sr-only"> (opens in a new tab)</span></a>,
                 open source (<a href="https://github.com/kyr0/defuss-search/blob/main/LICENSE" target="_blank" rel="noopener">MIT<svg class="hs-icon hs-ext" aria-hidden="true"><use href="#i-external" /></svg><span class="sr-only"> (opens in a new tab)</span></a>)</span
               >.
-              <span data-t>Local AI models:</span>
+              <span data-t>Edge AI models optimized by me:</span>
               <a href="https://huggingface.co/kyr0/Winzling-Embed-a8m-64k" target="_blank" rel="noopener">Winzling-embed<svg class="hs-icon hs-ext" aria-hidden="true"><use href="#i-external" /></svg><span class="sr-only" data-t> (opens in a new tab)</span></a
               >,
               <a href="https://huggingface.co/kyr0/winzling-embed-SauerkrautLM-MoEdernColBERT-1.5M-weight-space-programming" target="_blank" rel="noopener">Winzling-reranker<svg class="hs-icon hs-ext" aria-hidden="true"><use href="#i-external" /></svg><span class="sr-only" data-t> (opens in a new tab)</span></a>
@@ -430,7 +430,7 @@
               <span class="hs-usp-value"><span data-fig="translation-r1"></span> <span class="hs-usp-unit" data-t><span data-fig="translation-times"></span>x better</span></span>
               <span class="hs-usp-vs" data-t>vs. <span data-fig="translation-lexical-r1"></span> with lexical search alone (BM25)</span>
               <hr class="separator hs-usp-rule" />
-              <span class="hs-usp-label" data-t>R@1 when all notes are searched <strong>by their translation into another language</strong>. Lexical search needs words that both texts share; the vector search compares their meaning.</span>
+              <span class="hs-usp-label" data-t>R@1 when all notes are searched <strong>by their translation in another language</strong>. Lexical search needs words that both texts share; the vector search compares their meaning.</span>
               <div class="hs-usp-techniques">
                 <p class="hs-usp-techniques-title" data-t>Expert techniques applied:</p>
                 <p class="hs-usp-tags" data-t><span class="badge" data-variant="outline" data-size="sm">Hybrid search</span><span class="badge" data-variant="outline" data-size="sm">Weighted RRF</span><span class="badge" data-variant="outline" data-size="sm">Weak-lexical rule</span><span class="badge" data-variant="outline" data-size="sm">Cross-lingual embeddings</span></p>
@@ -438,7 +438,7 @@
             </div>
             <div class="hs-usp" data-enter="up">
               <span class="hs-usp-icon" aria-hidden="true"><svg class="hs-icon"><use href="#i-package" /></svg></span>
-              <span class="badge hs-usp-kicker" data-t>Model compression</span>
+              <span class="badge hs-usp-kicker" data-t>AI model compression</span>
               <span class="hs-usp-value"><span data-bytes="colbert"></span> <span class="hs-usp-unit" data-t><span data-fig="colbert-times"></span>x smaller</span></span>
               <span class="hs-usp-vs" data-t>vs. <span data-bytes="sauerkraut"></span> for its base model</span>
               <hr class="separator hs-usp-rule" />
@@ -451,7 +451,7 @@
             </div>
             <div class="hs-usp" data-enter="up">
               <span class="hs-usp-icon" aria-hidden="true"><svg class="hs-icon"><use href="#i-cpu" /></svg></span>
-              <span class="badge hs-usp-kicker" data-t>Model compression</span>
+              <span class="badge hs-usp-kicker" data-t>AI model compression</span>
               <span class="hs-usp-value"><span data-bytes="winzling"></span> <span class="hs-usp-unit" data-t><span data-fig="winzling-times"></span>x smaller</span></span>
               <span class="hs-usp-vs" data-t>vs. <span data-bytes="bekko"></span> for its base model</span>
               <hr class="separator hs-usp-rule" />
@@ -505,7 +505,7 @@
               <span class="hs-intro-icon" aria-hidden="true"><svg class="hs-icon"><use href="#i-layers" /></svg></span>
               <h3 data-t>Small core, optional peers</h3>
               <p data-t>
-                No runtime dependencies; ESM and CommonJS with types. Adapters load only when you import them, and your own retrievers plug in the same way.
+                No runtime dependencies; ESM and CommonJS with types. Adapters load only when you import them. Retrievers plug in the same way.
               </p>
             </article>
             <article class="hs-intro-item" data-enter="up">
@@ -553,7 +553,7 @@
           <header class="mk-section-header">
             <div class="mk-section-header-copy">
               <span class="badge hs-eyebrow" data-variant="outline"><svg class="hs-icon" aria-hidden="true"><use href="#i-search" /></svg><span data-t>Live demo</span></span>
-              <h2 class="mk-section-header-title" id="demo-title" data-anchor="demo"><span data-t>Watch where the gold passage lands</span></h2>
+              <h2 class="mk-section-header-title" id="demo-title" data-anchor="demo"><span data-t>Try the search</span></h2>
               <p class="mk-section-header-desc" data-t>
                 2,000 benchmark passages in 20 languages, indexed in your browser. Press <kbd class="kbd-group"><kbd class="kbd" data-mod>⌘</kbd><kbd class="kbd">K</kbd></kbd> for one of the 1,000 questions, or <kbd class="kbd">/</kbd> to ask your own. The second tab indexes your own notes.
               </p>
@@ -1161,7 +1161,7 @@
             </div>
           </div>
           <div class="hs-tiers">
-            <h3 class="hs-way-title" id="contract" data-anchor><span data-t>The ranking contract, in order</span></h3>
+            <h3 class="hs-way-title" id="contract" data-anchor><span data-t>The ranking logic</span></h3>
             <p class="hs-way-desc" data-t>
               The final rank is authoritative; scores from different stages are not comparable, so
               each hit states its <code>scoreKind</code>.
@@ -1187,7 +1187,7 @@
           <header class="mk-section-header">
             <div class="mk-section-header-copy">
               <span class="badge hs-eyebrow" data-variant="outline"><svg class="hs-icon" aria-hidden="true"><use href="#i-gauge" /></svg><span data-t>Performance</span></span>
-              <h2 class="mk-section-header-title" id="performance-title" data-anchor="performance"><span data-t>Quality, speed and size, measured</span></h2>
+              <h2 class="mk-section-header-title" id="performance-title" data-anchor="performance"><span data-t>Quality, speed and size</span></h2>
               <p class="mk-section-header-desc" data-t>
                 From this repository's benchmarks: Bun 1.4.3, Apple silicon, one thread. Change a factor and the chart follows; each table holds the same numbers.
               </p>

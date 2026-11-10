@@ -99,7 +99,7 @@ export async function checkSite(page, { strategies }) {
     );
   assert.deepEqual(
     await page.locator('.hs-usp-kicker').allTextContents(),
-    ['Accuracy', 'Real-world quality', 'Model compression', 'Model compression'],
+    ['Accuracy', 'Real-world quality', 'AI model compression', 'AI model compression'],
   );
   for (const count of await page.locator('.hs-usp-tags').evaluateAll((rows) => rows.map((row) => row.querySelectorAll('.badge').length)))
     assert.ok(count >= 4, `a card names ${count} techniques`);

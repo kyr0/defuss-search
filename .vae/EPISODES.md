@@ -68,11 +68,7 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-09T15:22:29Z s=a22aa615 FINDING website/index.html:data-background learn=none: visual; observed in SwiftShader screenshots after compile, before compile the poster
 2026-11-09T21:59:33Z s=a22aa615 FINDING Makefile:bench learn=none: ending the turn while make bench runs lets the stop-hook gate run pkgroll --clean-dist, which deletes dist/ that the next bench process imports; wait in-turn for long benches (observed 2026-11-09, the run survived).
 2026-11-09T22:01:49Z s=a22aa615 FINDING website/index.html:#p-colbert-label learn=none: spacing is visual; no rule distinguishes it from intended gaps.
-2026-11-09T23:50:56Z s=a22aa615 DONE fp=78c18c109648 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+91)
-2026-11-09T23:50:56Z s=a22aa615 FINDING scripts/e2e.mjs:92 learn=test: The e2e keyboard walk already encodes the tab order; it caught the change.
 2026-11-09T23:50:56Z s=a22aa615 FINDING bench/pareto.mjs:118 learn=none: Cleanup in a bench script; the default-run comparison is the behavior check.
-2026-11-10T01:29:42Z s=a22aa615 DONE fp=a3a552761fb5 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+95)
-2026-11-10T01:29:42Z s=a22aa615 FINDING website/router.mjs:64 learn=test: scripts/e2e-site.mjs repeats both hero links on their own address.
 2026-11-10T01:29:42Z s=a22aa615 FINDING bench/recall-core.mjs:13 learn=verifier: recall-docs already compares the description with its German; the new guard catches a preset the words no longer fit.
 2026-11-10T01:29:42Z s=a22aa615 FINDING src/core/options.ts:74 learn=test: engine test pins the documented precedence.
 2026-11-10T01:29:42Z s=a22aa615 FINDING src/presets.ts:25 learn=none: Wording fixed against the measured report.
@@ -106,3 +102,7 @@ Wrap: EVERY lead becomes a test | .vae/VERIFY.py rule | one MEMORY line with BC,
 2026-11-10T04:54:44Z s=a22aa615 FINDING bench/strategies.mjs learn=none: Nothing remains to check.
 2026-11-10T05:08:43Z s=a22aa615 DONE fp=782487f62da7 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+100)
 2026-11-10T05:08:43Z s=a22aa615 FINDING website/index.html:hero cards, technique badges learn=none: Model-card facts at pinned revisions; no repository check can verify their content.
+2026-11-10T05:15:47Z s=a22aa615 DONE fp=12eac4310064 cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T05:15:47Z s=a22aa615 FINDING website/index.html:hero credit learn=none: A copy change; the e2e region check covers its German.
+2026-11-10T05:22:11Z s=a22aa615 DONE fp=1a5c93f148ce cov=99.8% paths=ARCH.md,CHANGELOG.md,Makefile,README.md(+96)
+2026-11-10T05:22:11Z s=a22aa615 FINDING website/index.html, website/i18n/de.mjs: copy learn=none: Copy changes; the existing region and label checks cover them.
